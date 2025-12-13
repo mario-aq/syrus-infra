@@ -1,0 +1,99 @@
+You are a senior backend engineer specialized in AWS, DynamoDB, and CDK v2 (TypeScript).
+
+We are building Syrus, a WhatsApp chatbot dungeon master. Implement the MVP data layer with DynamoDB in a way that stays AWS free-tier friendly (minimizes cost).
+
+Stack
+	•	AWS CDK v2
+	•	TypeScript
+	•	Stack name: Syrus
+
+⸻
+
+DynamoDB Table: Campaigns
+
+Table name
+
+syrus-campaigns-${stage} where stage is dev or prod.
+
+Primary key
+	•	Partition key: campaignId (string)
+	•	Group campaign: WhatsApp group_id
+	•	Solo campaign: SOLO#<hostWaId>
+	•	No sort key for MVP (we overwrite records when a new campaign starts).
+
+Attributes stored on the item
+	•	campaignId (PK)
+	•	hostWaId (string)
+	•	status (string: configuring|active|paused|ended)
+	•	statusCampaign (string: ${status}#${campaignId}) used for the GSI sort key
+	•	createdAt (number epoch seconds)
+	•	updatedAt (number epoch seconds)
+	•	ttl (number epoch seconds)
+	•	party (map) keyed by waId; values include nested character sheet data (document only; Dynamo doesn’t enforce schema)
+
+⸻
+
+GSI (REQUIRED)
+
+Index name: ByHostStatus
+	•	GSI partition key: hostWaId (string)
+	•	GSI sort key: statusCampaign (string)
+
+This enables querying ACTIVE campaigns for a host using begins_with(“active#”).
+
+⸻
+
+Free-tier friendly settings
+
+Use PROVISIONED capacity (not PAY_PER_REQUEST):
+	•	Table:
+	•	readCapacity: 1
+	•	writeCapacity: 1
+	•	GSI:
+	•	readCapacity: 1
+	•	writeCapacity: 1
+
+Disable PITR for MVP (both dev and prod).
+Enable TTL on attribute ttl.
+
+Removal policy:
+	•	DESTROY in dev
+	•	RETAIN in prod
+
+Tags on all resources:
+	•	App=Syrus
+	•	Service=WhatsAppBot
+	•	Stage=
+
+⸻
+
+CDK implementation
+	1.	Create lib/campaigns-table.ts exporting:
+createCampaignsTable(scope: Construct, stageConfig: StageConfig): dynamodb.Table
+	2.	In the main stack, call the helper and output:
+
+	•	CampaignsTableName
+
+	3.	Add a StageConfig type and map for dev/prod controlling:
+
+	•	stage
+	•	removalPolicy
+	•	tableCapacity (rcu/wcu)
+	•	gsiCapacity (rcu/wcu)
+
+	4.	Add a clear comment explaining why status is NOT a sort key on the main table (status is mutable; campaignId identifies the single current campaign per group/solo in MVP).
+
+⸻
+
+README update
+
+Document:
+	•	campaignId convention
+	•	overwrite behavior
+	•	GSI purpose
+	•	provisioned capacity choices for cost control
+	•	TTL behavior
+
+⸻
+
+Make a plan first, wait for approval, then implement.

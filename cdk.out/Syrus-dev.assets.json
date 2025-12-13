@@ -1,0 +1,19 @@
+{
+  "version": "36.3.0",
+  "files": {
+    "ff76caef40096edae1345bf2d79d0596f34934e04e4b0410cb13ebc4a805e20c": {
+      "source": {
+        "path": "Syrus-dev.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "ff76caef40096edae1345bf2d79d0596f34934e04e4b0410cb13ebc4a805e20c.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
