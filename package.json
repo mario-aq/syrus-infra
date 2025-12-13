@@ -6,11 +6,13 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:lambda": "find lambda -name main.go -exec dirname {} \\; | xargs -I {} sh -c 'echo \"Building {}...\" && cd {} && GOOS=linux GOARCH=amd64 go build -o bootstrap main.go'",
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
-    "deploy:dev": "npm run build && AWS_PROFILE=arborquote cdk deploy Syrus-dev",
-    "deploy:prod": "npm run build && AWS_PROFILE=arborquote cdk deploy Syrus-prod",
+    "setup-secrets": "./setup-secrets.sh",
+    "deploy:dev": "npm run build && (npm run build:lambda || echo '⚠️  Go not available - skipping lambda build') && AWS_PROFILE=arborquote cdk deploy Syrus-dev --require-approval never",
+    "deploy:prod": "npm run build && (npm run build:lambda || echo '⚠️  Go not available - skipping lambda build') && AWS_PROFILE=arborquote cdk deploy Syrus-prod --require-approval never",
     "bootstrap": "AWS_PROFILE=arborquote cdk bootstrap",
     "synth": "npm run build && cdk synth"
   },

@@ -78,15 +78,521 @@
     "aws:cdk:path": "Syrus-dev/CampaignsTable/Resource"
    }
   },
+  "HostsTable3E8ABB46": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "waId",
+      "AttributeType": "S"
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "waId",
+      "KeyType": "HASH"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": false
+    },
+    "ProvisionedThroughput": {
+     "ReadCapacityUnits": 1,
+     "WriteCapacityUnits": 1
+    },
+    "TableName": "syrus-hosts-dev",
+    "Tags": [
+     {
+      "Key": "App",
+      "Value": "Syrus"
+     },
+     {
+      "Key": "Service",
+      "Value": "WhatsAppBot"
+     },
+     {
+      "Key": "Stage",
+      "Value": "dev"
+     }
+    ],
+    "TimeToLiveSpecification": {
+     "AttributeName": "ttl",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/HostsTable/Resource"
+   }
+  },
+  "SyrusApiWebhookCertificate5FBA0839": {
+   "Type": "AWS::CertificateManager::Certificate",
+   "Properties": {
+    "DomainName": "api-dev.syrus.chat",
+    "DomainValidationOptions": [
+     {
+      "DomainName": "api-dev.syrus.chat",
+      "HostedZoneId": "Z08867313GKFNLESF4SYL"
+     }
+    ],
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "Syrus-dev/SyrusApi/WebhookCertificate"
+     }
+    ],
+    "ValidationMethod": "DNS"
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/WebhookCertificate/Resource"
+   }
+  },
+  "SyrusApiSyrusFunctionServiceRoleA93701A4": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ],
+    "Tags": [
+     {
+      "Key": "App",
+      "Value": "Syrus"
+     },
+     {
+      "Key": "LastUpdated",
+      "Value": "2025-12-13T22:11:00.154Z"
+     },
+     {
+      "Key": "Service",
+      "Value": "WhatsAppBot"
+     },
+     {
+      "Key": "Stage",
+      "Value": "dev"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusFunction/ServiceRole/Resource"
+   }
+  },
+  "SyrusApiSyrusFunctionServiceRoleDefaultPolicyE352EE74": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:Query"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:dynamodb:",
+          {
+           "Ref": "AWS::Region"
+          },
+          ":",
+          {
+           "Ref": "AWS::AccountId"
+          },
+          ":table/syrus-hosts-dev"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "SyrusApiSyrusFunctionServiceRoleDefaultPolicyE352EE74",
+    "Roles": [
+     {
+      "Ref": "SyrusApiSyrusFunctionServiceRoleA93701A4"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "SyrusApiSyrusFunction2DBA7AAE": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "f3c78ea2f5efa25c887f383c8e6cdb6eae112eeeb1ebd74488d21b1f468ba95e.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "SYRUS_VERIFY_TOKEN": {
+       "Ref": "SsmParameterValuesyrusdevwhatsappverifytokenC96584B6F00A464EAD1953AFF4B05118Parameter"
+      },
+      "SYRUS_WA_TOKEN": {
+       "Ref": "SsmParameterValuesyrusdevwhatsappaccesstokenC96584B6F00A464EAD1953AFF4B05118Parameter"
+      },
+      "SYRUS_PHONE_ID": {
+       "Ref": "SsmParameterValuesyrusdevwhatsappphonenumberidC96584B6F00A464EAD1953AFF4B05118Parameter"
+      },
+      "SYRUS_HOSTS_TABLE": {
+       "Ref": "HostsTable3E8ABB46"
+      }
+     }
+    },
+    "Handler": "bootstrap",
+    "MemorySize": 256,
+    "Role": {
+     "Fn::GetAtt": [
+      "SyrusApiSyrusFunctionServiceRoleA93701A4",
+      "Arn"
+     ]
+    },
+    "Runtime": "provided.al2023",
+    "Tags": [
+     {
+      "Key": "App",
+      "Value": "Syrus"
+     },
+     {
+      "Key": "LastUpdated",
+      "Value": "2025-12-13T22:11:00.154Z"
+     },
+     {
+      "Key": "Service",
+      "Value": "WhatsAppBot"
+     },
+     {
+      "Key": "Stage",
+      "Value": "dev"
+     }
+    ],
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "SyrusApiSyrusFunctionServiceRoleDefaultPolicyE352EE74",
+    "SyrusApiSyrusFunctionServiceRoleA93701A4"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusFunction/Resource",
+    "aws:asset:path": "asset.f3c78ea2f5efa25c887f383c8e6cdb6eae112eeeb1ebd74488d21b1f468ba95e",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "SyrusApi55624811": {
+   "Type": "AWS::ApiGatewayV2::Api",
+   "Properties": {
+    "CorsConfiguration": {
+     "AllowHeaders": [
+      "Content-Type",
+      "X-Amz-Date",
+      "Authorization",
+      "X-Api-Key",
+      "X-Amz-Security-Token"
+     ],
+     "AllowMethods": [
+      "GET",
+      "POST",
+      "OPTIONS"
+     ],
+     "AllowOrigins": [
+      "*"
+     ]
+    },
+    "Description": "Syrus API for WhatsApp webhooks",
+    "Name": "syrus-api-dev",
+    "ProtocolType": "HTTP",
+    "Tags": {
+     "App": "Syrus",
+     "Service": "WhatsAppBot",
+     "Stage": "dev"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusApi/Resource"
+   }
+  },
+  "SyrusApiDefaultStage02DEAB07": {
+   "Type": "AWS::ApiGatewayV2::Stage",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SyrusApi55624811"
+    },
+    "AutoDeploy": true,
+    "StageName": "$default",
+    "Tags": {
+     "App": "Syrus",
+     "Service": "WhatsAppBot",
+     "Stage": "dev"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusApi/DefaultStage/Resource"
+   }
+  },
+  "SyrusApiGETwebhookswaSyrusIntegration4A31E1F6": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SyrusApi55624811"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::GetAtt": [
+      "SyrusApiSyrusFunction2DBA7AAE",
+      "Arn"
+     ]
+    },
+    "PayloadFormatVersion": "2.0"
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration/Resource"
+   }
+  },
+  "SyrusApiGETwebhookswaSyrusIntegrationPermission6054E2DB": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "SyrusApiSyrusFunction2DBA7AAE",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "SyrusApi55624811"
+       },
+       "/*/*/webhooks/wa"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration-Permission"
+   }
+  },
+  "SyrusApiGETwebhookswaFE04F50B": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SyrusApi55624811"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "GET /webhooks/wa",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SyrusApiGETwebhookswaSyrusIntegration4A31E1F6"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusApi/GET--webhooks--wa/Resource"
+   }
+  },
+  "SyrusApiPOSTwebhookswaSyrusIntegrationPermission74DB37A3": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "SyrusApiSyrusFunction2DBA7AAE",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "SyrusApi55624811"
+       },
+       "/*/*/webhooks/wa"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusApi/POST--webhooks--wa/SyrusIntegration-Permission"
+   }
+  },
+  "SyrusApiPOSTwebhookswa726E7827": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SyrusApi55624811"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "POST /webhooks/wa",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SyrusApiGETwebhookswaSyrusIntegration4A31E1F6"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusApi/POST--webhooks--wa/Resource"
+   }
+  },
+  "SyrusApiSyrusCustomDomainB1A6F750": {
+   "Type": "AWS::ApiGatewayV2::DomainName",
+   "Properties": {
+    "DomainName": "api-dev.syrus.chat",
+    "DomainNameConfigurations": [
+     {
+      "CertificateArn": {
+       "Ref": "SyrusApiWebhookCertificate5FBA0839"
+      },
+      "EndpointType": "REGIONAL"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusCustomDomain/Resource"
+   }
+  },
+  "SyrusApiSyrusApiMappingE68289EB": {
+   "Type": "AWS::ApiGatewayV2::ApiMapping",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SyrusApi55624811"
+    },
+    "DomainName": {
+     "Ref": "SyrusApiSyrusCustomDomainB1A6F750"
+    },
+    "Stage": "$default"
+   },
+   "DependsOn": [
+    "SyrusApiDefaultStage02DEAB07"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusApiMapping/Resource"
+   }
+  },
+  "SyrusApiSyrusApiRecord9250695F": {
+   "Type": "AWS::Route53::RecordSet",
+   "Properties": {
+    "AliasTarget": {
+     "DNSName": {
+      "Fn::GetAtt": [
+       "SyrusApiSyrusCustomDomainB1A6F750",
+       "RegionalDomainName"
+      ]
+     },
+     "HostedZoneId": {
+      "Fn::GetAtt": [
+       "SyrusApiSyrusCustomDomainB1A6F750",
+       "RegionalHostedZoneId"
+      ]
+     }
+    },
+    "HostedZoneId": "Z08867313GKFNLESF4SYL",
+    "Name": "api-dev.syrus.chat.",
+    "Type": "A"
+   },
+   "Metadata": {
+    "aws:cdk:path": "Syrus-dev/SyrusApi/SyrusApiRecord/Resource"
+   }
+  },
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/zPSMzQ10zNQTCwv1k1OydbNyUzSqw4uSUzO1gEKxadU5iXm5qcAxUISk3JSdZzT8sCMWp2g1OL80qJksJB/aUlBaQmIhSzqnJ+XklmSmZ9Xq5OXn5Kql1WsX2ZkomcEtC2rODNTt6g0ryQzN1UvCEIDADbuTIKKAAAA"
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/11RwU7DMAz9Fu5ZgI5x34YQHICp4z55qVd5a5IqcTZNUf+dJC1i4uT3rOf37KSSj4tn+XAHFz9TzWnW0V7GLYM6idTaxeZqQNsmNb9h36FYH0wBg1DomA6kgFGDgRadjOu/Xlbe0EF0oPcNyPgajGKyJgtu8QadJu8TGwSBlrG2Y16pG9uRuhZdQYPw8x14j+zlMpfE5SqoE/IKPAroqU2xF7ieKxnfmPtlT3k8l0zTjW2xH0Fu1TbwiN4NY+vgd7V/dNS9WA1kPkEXlxuWEj6g78m0U97EBuHy4GIu47JGZV1TzAraIg+DqNHb4FSyyBflxSaTDbjkzOgy+QrcBx5nJ31+a2sa4vJ6xjYoj/7+XD3JKv3t0RPNXDBMGmU91h8q+wrP+AEAAA=="
    },
    "Metadata": {
     "aws:cdk:path": "Syrus-dev/CDKMetadata/Default"
    },
    "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Parameters": {
+  "SsmParameterValuesyrusdevwhatsappverifytokenC96584B6F00A464EAD1953AFF4B05118Parameter": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/syrus/dev/whatsapp/verify-token"
+  },
+  "SsmParameterValuesyrusdevwhatsappaccesstokenC96584B6F00A464EAD1953AFF4B05118Parameter": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/syrus/dev/whatsapp/access-token"
+  },
+  "SsmParameterValuesyrusdevwhatsappphonenumberidC96584B6F00A464EAD1953AFF4B05118Parameter": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/syrus/dev/whatsapp/phone-number-id"
+  },
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
   }
  },
  "Outputs": {
@@ -97,6 +603,34 @@
    },
    "Export": {
     "Name": "SyrusTableName-dev"
+   }
+  },
+  "HostsTableName": {
+   "Description": "Name of the DynamoDB hosts table",
+   "Value": {
+    "Ref": "HostsTable3E8ABB46"
+   },
+   "Export": {
+    "Name": "SyrusHostsTableName-dev"
+   }
+  },
+  "SyrusApiUrl": {
+   "Description": "Syrus API URL with custom domain",
+   "Value": "https://api-dev.syrus.chat/webhooks/wa",
+   "Export": {
+    "Name": "SyrusApiUrl-dev"
+   }
+  },
+  "SyrusLambdaArn": {
+   "Description": "Syrus Lambda function ARN",
+   "Value": {
+    "Fn::GetAtt": [
+     "SyrusApiSyrusFunction2DBA7AAE",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "SyrusLambdaArn-dev"
    }
   }
  },
@@ -364,13 +898,6 @@
      ]
     }
    ]
-  }
- },
- "Parameters": {
-  "BootstrapVersion": {
-   "Type": "AWS::SSM::Parameter::Value<String>",
-   "Default": "/cdk-bootstrap/hnb659fds/version",
-   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
   }
  },
  "Rules": {

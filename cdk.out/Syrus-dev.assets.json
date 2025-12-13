@@ -1,7 +1,20 @@
 {
   "version": "36.3.0",
   "files": {
-    "ff76caef40096edae1345bf2d79d0596f34934e04e4b0410cb13ebc4a805e20c": {
+    "f3c78ea2f5efa25c887f383c8e6cdb6eae112eeeb1ebd74488d21b1f468ba95e": {
+      "source": {
+        "path": "asset.f3c78ea2f5efa25c887f383c8e6cdb6eae112eeeb1ebd74488d21b1f468ba95e",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "f3c78ea2f5efa25c887f383c8e6cdb6eae112eeeb1ebd74488d21b1f468ba95e.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "966be5bef6e732abf1289c1bdc6031c712ffb44d3c97655c61f097c1c9686001": {
       "source": {
         "path": "Syrus-dev.template.json",
         "packaging": "file"
@@ -9,7 +22,7 @@
       "destinations": {
         "current_account-current_region": {
           "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
-          "objectKey": "ff76caef40096edae1345bf2d79d0596f34934e04e4b0410cb13ebc4a805e20c.json",
+          "objectKey": "966be5bef6e732abf1289c1bdc6031c712ffb44d3c97655c61f097c1c9686001.json",
           "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
         }
       }

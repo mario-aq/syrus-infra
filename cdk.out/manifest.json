@@ -18,7 +18,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/ff76caef40096edae1345bf2d79d0596f34934e04e4b0410cb13ebc4a805e20c.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/966be5bef6e732abf1289c1bdc6031c712ffb44d3c97655c61f097c1c9686001.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -48,10 +48,144 @@
             "data": "CampaignsTableC0F6C4C0"
           }
         ],
+        "/Syrus-dev/HostsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "HostsTable3E8ABB46"
+            }
+          }
+        ],
+        "/Syrus-dev/HostsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "HostsTable3E8ABB46"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/WebhookCertificate/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiWebhookCertificate5FBA0839"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusFunction/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusFunctionServiceRoleA93701A4"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusFunction/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusFunctionServiceRoleDefaultPolicyE352EE74"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusFunction/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusFunction2DBA7AAE"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusApi/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApi55624811"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusApi/DefaultStage/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiDefaultStage02DEAB07"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiGETwebhookswaSyrusIntegration4A31E1F6"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiGETwebhookswaSyrusIntegrationPermission6054E2DB"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusApi/GET--webhooks--wa/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiGETwebhookswaFE04F50B"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusApi/POST--webhooks--wa/SyrusIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiPOSTwebhookswaSyrusIntegrationPermission74DB37A3"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusApi/POST--webhooks--wa/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiPOSTwebhookswa726E7827"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusCustomDomain/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusCustomDomainB1A6F750"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusApiMapping/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusApiMappingE68289EB"
+          }
+        ],
+        "/Syrus-dev/SyrusApi/SyrusApiRecord/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusApiRecord9250695F"
+          }
+        ],
+        "/Syrus-dev/SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SsmParameterValuesyrusdevwhatsappverifytokenC96584B6F00A464EAD1953AFF4B05118Parameter"
+          }
+        ],
+        "/Syrus-dev/SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SsmParameterValuesyrusdevwhatsappaccesstokenC96584B6F00A464EAD1953AFF4B05118Parameter"
+          }
+        ],
+        "/Syrus-dev/SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SsmParameterValuesyrusdevwhatsappphonenumberidC96584B6F00A464EAD1953AFF4B05118Parameter"
+          }
+        ],
         "/Syrus-dev/CampaignsTableName": [
           {
             "type": "aws:cdk:logicalId",
             "data": "CampaignsTableName"
+          }
+        ],
+        "/Syrus-dev/HostsTableName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "HostsTableName"
+          }
+        ],
+        "/Syrus-dev/SyrusApiUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiUrl"
+          }
+        ],
+        "/Syrus-dev/SyrusLambdaArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusLambdaArn"
           }
         ],
         "/Syrus-dev/CDKMetadata/Default": [
@@ -98,7 +232,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/6f993e9a10c1554efcc7b7bdd9a9481663f70ce59f55c516d78c41af0b04ce08.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/e9fed20703faab0a763054f9fb1921b3b4117684cb48423c182c2e446fe6a32e.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -128,10 +262,144 @@
             "data": "CampaignsTableC0F6C4C0"
           }
         ],
+        "/Syrus-prod/HostsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "HostsTable3E8ABB46"
+            }
+          }
+        ],
+        "/Syrus-prod/HostsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "HostsTable3E8ABB46"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/WebhookCertificate/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiWebhookCertificate5FBA0839"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusFunction/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusFunctionServiceRoleA93701A4"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusFunction/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusFunctionServiceRoleDefaultPolicyE352EE74"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusFunction/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusFunction2DBA7AAE"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusApi/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApi55624811"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusApi/DefaultStage/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiDefaultStage02DEAB07"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiGETwebhookswaSyrusIntegration4A31E1F6"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiGETwebhookswaSyrusIntegrationPermission6054E2DB"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusApi/GET--webhooks--wa/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiGETwebhookswaFE04F50B"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusApi/POST--webhooks--wa/SyrusIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiPOSTwebhookswaSyrusIntegrationPermission74DB37A3"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusApi/POST--webhooks--wa/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiPOSTwebhookswa726E7827"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusCustomDomain/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusCustomDomainB1A6F750"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusApiMapping/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusApiMappingE68289EB"
+          }
+        ],
+        "/Syrus-prod/SyrusApi/SyrusApiRecord/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiSyrusApiRecord9250695F"
+          }
+        ],
+        "/Syrus-prod/SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SsmParameterValuesyrusdevwhatsappverifytokenC96584B6F00A464EAD1953AFF4B05118Parameter"
+          }
+        ],
+        "/Syrus-prod/SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SsmParameterValuesyrusdevwhatsappaccesstokenC96584B6F00A464EAD1953AFF4B05118Parameter"
+          }
+        ],
+        "/Syrus-prod/SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SsmParameterValuesyrusdevwhatsappphonenumberidC96584B6F00A464EAD1953AFF4B05118Parameter"
+          }
+        ],
         "/Syrus-prod/CampaignsTableName": [
           {
             "type": "aws:cdk:logicalId",
             "data": "CampaignsTableName"
+          }
+        ],
+        "/Syrus-prod/HostsTableName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "HostsTableName"
+          }
+        ],
+        "/Syrus-prod/SyrusApiUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusApiUrl"
+          }
+        ],
+        "/Syrus-prod/SyrusLambdaArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SyrusLambdaArn"
           }
         ],
         "/Syrus-prod/CDKMetadata/Default": [

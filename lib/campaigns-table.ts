@@ -53,3 +53,35 @@ export function createCampaignsTable(scope: Construct, stageConfig: StageConfig)
 
   return table;
 }
+
+/**
+ * Creates the Hosts DynamoDB table for whitelisting WhatsApp users
+ *
+ * @param scope The CDK construct scope
+ * @param stageConfig Configuration for the deployment stage
+ * @returns The DynamoDB table construct
+ */
+export function createHostsTable(scope: Construct, stageConfig: StageConfig): dynamodb.Table {
+  const table = new dynamodb.Table(scope, 'HostsTable', {
+    tableName: `syrus-hosts-${stageConfig.stage}`,
+    partitionKey: {
+      name: 'waId',
+      type: dynamodb.AttributeType.STRING,
+    },
+    billingMode: dynamodb.BillingMode.PROVISIONED,
+    readCapacity: stageConfig.tableCapacity.readCapacity,
+    writeCapacity: stageConfig.tableCapacity.writeCapacity,
+    removalPolicy: stageConfig.removalPolicy,
+    pointInTimeRecovery: false, // Disabled for MVP to stay free-tier friendly
+
+    // Enable TTL on the 'ttl' attribute
+    timeToLiveAttribute: 'ttl',
+  });
+
+  // Add tags
+  Tags.of(table).add('App', 'Syrus');
+  Tags.of(table).add('Service', 'WhatsAppBot');
+  Tags.of(table).add('Stage', stageConfig.stage);
+
+  return table;
+}

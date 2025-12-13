@@ -107,9 +107,821 @@
               "version": "2.156.0"
             }
           },
+          "HostsTable": {
+            "id": "HostsTable",
+            "path": "Syrus-dev/HostsTable",
+            "children": {
+              "Resource": {
+                "id": "Resource",
+                "path": "Syrus-dev/HostsTable/Resource",
+                "attributes": {
+                  "aws:cdk:cloudformation:type": "AWS::DynamoDB::Table",
+                  "aws:cdk:cloudformation:props": {
+                    "attributeDefinitions": [
+                      {
+                        "attributeName": "waId",
+                        "attributeType": "S"
+                      }
+                    ],
+                    "keySchema": [
+                      {
+                        "attributeName": "waId",
+                        "keyType": "HASH"
+                      }
+                    ],
+                    "pointInTimeRecoverySpecification": {
+                      "pointInTimeRecoveryEnabled": false
+                    },
+                    "provisionedThroughput": {
+                      "readCapacityUnits": 1,
+                      "writeCapacityUnits": 1
+                    },
+                    "tableName": "syrus-hosts-dev",
+                    "tags": [
+                      {
+                        "key": "App",
+                        "value": "Syrus"
+                      },
+                      {
+                        "key": "Service",
+                        "value": "WhatsAppBot"
+                      },
+                      {
+                        "key": "Stage",
+                        "value": "dev"
+                      }
+                    ],
+                    "timeToLiveSpecification": {
+                      "attributeName": "ttl",
+                      "enabled": true
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_dynamodb.CfnTable",
+                  "version": "2.156.0"
+                }
+              },
+              "ScalingRole": {
+                "id": "ScalingRole",
+                "path": "Syrus-dev/HostsTable/ScalingRole",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.Resource",
+                  "version": "2.156.0"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.aws_dynamodb.Table",
+              "version": "2.156.0"
+            }
+          },
+          "SyrusApi": {
+            "id": "SyrusApi",
+            "path": "Syrus-dev/SyrusApi",
+            "children": {
+              "HostedZone": {
+                "id": "HostedZone",
+                "path": "Syrus-dev/SyrusApi/HostedZone",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.Resource",
+                  "version": "2.156.0"
+                }
+              },
+              "WebhookCertificate": {
+                "id": "WebhookCertificate",
+                "path": "Syrus-dev/SyrusApi/WebhookCertificate",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-dev/SyrusApi/WebhookCertificate/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::CertificateManager::Certificate",
+                      "aws:cdk:cloudformation:props": {
+                        "domainName": "api-dev.syrus.chat",
+                        "domainValidationOptions": [
+                          {
+                            "domainName": "api-dev.syrus.chat",
+                            "hostedZoneId": "Z08867313GKFNLESF4SYL"
+                          }
+                        ],
+                        "tags": [
+                          {
+                            "key": "Name",
+                            "value": "Syrus-dev/SyrusApi/WebhookCertificate"
+                          }
+                        ],
+                        "validationMethod": "DNS"
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_certificatemanager.CfnCertificate",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_certificatemanager.Certificate",
+                  "version": "2.156.0"
+                }
+              },
+              "SyrusFunction": {
+                "id": "SyrusFunction",
+                "path": "Syrus-dev/SyrusApi/SyrusFunction",
+                "children": {
+                  "ServiceRole": {
+                    "id": "ServiceRole",
+                    "path": "Syrus-dev/SyrusApi/SyrusFunction/ServiceRole",
+                    "children": {
+                      "ImportServiceRole": {
+                        "id": "ImportServiceRole",
+                        "path": "Syrus-dev/SyrusApi/SyrusFunction/ServiceRole/ImportServiceRole",
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.Resource",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "Resource": {
+                        "id": "Resource",
+                        "path": "Syrus-dev/SyrusApi/SyrusFunction/ServiceRole/Resource",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::IAM::Role",
+                          "aws:cdk:cloudformation:props": {
+                            "assumeRolePolicyDocument": {
+                              "Statement": [
+                                {
+                                  "Action": "sts:AssumeRole",
+                                  "Effect": "Allow",
+                                  "Principal": {
+                                    "Service": "lambda.amazonaws.com"
+                                  }
+                                }
+                              ],
+                              "Version": "2012-10-17"
+                            },
+                            "managedPolicyArns": [
+                              {
+                                "Fn::Join": [
+                                  "",
+                                  [
+                                    "arn:",
+                                    {
+                                      "Ref": "AWS::Partition"
+                                    },
+                                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                                  ]
+                                ]
+                              }
+                            ],
+                            "tags": [
+                              {
+                                "key": "App",
+                                "value": "Syrus"
+                              },
+                              {
+                                "key": "LastUpdated",
+                                "value": "2025-12-13T22:11:00.154Z"
+                              },
+                              {
+                                "key": "Service",
+                                "value": "WhatsAppBot"
+                              },
+                              {
+                                "key": "Stage",
+                                "value": "dev"
+                              }
+                            ]
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_iam.CfnRole",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "DefaultPolicy": {
+                        "id": "DefaultPolicy",
+                        "path": "Syrus-dev/SyrusApi/SyrusFunction/ServiceRole/DefaultPolicy",
+                        "children": {
+                          "Resource": {
+                            "id": "Resource",
+                            "path": "Syrus-dev/SyrusApi/SyrusFunction/ServiceRole/DefaultPolicy/Resource",
+                            "attributes": {
+                              "aws:cdk:cloudformation:type": "AWS::IAM::Policy",
+                              "aws:cdk:cloudformation:props": {
+                                "policyDocument": {
+                                  "Statement": [
+                                    {
+                                      "Action": [
+                                        "dynamodb:GetItem",
+                                        "dynamodb:Query"
+                                      ],
+                                      "Effect": "Allow",
+                                      "Resource": {
+                                        "Fn::Join": [
+                                          "",
+                                          [
+                                            "arn:aws:dynamodb:",
+                                            {
+                                              "Ref": "AWS::Region"
+                                            },
+                                            ":",
+                                            {
+                                              "Ref": "AWS::AccountId"
+                                            },
+                                            ":table/syrus-hosts-dev"
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  ],
+                                  "Version": "2012-10-17"
+                                },
+                                "policyName": "SyrusApiSyrusFunctionServiceRoleDefaultPolicyE352EE74",
+                                "roles": [
+                                  {
+                                    "Ref": "SyrusApiSyrusFunctionServiceRoleA93701A4"
+                                  }
+                                ]
+                              }
+                            },
+                            "constructInfo": {
+                              "fqn": "aws-cdk-lib.aws_iam.CfnPolicy",
+                              "version": "2.156.0"
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_iam.Policy",
+                          "version": "2.156.0"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_iam.Role",
+                      "version": "2.156.0"
+                    }
+                  },
+                  "Code": {
+                    "id": "Code",
+                    "path": "Syrus-dev/SyrusApi/SyrusFunction/Code",
+                    "children": {
+                      "Stage": {
+                        "id": "Stage",
+                        "path": "Syrus-dev/SyrusApi/SyrusFunction/Code/Stage",
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.AssetStaging",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "AssetBucket": {
+                        "id": "AssetBucket",
+                        "path": "Syrus-dev/SyrusApi/SyrusFunction/Code/AssetBucket",
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_s3.BucketBase",
+                          "version": "2.156.0"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_s3_assets.Asset",
+                      "version": "2.156.0"
+                    }
+                  },
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-dev/SyrusApi/SyrusFunction/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::Lambda::Function",
+                      "aws:cdk:cloudformation:props": {
+                        "code": {
+                          "s3Bucket": {
+                            "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+                          },
+                          "s3Key": "f3c78ea2f5efa25c887f383c8e6cdb6eae112eeeb1ebd74488d21b1f468ba95e.zip"
+                        },
+                        "environment": {
+                          "variables": {
+                            "SYRUS_VERIFY_TOKEN": {
+                              "Ref": "SsmParameterValuesyrusdevwhatsappverifytokenC96584B6F00A464EAD1953AFF4B05118Parameter"
+                            },
+                            "SYRUS_WA_TOKEN": {
+                              "Ref": "SsmParameterValuesyrusdevwhatsappaccesstokenC96584B6F00A464EAD1953AFF4B05118Parameter"
+                            },
+                            "SYRUS_PHONE_ID": {
+                              "Ref": "SsmParameterValuesyrusdevwhatsappphonenumberidC96584B6F00A464EAD1953AFF4B05118Parameter"
+                            },
+                            "SYRUS_HOSTS_TABLE": {
+                              "Ref": "HostsTable3E8ABB46"
+                            }
+                          }
+                        },
+                        "handler": "bootstrap",
+                        "memorySize": 256,
+                        "role": {
+                          "Fn::GetAtt": [
+                            "SyrusApiSyrusFunctionServiceRoleA93701A4",
+                            "Arn"
+                          ]
+                        },
+                        "runtime": "provided.al2023",
+                        "tags": [
+                          {
+                            "key": "App",
+                            "value": "Syrus"
+                          },
+                          {
+                            "key": "LastUpdated",
+                            "value": "2025-12-13T22:11:00.154Z"
+                          },
+                          {
+                            "key": "Service",
+                            "value": "WhatsAppBot"
+                          },
+                          {
+                            "key": "Stage",
+                            "value": "dev"
+                          }
+                        ],
+                        "timeout": 30
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_lambda.CfnFunction",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_lambda.Function",
+                  "version": "2.156.0"
+                }
+              },
+              "SyrusApi": {
+                "id": "SyrusApi",
+                "path": "Syrus-dev/SyrusApi/SyrusApi",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-dev/SyrusApi/SyrusApi/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::Api",
+                      "aws:cdk:cloudformation:props": {
+                        "corsConfiguration": {
+                          "allowHeaders": [
+                            "Content-Type",
+                            "X-Amz-Date",
+                            "Authorization",
+                            "X-Api-Key",
+                            "X-Amz-Security-Token"
+                          ],
+                          "allowMethods": [
+                            "GET",
+                            "POST",
+                            "OPTIONS"
+                          ],
+                          "allowOrigins": [
+                            "*"
+                          ]
+                        },
+                        "description": "Syrus API for WhatsApp webhooks",
+                        "name": "syrus-api-dev",
+                        "protocolType": "HTTP",
+                        "tags": {
+                          "App": "Syrus",
+                          "Service": "WhatsAppBot",
+                          "Stage": "dev"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnApi",
+                      "version": "2.156.0"
+                    }
+                  },
+                  "DefaultStage": {
+                    "id": "DefaultStage",
+                    "path": "Syrus-dev/SyrusApi/SyrusApi/DefaultStage",
+                    "children": {
+                      "Resource": {
+                        "id": "Resource",
+                        "path": "Syrus-dev/SyrusApi/SyrusApi/DefaultStage/Resource",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::Stage",
+                          "aws:cdk:cloudformation:props": {
+                            "apiId": {
+                              "Ref": "SyrusApi55624811"
+                            },
+                            "autoDeploy": true,
+                            "stageName": "$default",
+                            "tags": {
+                              "App": "Syrus",
+                              "Service": "WhatsAppBot",
+                              "Stage": "dev"
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnStage",
+                          "version": "2.156.0"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.HttpStage",
+                      "version": "2.156.0"
+                    }
+                  },
+                  "GET--webhooks--wa": {
+                    "id": "GET--webhooks--wa",
+                    "path": "Syrus-dev/SyrusApi/SyrusApi/GET--webhooks--wa",
+                    "children": {
+                      "SyrusIntegration": {
+                        "id": "SyrusIntegration",
+                        "path": "Syrus-dev/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration",
+                        "children": {
+                          "Resource": {
+                            "id": "Resource",
+                            "path": "Syrus-dev/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration/Resource",
+                            "attributes": {
+                              "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::Integration",
+                              "aws:cdk:cloudformation:props": {
+                                "apiId": {
+                                  "Ref": "SyrusApi55624811"
+                                },
+                                "integrationType": "AWS_PROXY",
+                                "integrationUri": {
+                                  "Fn::GetAtt": [
+                                    "SyrusApiSyrusFunction2DBA7AAE",
+                                    "Arn"
+                                  ]
+                                },
+                                "payloadFormatVersion": "2.0"
+                              }
+                            },
+                            "constructInfo": {
+                              "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnIntegration",
+                              "version": "2.156.0"
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_apigatewayv2.HttpIntegration",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "SyrusIntegration-Permission": {
+                        "id": "SyrusIntegration-Permission",
+                        "path": "Syrus-dev/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration-Permission",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::Lambda::Permission",
+                          "aws:cdk:cloudformation:props": {
+                            "action": "lambda:InvokeFunction",
+                            "functionName": {
+                              "Fn::GetAtt": [
+                                "SyrusApiSyrusFunction2DBA7AAE",
+                                "Arn"
+                              ]
+                            },
+                            "principal": "apigateway.amazonaws.com",
+                            "sourceArn": {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  "arn:",
+                                  {
+                                    "Ref": "AWS::Partition"
+                                  },
+                                  ":execute-api:",
+                                  {
+                                    "Ref": "AWS::Region"
+                                  },
+                                  ":",
+                                  {
+                                    "Ref": "AWS::AccountId"
+                                  },
+                                  ":",
+                                  {
+                                    "Ref": "SyrusApi55624811"
+                                  },
+                                  "/*/*/webhooks/wa"
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_lambda.CfnPermission",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "Resource": {
+                        "id": "Resource",
+                        "path": "Syrus-dev/SyrusApi/SyrusApi/GET--webhooks--wa/Resource",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::Route",
+                          "aws:cdk:cloudformation:props": {
+                            "apiId": {
+                              "Ref": "SyrusApi55624811"
+                            },
+                            "authorizationType": "NONE",
+                            "routeKey": "GET /webhooks/wa",
+                            "target": {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  "integrations/",
+                                  {
+                                    "Ref": "SyrusApiGETwebhookswaSyrusIntegration4A31E1F6"
+                                  }
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnRoute",
+                          "version": "2.156.0"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.HttpRoute",
+                      "version": "2.156.0"
+                    }
+                  },
+                  "POST--webhooks--wa": {
+                    "id": "POST--webhooks--wa",
+                    "path": "Syrus-dev/SyrusApi/SyrusApi/POST--webhooks--wa",
+                    "children": {
+                      "SyrusIntegration-Permission": {
+                        "id": "SyrusIntegration-Permission",
+                        "path": "Syrus-dev/SyrusApi/SyrusApi/POST--webhooks--wa/SyrusIntegration-Permission",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::Lambda::Permission",
+                          "aws:cdk:cloudformation:props": {
+                            "action": "lambda:InvokeFunction",
+                            "functionName": {
+                              "Fn::GetAtt": [
+                                "SyrusApiSyrusFunction2DBA7AAE",
+                                "Arn"
+                              ]
+                            },
+                            "principal": "apigateway.amazonaws.com",
+                            "sourceArn": {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  "arn:",
+                                  {
+                                    "Ref": "AWS::Partition"
+                                  },
+                                  ":execute-api:",
+                                  {
+                                    "Ref": "AWS::Region"
+                                  },
+                                  ":",
+                                  {
+                                    "Ref": "AWS::AccountId"
+                                  },
+                                  ":",
+                                  {
+                                    "Ref": "SyrusApi55624811"
+                                  },
+                                  "/*/*/webhooks/wa"
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_lambda.CfnPermission",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "Resource": {
+                        "id": "Resource",
+                        "path": "Syrus-dev/SyrusApi/SyrusApi/POST--webhooks--wa/Resource",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::Route",
+                          "aws:cdk:cloudformation:props": {
+                            "apiId": {
+                              "Ref": "SyrusApi55624811"
+                            },
+                            "authorizationType": "NONE",
+                            "routeKey": "POST /webhooks/wa",
+                            "target": {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  "integrations/",
+                                  {
+                                    "Ref": "SyrusApiGETwebhookswaSyrusIntegration4A31E1F6"
+                                  }
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnRoute",
+                          "version": "2.156.0"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.HttpRoute",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_apigatewayv2.HttpApi",
+                  "version": "2.156.0"
+                }
+              },
+              "SyrusCustomDomain": {
+                "id": "SyrusCustomDomain",
+                "path": "Syrus-dev/SyrusApi/SyrusCustomDomain",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-dev/SyrusApi/SyrusCustomDomain/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::DomainName",
+                      "aws:cdk:cloudformation:props": {
+                        "domainName": "api-dev.syrus.chat",
+                        "domainNameConfigurations": [
+                          {
+                            "certificateArn": {
+                              "Ref": "SyrusApiWebhookCertificate5FBA0839"
+                            },
+                            "endpointType": "REGIONAL"
+                          }
+                        ]
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnDomainName",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_apigatewayv2.DomainName",
+                  "version": "2.156.0"
+                }
+              },
+              "SyrusApiMapping": {
+                "id": "SyrusApiMapping",
+                "path": "Syrus-dev/SyrusApi/SyrusApiMapping",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-dev/SyrusApi/SyrusApiMapping/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::ApiMapping",
+                      "aws:cdk:cloudformation:props": {
+                        "apiId": {
+                          "Ref": "SyrusApi55624811"
+                        },
+                        "domainName": {
+                          "Ref": "SyrusApiSyrusCustomDomainB1A6F750"
+                        },
+                        "stage": "$default"
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnApiMapping",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_apigatewayv2.ApiMapping",
+                  "version": "2.156.0"
+                }
+              },
+              "SyrusApiRecord": {
+                "id": "SyrusApiRecord",
+                "path": "Syrus-dev/SyrusApi/SyrusApiRecord",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-dev/SyrusApi/SyrusApiRecord/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::Route53::RecordSet",
+                      "aws:cdk:cloudformation:props": {
+                        "aliasTarget": {
+                          "dnsName": {
+                            "Fn::GetAtt": [
+                              "SyrusApiSyrusCustomDomainB1A6F750",
+                              "RegionalDomainName"
+                            ]
+                          },
+                          "hostedZoneId": {
+                            "Fn::GetAtt": [
+                              "SyrusApiSyrusCustomDomainB1A6F750",
+                              "RegionalHostedZoneId"
+                            ]
+                          }
+                        },
+                        "hostedZoneId": "Z08867313GKFNLESF4SYL",
+                        "name": "api-dev.syrus.chat.",
+                        "type": "A"
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_route53.CfnRecordSet",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_route53.ARecord",
+                  "version": "2.156.0"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "constructs.Construct",
+              "version": "10.4.4"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "path": "Syrus-dev/SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnParameter",
+              "version": "2.156.0"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "path": "Syrus-dev/SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.Resource",
+              "version": "2.156.0"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "path": "Syrus-dev/SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnParameter",
+              "version": "2.156.0"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "path": "Syrus-dev/SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.Resource",
+              "version": "2.156.0"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "path": "Syrus-dev/SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnParameter",
+              "version": "2.156.0"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "path": "Syrus-dev/SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.Resource",
+              "version": "2.156.0"
+            }
+          },
           "CampaignsTableName": {
             "id": "CampaignsTableName",
             "path": "Syrus-dev/CampaignsTableName",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnOutput",
+              "version": "2.156.0"
+            }
+          },
+          "HostsTableName": {
+            "id": "HostsTableName",
+            "path": "Syrus-dev/HostsTableName",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnOutput",
+              "version": "2.156.0"
+            }
+          },
+          "SyrusApiUrl": {
+            "id": "SyrusApiUrl",
+            "path": "Syrus-dev/SyrusApiUrl",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnOutput",
+              "version": "2.156.0"
+            }
+          },
+          "SyrusLambdaArn": {
+            "id": "SyrusLambdaArn",
+            "path": "Syrus-dev/SyrusLambdaArn",
             "constructInfo": {
               "fqn": "aws-cdk-lib.CfnOutput",
               "version": "2.156.0"
@@ -266,9 +1078,821 @@
               "version": "2.156.0"
             }
           },
+          "HostsTable": {
+            "id": "HostsTable",
+            "path": "Syrus-prod/HostsTable",
+            "children": {
+              "Resource": {
+                "id": "Resource",
+                "path": "Syrus-prod/HostsTable/Resource",
+                "attributes": {
+                  "aws:cdk:cloudformation:type": "AWS::DynamoDB::Table",
+                  "aws:cdk:cloudformation:props": {
+                    "attributeDefinitions": [
+                      {
+                        "attributeName": "waId",
+                        "attributeType": "S"
+                      }
+                    ],
+                    "keySchema": [
+                      {
+                        "attributeName": "waId",
+                        "keyType": "HASH"
+                      }
+                    ],
+                    "pointInTimeRecoverySpecification": {
+                      "pointInTimeRecoveryEnabled": false
+                    },
+                    "provisionedThroughput": {
+                      "readCapacityUnits": 1,
+                      "writeCapacityUnits": 1
+                    },
+                    "tableName": "syrus-hosts-prod",
+                    "tags": [
+                      {
+                        "key": "App",
+                        "value": "Syrus"
+                      },
+                      {
+                        "key": "Service",
+                        "value": "WhatsAppBot"
+                      },
+                      {
+                        "key": "Stage",
+                        "value": "prod"
+                      }
+                    ],
+                    "timeToLiveSpecification": {
+                      "attributeName": "ttl",
+                      "enabled": true
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_dynamodb.CfnTable",
+                  "version": "2.156.0"
+                }
+              },
+              "ScalingRole": {
+                "id": "ScalingRole",
+                "path": "Syrus-prod/HostsTable/ScalingRole",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.Resource",
+                  "version": "2.156.0"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.aws_dynamodb.Table",
+              "version": "2.156.0"
+            }
+          },
+          "SyrusApi": {
+            "id": "SyrusApi",
+            "path": "Syrus-prod/SyrusApi",
+            "children": {
+              "HostedZone": {
+                "id": "HostedZone",
+                "path": "Syrus-prod/SyrusApi/HostedZone",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.Resource",
+                  "version": "2.156.0"
+                }
+              },
+              "WebhookCertificate": {
+                "id": "WebhookCertificate",
+                "path": "Syrus-prod/SyrusApi/WebhookCertificate",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-prod/SyrusApi/WebhookCertificate/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::CertificateManager::Certificate",
+                      "aws:cdk:cloudformation:props": {
+                        "domainName": "api.syrus.chat",
+                        "domainValidationOptions": [
+                          {
+                            "domainName": "api.syrus.chat",
+                            "hostedZoneId": "Z08867313GKFNLESF4SYL"
+                          }
+                        ],
+                        "tags": [
+                          {
+                            "key": "Name",
+                            "value": "Syrus-prod/SyrusApi/WebhookCertificate"
+                          }
+                        ],
+                        "validationMethod": "DNS"
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_certificatemanager.CfnCertificate",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_certificatemanager.Certificate",
+                  "version": "2.156.0"
+                }
+              },
+              "SyrusFunction": {
+                "id": "SyrusFunction",
+                "path": "Syrus-prod/SyrusApi/SyrusFunction",
+                "children": {
+                  "ServiceRole": {
+                    "id": "ServiceRole",
+                    "path": "Syrus-prod/SyrusApi/SyrusFunction/ServiceRole",
+                    "children": {
+                      "ImportServiceRole": {
+                        "id": "ImportServiceRole",
+                        "path": "Syrus-prod/SyrusApi/SyrusFunction/ServiceRole/ImportServiceRole",
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.Resource",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "Resource": {
+                        "id": "Resource",
+                        "path": "Syrus-prod/SyrusApi/SyrusFunction/ServiceRole/Resource",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::IAM::Role",
+                          "aws:cdk:cloudformation:props": {
+                            "assumeRolePolicyDocument": {
+                              "Statement": [
+                                {
+                                  "Action": "sts:AssumeRole",
+                                  "Effect": "Allow",
+                                  "Principal": {
+                                    "Service": "lambda.amazonaws.com"
+                                  }
+                                }
+                              ],
+                              "Version": "2012-10-17"
+                            },
+                            "managedPolicyArns": [
+                              {
+                                "Fn::Join": [
+                                  "",
+                                  [
+                                    "arn:",
+                                    {
+                                      "Ref": "AWS::Partition"
+                                    },
+                                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                                  ]
+                                ]
+                              }
+                            ],
+                            "tags": [
+                              {
+                                "key": "App",
+                                "value": "Syrus"
+                              },
+                              {
+                                "key": "LastUpdated",
+                                "value": "2025-12-13T22:11:00.181Z"
+                              },
+                              {
+                                "key": "Service",
+                                "value": "WhatsAppBot"
+                              },
+                              {
+                                "key": "Stage",
+                                "value": "prod"
+                              }
+                            ]
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_iam.CfnRole",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "DefaultPolicy": {
+                        "id": "DefaultPolicy",
+                        "path": "Syrus-prod/SyrusApi/SyrusFunction/ServiceRole/DefaultPolicy",
+                        "children": {
+                          "Resource": {
+                            "id": "Resource",
+                            "path": "Syrus-prod/SyrusApi/SyrusFunction/ServiceRole/DefaultPolicy/Resource",
+                            "attributes": {
+                              "aws:cdk:cloudformation:type": "AWS::IAM::Policy",
+                              "aws:cdk:cloudformation:props": {
+                                "policyDocument": {
+                                  "Statement": [
+                                    {
+                                      "Action": [
+                                        "dynamodb:GetItem",
+                                        "dynamodb:Query"
+                                      ],
+                                      "Effect": "Allow",
+                                      "Resource": {
+                                        "Fn::Join": [
+                                          "",
+                                          [
+                                            "arn:aws:dynamodb:",
+                                            {
+                                              "Ref": "AWS::Region"
+                                            },
+                                            ":",
+                                            {
+                                              "Ref": "AWS::AccountId"
+                                            },
+                                            ":table/syrus-hosts-prod"
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  ],
+                                  "Version": "2012-10-17"
+                                },
+                                "policyName": "SyrusApiSyrusFunctionServiceRoleDefaultPolicyE352EE74",
+                                "roles": [
+                                  {
+                                    "Ref": "SyrusApiSyrusFunctionServiceRoleA93701A4"
+                                  }
+                                ]
+                              }
+                            },
+                            "constructInfo": {
+                              "fqn": "aws-cdk-lib.aws_iam.CfnPolicy",
+                              "version": "2.156.0"
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_iam.Policy",
+                          "version": "2.156.0"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_iam.Role",
+                      "version": "2.156.0"
+                    }
+                  },
+                  "Code": {
+                    "id": "Code",
+                    "path": "Syrus-prod/SyrusApi/SyrusFunction/Code",
+                    "children": {
+                      "Stage": {
+                        "id": "Stage",
+                        "path": "Syrus-prod/SyrusApi/SyrusFunction/Code/Stage",
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.AssetStaging",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "AssetBucket": {
+                        "id": "AssetBucket",
+                        "path": "Syrus-prod/SyrusApi/SyrusFunction/Code/AssetBucket",
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_s3.BucketBase",
+                          "version": "2.156.0"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_s3_assets.Asset",
+                      "version": "2.156.0"
+                    }
+                  },
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-prod/SyrusApi/SyrusFunction/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::Lambda::Function",
+                      "aws:cdk:cloudformation:props": {
+                        "code": {
+                          "s3Bucket": {
+                            "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+                          },
+                          "s3Key": "f3c78ea2f5efa25c887f383c8e6cdb6eae112eeeb1ebd74488d21b1f468ba95e.zip"
+                        },
+                        "environment": {
+                          "variables": {
+                            "SYRUS_VERIFY_TOKEN": {
+                              "Ref": "SsmParameterValuesyrusdevwhatsappverifytokenC96584B6F00A464EAD1953AFF4B05118Parameter"
+                            },
+                            "SYRUS_WA_TOKEN": {
+                              "Ref": "SsmParameterValuesyrusdevwhatsappaccesstokenC96584B6F00A464EAD1953AFF4B05118Parameter"
+                            },
+                            "SYRUS_PHONE_ID": {
+                              "Ref": "SsmParameterValuesyrusdevwhatsappphonenumberidC96584B6F00A464EAD1953AFF4B05118Parameter"
+                            },
+                            "SYRUS_HOSTS_TABLE": {
+                              "Ref": "HostsTable3E8ABB46"
+                            }
+                          }
+                        },
+                        "handler": "bootstrap",
+                        "memorySize": 256,
+                        "role": {
+                          "Fn::GetAtt": [
+                            "SyrusApiSyrusFunctionServiceRoleA93701A4",
+                            "Arn"
+                          ]
+                        },
+                        "runtime": "provided.al2023",
+                        "tags": [
+                          {
+                            "key": "App",
+                            "value": "Syrus"
+                          },
+                          {
+                            "key": "LastUpdated",
+                            "value": "2025-12-13T22:11:00.181Z"
+                          },
+                          {
+                            "key": "Service",
+                            "value": "WhatsAppBot"
+                          },
+                          {
+                            "key": "Stage",
+                            "value": "prod"
+                          }
+                        ],
+                        "timeout": 30
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_lambda.CfnFunction",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_lambda.Function",
+                  "version": "2.156.0"
+                }
+              },
+              "SyrusApi": {
+                "id": "SyrusApi",
+                "path": "Syrus-prod/SyrusApi/SyrusApi",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-prod/SyrusApi/SyrusApi/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::Api",
+                      "aws:cdk:cloudformation:props": {
+                        "corsConfiguration": {
+                          "allowHeaders": [
+                            "Content-Type",
+                            "X-Amz-Date",
+                            "Authorization",
+                            "X-Api-Key",
+                            "X-Amz-Security-Token"
+                          ],
+                          "allowMethods": [
+                            "GET",
+                            "POST",
+                            "OPTIONS"
+                          ],
+                          "allowOrigins": [
+                            "*"
+                          ]
+                        },
+                        "description": "Syrus API for WhatsApp webhooks",
+                        "name": "syrus-api-prod",
+                        "protocolType": "HTTP",
+                        "tags": {
+                          "App": "Syrus",
+                          "Service": "WhatsAppBot",
+                          "Stage": "prod"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnApi",
+                      "version": "2.156.0"
+                    }
+                  },
+                  "DefaultStage": {
+                    "id": "DefaultStage",
+                    "path": "Syrus-prod/SyrusApi/SyrusApi/DefaultStage",
+                    "children": {
+                      "Resource": {
+                        "id": "Resource",
+                        "path": "Syrus-prod/SyrusApi/SyrusApi/DefaultStage/Resource",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::Stage",
+                          "aws:cdk:cloudformation:props": {
+                            "apiId": {
+                              "Ref": "SyrusApi55624811"
+                            },
+                            "autoDeploy": true,
+                            "stageName": "$default",
+                            "tags": {
+                              "App": "Syrus",
+                              "Service": "WhatsAppBot",
+                              "Stage": "prod"
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnStage",
+                          "version": "2.156.0"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.HttpStage",
+                      "version": "2.156.0"
+                    }
+                  },
+                  "GET--webhooks--wa": {
+                    "id": "GET--webhooks--wa",
+                    "path": "Syrus-prod/SyrusApi/SyrusApi/GET--webhooks--wa",
+                    "children": {
+                      "SyrusIntegration": {
+                        "id": "SyrusIntegration",
+                        "path": "Syrus-prod/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration",
+                        "children": {
+                          "Resource": {
+                            "id": "Resource",
+                            "path": "Syrus-prod/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration/Resource",
+                            "attributes": {
+                              "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::Integration",
+                              "aws:cdk:cloudformation:props": {
+                                "apiId": {
+                                  "Ref": "SyrusApi55624811"
+                                },
+                                "integrationType": "AWS_PROXY",
+                                "integrationUri": {
+                                  "Fn::GetAtt": [
+                                    "SyrusApiSyrusFunction2DBA7AAE",
+                                    "Arn"
+                                  ]
+                                },
+                                "payloadFormatVersion": "2.0"
+                              }
+                            },
+                            "constructInfo": {
+                              "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnIntegration",
+                              "version": "2.156.0"
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_apigatewayv2.HttpIntegration",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "SyrusIntegration-Permission": {
+                        "id": "SyrusIntegration-Permission",
+                        "path": "Syrus-prod/SyrusApi/SyrusApi/GET--webhooks--wa/SyrusIntegration-Permission",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::Lambda::Permission",
+                          "aws:cdk:cloudformation:props": {
+                            "action": "lambda:InvokeFunction",
+                            "functionName": {
+                              "Fn::GetAtt": [
+                                "SyrusApiSyrusFunction2DBA7AAE",
+                                "Arn"
+                              ]
+                            },
+                            "principal": "apigateway.amazonaws.com",
+                            "sourceArn": {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  "arn:",
+                                  {
+                                    "Ref": "AWS::Partition"
+                                  },
+                                  ":execute-api:",
+                                  {
+                                    "Ref": "AWS::Region"
+                                  },
+                                  ":",
+                                  {
+                                    "Ref": "AWS::AccountId"
+                                  },
+                                  ":",
+                                  {
+                                    "Ref": "SyrusApi55624811"
+                                  },
+                                  "/*/*/webhooks/wa"
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_lambda.CfnPermission",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "Resource": {
+                        "id": "Resource",
+                        "path": "Syrus-prod/SyrusApi/SyrusApi/GET--webhooks--wa/Resource",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::Route",
+                          "aws:cdk:cloudformation:props": {
+                            "apiId": {
+                              "Ref": "SyrusApi55624811"
+                            },
+                            "authorizationType": "NONE",
+                            "routeKey": "GET /webhooks/wa",
+                            "target": {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  "integrations/",
+                                  {
+                                    "Ref": "SyrusApiGETwebhookswaSyrusIntegration4A31E1F6"
+                                  }
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnRoute",
+                          "version": "2.156.0"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.HttpRoute",
+                      "version": "2.156.0"
+                    }
+                  },
+                  "POST--webhooks--wa": {
+                    "id": "POST--webhooks--wa",
+                    "path": "Syrus-prod/SyrusApi/SyrusApi/POST--webhooks--wa",
+                    "children": {
+                      "SyrusIntegration-Permission": {
+                        "id": "SyrusIntegration-Permission",
+                        "path": "Syrus-prod/SyrusApi/SyrusApi/POST--webhooks--wa/SyrusIntegration-Permission",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::Lambda::Permission",
+                          "aws:cdk:cloudformation:props": {
+                            "action": "lambda:InvokeFunction",
+                            "functionName": {
+                              "Fn::GetAtt": [
+                                "SyrusApiSyrusFunction2DBA7AAE",
+                                "Arn"
+                              ]
+                            },
+                            "principal": "apigateway.amazonaws.com",
+                            "sourceArn": {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  "arn:",
+                                  {
+                                    "Ref": "AWS::Partition"
+                                  },
+                                  ":execute-api:",
+                                  {
+                                    "Ref": "AWS::Region"
+                                  },
+                                  ":",
+                                  {
+                                    "Ref": "AWS::AccountId"
+                                  },
+                                  ":",
+                                  {
+                                    "Ref": "SyrusApi55624811"
+                                  },
+                                  "/*/*/webhooks/wa"
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_lambda.CfnPermission",
+                          "version": "2.156.0"
+                        }
+                      },
+                      "Resource": {
+                        "id": "Resource",
+                        "path": "Syrus-prod/SyrusApi/SyrusApi/POST--webhooks--wa/Resource",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::Route",
+                          "aws:cdk:cloudformation:props": {
+                            "apiId": {
+                              "Ref": "SyrusApi55624811"
+                            },
+                            "authorizationType": "NONE",
+                            "routeKey": "POST /webhooks/wa",
+                            "target": {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  "integrations/",
+                                  {
+                                    "Ref": "SyrusApiGETwebhookswaSyrusIntegration4A31E1F6"
+                                  }
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnRoute",
+                          "version": "2.156.0"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.HttpRoute",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_apigatewayv2.HttpApi",
+                  "version": "2.156.0"
+                }
+              },
+              "SyrusCustomDomain": {
+                "id": "SyrusCustomDomain",
+                "path": "Syrus-prod/SyrusApi/SyrusCustomDomain",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-prod/SyrusApi/SyrusCustomDomain/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::DomainName",
+                      "aws:cdk:cloudformation:props": {
+                        "domainName": "api.syrus.chat",
+                        "domainNameConfigurations": [
+                          {
+                            "certificateArn": {
+                              "Ref": "SyrusApiWebhookCertificate5FBA0839"
+                            },
+                            "endpointType": "REGIONAL"
+                          }
+                        ]
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnDomainName",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_apigatewayv2.DomainName",
+                  "version": "2.156.0"
+                }
+              },
+              "SyrusApiMapping": {
+                "id": "SyrusApiMapping",
+                "path": "Syrus-prod/SyrusApi/SyrusApiMapping",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-prod/SyrusApi/SyrusApiMapping/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::ApiGatewayV2::ApiMapping",
+                      "aws:cdk:cloudformation:props": {
+                        "apiId": {
+                          "Ref": "SyrusApi55624811"
+                        },
+                        "domainName": {
+                          "Ref": "SyrusApiSyrusCustomDomainB1A6F750"
+                        },
+                        "stage": "$default"
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigatewayv2.CfnApiMapping",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_apigatewayv2.ApiMapping",
+                  "version": "2.156.0"
+                }
+              },
+              "SyrusApiRecord": {
+                "id": "SyrusApiRecord",
+                "path": "Syrus-prod/SyrusApi/SyrusApiRecord",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Syrus-prod/SyrusApi/SyrusApiRecord/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::Route53::RecordSet",
+                      "aws:cdk:cloudformation:props": {
+                        "aliasTarget": {
+                          "dnsName": {
+                            "Fn::GetAtt": [
+                              "SyrusApiSyrusCustomDomainB1A6F750",
+                              "RegionalDomainName"
+                            ]
+                          },
+                          "hostedZoneId": {
+                            "Fn::GetAtt": [
+                              "SyrusApiSyrusCustomDomainB1A6F750",
+                              "RegionalHostedZoneId"
+                            ]
+                          }
+                        },
+                        "hostedZoneId": "Z08867313GKFNLESF4SYL",
+                        "name": "api.syrus.chat.",
+                        "type": "A"
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_route53.CfnRecordSet",
+                      "version": "2.156.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_route53.ARecord",
+                  "version": "2.156.0"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "constructs.Construct",
+              "version": "10.4.4"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "path": "Syrus-prod/SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnParameter",
+              "version": "2.156.0"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "path": "Syrus-prod/SsmParameterValue:--syrus--dev--whatsapp--verify-token:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.Resource",
+              "version": "2.156.0"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "path": "Syrus-prod/SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnParameter",
+              "version": "2.156.0"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "path": "Syrus-prod/SsmParameterValue:--syrus--dev--whatsapp--access-token:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.Resource",
+              "version": "2.156.0"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "path": "Syrus-prod/SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118.Parameter",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnParameter",
+              "version": "2.156.0"
+            }
+          },
+          "SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118": {
+            "id": "SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "path": "Syrus-prod/SsmParameterValue:--syrus--dev--whatsapp--phone-number-id:C96584B6-F00A-464E-AD19-53AFF4B05118",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.Resource",
+              "version": "2.156.0"
+            }
+          },
           "CampaignsTableName": {
             "id": "CampaignsTableName",
             "path": "Syrus-prod/CampaignsTableName",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnOutput",
+              "version": "2.156.0"
+            }
+          },
+          "HostsTableName": {
+            "id": "HostsTableName",
+            "path": "Syrus-prod/HostsTableName",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnOutput",
+              "version": "2.156.0"
+            }
+          },
+          "SyrusApiUrl": {
+            "id": "SyrusApiUrl",
+            "path": "Syrus-prod/SyrusApiUrl",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnOutput",
+              "version": "2.156.0"
+            }
+          },
+          "SyrusLambdaArn": {
+            "id": "SyrusLambdaArn",
+            "path": "Syrus-prod/SyrusLambdaArn",
             "constructInfo": {
               "fqn": "aws-cdk-lib.CfnOutput",
               "version": "2.156.0"

@@ -9,3 +9,11 @@ import { StageConfig } from './config';
  * @returns The DynamoDB table construct
  */
 export declare function createCampaignsTable(scope: Construct, stageConfig: StageConfig): dynamodb.Table;
+/**
+ * Creates the Hosts DynamoDB table for whitelisting WhatsApp users
+ *
+ * @param scope The CDK construct scope
+ * @param stageConfig Configuration for the deployment stage
+ * @returns The DynamoDB table construct
+ */
+export declare function createHostsTable(scope: Construct, stageConfig: StageConfig): dynamodb.Table;
