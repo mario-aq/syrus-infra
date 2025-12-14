@@ -3,6 +3,10 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -16,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/ssm"
 )
 
 // WhatsApp webhook payload structures
@@ -184,17 +189,22 @@ func checkHostExists(waId string) (string, bool) {
 	return name, true
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	// Handle GET requests for webhook verification
-	if request.RequestContext.HTTP.Method == "GET" {
-		mode := request.QueryStringParameters["hub.mode"]
-		token := request.QueryStringParameters["hub.verify_token"]
-		challenge := request.QueryStringParameters["hub.challenge"]
+	if request.HTTPMethod == "GET" {
+		mode := ""
+		token := ""
+		challenge := ""
+		if request.QueryStringParameters != nil {
+			mode = request.QueryStringParameters["hub.mode"]
+			token = request.QueryStringParameters["hub.verify_token"]
+			challenge = request.QueryStringParameters["hub.challenge"]
+		}
 
 		verifyToken := os.Getenv("SYRUS_VERIFY_TOKEN")
 
 		if mode == "subscribe" && token == verifyToken {
-			return events.APIGatewayV2HTTPResponse{
+			return events.APIGatewayProxyResponse{
 				StatusCode: 200,
 				Headers: map[string]string{
 					"Content-Type": "text/plain",
@@ -204,18 +214,97 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 		}
 
 		log.Printf("Webhook verification failed - invalid token or mode")
-		return events.APIGatewayV2HTTPResponse{
+		return events.APIGatewayProxyResponse{
 			StatusCode: 403,
 			Body:       "Forbidden",
 		}, nil
 	}
 
 	// Handle POST requests for messages
-	if request.RequestContext.HTTP.Method == "POST" {
-		// Parse the webhook payload
+	if request.HTTPMethod == "POST" {
+		// Log incoming request for debugging
+		log.Printf("POST request received")
+		log.Printf("Headers: %+v", request.Headers)
+		log.Printf("Body length: %d", len(request.Body))
+		log.Printf("IsBase64Encoded: %v", request.IsBase64Encoded)
+		if len(request.Body) > 0 && len(request.Body) < 500 {
+			log.Printf("Body preview: %s", request.Body)
+		}
+
+		// Verify signature first
+		signatureHeader := ""
+		if request.Headers != nil {
+			// REST API headers are case-insensitive but may be normalized
+			// Check multiple possible header name formats
+			for key, value := range request.Headers {
+				keyLower := strings.ToLower(key)
+				if keyLower == "x-hub-signature-256" {
+					signatureHeader = value
+					log.Printf("Found signature header: %s = %s", key, value)
+					break
+				}
+			}
+		}
+
+		if signatureHeader == "" {
+			log.Printf("Missing X-Hub-Signature-256 header. Available headers: %v", request.Headers)
+			return events.APIGatewayProxyResponse{
+				StatusCode: 401,
+				Body:       `{"error": "Unauthorized"}`,
+			}, nil
+		}
+
+		// Get app secret from SSM
+		stage := os.Getenv("SYRUS_STAGE")
+		if stage == "" {
+			stage = "dev"
+		}
+		appSecret, err := getAppSecret(stage)
+		if err != nil {
+			log.Printf("Failed to get app secret: %v", err)
+			return events.APIGatewayProxyResponse{
+				StatusCode: 500,
+				Body:       `{"error": "Internal server error"}`,
+			}, nil
+		}
+
+		// Handle base64 encoded body if needed
+		body := request.Body
+		if request.IsBase64Encoded {
+			decoded, err := base64.StdEncoding.DecodeString(body)
+			if err != nil {
+				log.Printf("Failed to decode base64 body: %v", err)
+				return events.APIGatewayProxyResponse{
+					StatusCode: 400,
+					Body:       `{"error": "Invalid request body"}`,
+				}, nil
+			}
+			body = string(decoded)
+			log.Printf("Decoded base64 body, new length: %d", len(body))
+		}
+
+		// Verify signature using the raw body
+		if !verifySignature(signatureHeader, body, appSecret) {
+			log.Printf("Signature verification failed - header: %s, body length: %d", signatureHeader, len(body))
+			return events.APIGatewayProxyResponse{
+				StatusCode: 401,
+				Body:       `{"error": "Unauthorized"}`,
+			}, nil
+		}
+
+		// Parse the webhook payload (use decoded body if it was base64)
 		var webhookPayload WebhookPayload
-		if err := json.Unmarshal([]byte(request.Body), &webhookPayload); err != nil {
-			return events.APIGatewayV2HTTPResponse{
+		if err := json.Unmarshal([]byte(body), &webhookPayload); err != nil {
+			return events.APIGatewayProxyResponse{
+				StatusCode: 400,
+				Body:       `{"error": "Invalid webhook payload"}`,
+			}, nil
+		}
+
+		// Validate schema (use decoded body)
+		if err := validateSchema(body); err != nil {
+			log.Printf("Schema validation failed: %v", err)
+			return events.APIGatewayProxyResponse{
 				StatusCode: 400,
 				Body:       `{"error": "Invalid webhook payload"}`,
 			}, nil
@@ -265,7 +354,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 		}
 
 		// Return 200 OK immediately to acknowledge receipt
-		return events.APIGatewayV2HTTPResponse{
+		return events.APIGatewayProxyResponse{
 			StatusCode: 200,
 			Headers: map[string]string{
 				"Content-Type": "application/json",
@@ -275,7 +364,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 	}
 
 	// Method not allowed
-	return events.APIGatewayV2HTTPResponse{
+	return events.APIGatewayProxyResponse{
 		StatusCode: 405,
 		Body:       "Method Not Allowed",
 	}, nil
@@ -345,6 +434,79 @@ func sendMessage(recipientPhoneNumber string, messageBody string) {
 
 func sendReceivedMessage(recipientPhoneNumber string) {
 	sendMessage(recipientPhoneNumber, "Received")
+}
+
+// getAppSecret retrieves the WhatsApp app secret from SSM Parameter Store
+func getAppSecret(stage string) (string, error) {
+	sess, err := session.NewSession()
+	if err != nil {
+		return "", fmt.Errorf("failed to create AWS session: %w", err)
+	}
+
+	svc := ssm.New(sess)
+	paramName := fmt.Sprintf("/syrus/%s/whatsapp/app-secret", stage)
+	result, err := svc.GetParameter(&ssm.GetParameterInput{
+		Name:           aws.String(paramName),
+		WithDecryption: aws.Bool(true),
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("failed to get parameter %s: %w", paramName, err)
+	}
+
+	if result.Parameter == nil || result.Parameter.Value == nil {
+		return "", fmt.Errorf("parameter %s not found or has no value", paramName)
+	}
+
+	return *result.Parameter.Value, nil
+}
+
+// verifySignature verifies the WhatsApp webhook signature using X-Hub-Signature-256 header
+func verifySignature(signatureHeader, body, appSecret string) bool {
+	if signatureHeader == "" {
+		return false
+	}
+
+	if !strings.HasPrefix(signatureHeader, "sha256=") {
+		log.Printf("Invalid signature format: %s", signatureHeader)
+		return false
+	}
+	expectedSignature := strings.TrimPrefix(signatureHeader, "sha256=")
+
+	h := hmac.New(sha256.New, []byte(appSecret))
+	h.Write([]byte(body))
+	computedSignature := hex.EncodeToString(h.Sum(nil))
+
+	return hmac.Equal([]byte(expectedSignature), []byte(computedSignature))
+}
+
+// validateSchema validates the webhook payload schema
+func validateSchema(body string) error {
+	var payload WebhookPayload
+	if err := json.Unmarshal([]byte(body), &payload); err != nil {
+		return fmt.Errorf("invalid JSON payload: %w", err)
+	}
+
+	if payload.Object == "" {
+		return fmt.Errorf("missing 'object' field")
+	}
+
+	if len(payload.Entry) == 0 {
+		return fmt.Errorf("missing or empty 'entry' array")
+	}
+
+	for i, entry := range payload.Entry {
+		if len(entry.Changes) == 0 {
+			return fmt.Errorf("entry[%d] has no changes", i)
+		}
+		for j, change := range entry.Changes {
+			if change.Value.MessagingProduct != "whatsapp" {
+				return fmt.Errorf("entry[%d].changes[%d].value.messaging_product must be 'whatsapp', got: %s", i, j, change.Value.MessagingProduct)
+			}
+		}
+	}
+
+	return nil
 }
 
 func main() {

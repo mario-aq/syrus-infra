@@ -1,6 +1,6 @@
 import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import { StageConfig } from './config';
 export interface WebhookApiProps {
     stageConfig: StageConfig;
@@ -8,8 +8,9 @@ export interface WebhookApiProps {
     hostsTableName?: string;
 }
 export declare class SyrusApi extends Construct {
-    readonly api: apigatewayv2.HttpApi;
+    readonly api: apigateway.RestApi;
     readonly lambdaFunction: lambda.Function;
+    readonly authorizerFunction: lambda.Function;
     readonly customDomainUrl: string;
     constructor(scope: Construct, id: string, props: WebhookApiProps);
 }

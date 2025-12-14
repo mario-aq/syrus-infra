@@ -6,7 +6,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "build:lambda": "find lambda -name main.go -exec dirname {} \\; | xargs -I {} sh -c 'echo \"Building {}...\" && cd {} && GOOS=linux GOARCH=amd64 go build -o bootstrap main.go'",
+    "build:lambda": "find lambda -name main.go -exec dirname {} \\; | xargs -I {} sh -c 'echo \"Building {}...\" && cd {} && (go mod tidy 2>/dev/null || true) && GOOS=linux GOARCH=amd64 go build -o bootstrap main.go'",
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
