@@ -250,24 +250,14 @@ Syrus responds to messages that start with:
 
 #### Message Logging
 
-The Lambda function provides comprehensive logging for debugging and monitoring:
+When a whitelisted user sends a message, the Lambda function logs the complete incoming webhook payload in CloudWatch Logs for debugging and monitoring purposes. The log includes the user's name from the hosts table (if available) or their waId.
 
-**Syrus Command Detection:**
-```
-Syrus command received from [waId]: prefix='[prefix]', command='[command]', message='[full message]'
-```
-
-**Whitelisted User Processing:**
+**Log Format:**
 ```
 Incoming message from whitelisted user [NAME|waId]: [full JSON payload]
 ```
 
-**Example command detection:**
-```
-Syrus command received from 19547088572: prefix='$yrus', command='debug', message='$yrus debug test'
-```
-
-**Example whitelisted user processing:**
+**Example with name:**
 ```
 Incoming message from whitelisted user Mario Ricart: {
   "object": "whatsapp_business_account",
@@ -284,6 +274,11 @@ Incoming message from whitelisted user Mario Ricart: {
     }]
   }]
 }
+```
+
+**Example with waId (if no name):**
+```
+Incoming message from whitelisted user 19547088572: {...}
 ```
 
 ### Resource Tagging

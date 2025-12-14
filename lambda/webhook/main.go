@@ -230,9 +230,6 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 							// Parse syrus command from message
 							prefix, command, _ := parseSyrusCommand(msg.Text.Body) // args reserved for future commands
 							if prefix != "" {
-								// Log syrus command received
-								log.Printf("Syrus command received from %s: prefix='%s', command='%s', message='%s'", msg.From, prefix, command, msg.Text.Body)
-
 								// Check if sender is whitelisted in hosts table
 								name, exists := checkHostExists(msg.From)
 								if exists {
