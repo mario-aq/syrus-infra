@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -89,6 +90,51 @@ type WhatsAppMessageResponse struct {
 	Messages []struct {
 		ID string `json:"id"`
 	} `json:"messages"`
+}
+
+// parseSyrusCommand parses messages that start with $yrus or /syrus
+// Returns prefix, command, and arguments. Returns empty strings if not a syrus command.
+func parseSyrusCommand(body string) (prefix string, command string, args []string) {
+	// Check for $yrus prefix
+	if strings.HasPrefix(body, "$yrus") {
+		prefix = "$yrus"
+		remaining := strings.TrimSpace(body[len(prefix):])
+		if remaining == "" {
+			return prefix, "", []string{}
+		}
+		parts := strings.Fields(remaining)
+		if len(parts) == 0 {
+			return prefix, "", []string{}
+		}
+		return prefix, parts[0], parts[1:]
+	}
+
+	// Check for /syrus prefix
+	if strings.HasPrefix(body, "/syrus") {
+		prefix = "/syrus"
+		remaining := strings.TrimSpace(body[len(prefix):])
+		if remaining == "" {
+			return prefix, "", []string{}
+		}
+		parts := strings.Fields(remaining)
+		if len(parts) == 0 {
+			return prefix, "", []string{}
+		}
+		return prefix, parts[0], parts[1:]
+	}
+
+	// Not a syrus command
+	return "", "", []string{}
+}
+
+// formatDebugPayload formats the complete webhook payload for debug responses
+func formatDebugPayload(payload WebhookPayload) string {
+	payloadJSON, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return fmt.Sprintf("Error formatting payload: %v", err)
+	}
+
+	return fmt.Sprintf("Received:\n%s\n\n===>\nResponse:\nDebug mode - full payload logged above", string(payloadJSON))
 }
 
 // checkHostExists checks if a WhatsApp user ID exists in the hosts table and returns name if found
@@ -181,25 +227,40 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 				for _, change := range entry.Changes {
 					if change.Field == "messages" && len(change.Value.Messages) > 0 {
 						for _, msg := range change.Value.Messages {
-							// Check if sender is whitelisted in hosts table
-							name, exists := checkHostExists(msg.From)
-							if exists {
-								// Log the full incoming message payload for whitelisted users
-								payloadJSON, err := json.MarshalIndent(webhookPayload, "", "  ")
-								if err != nil {
-									log.Printf("Error marshaling webhook payload for logging: %v", err)
-								} else {
-									userIdentifier := name
-									if userIdentifier == "" {
-										userIdentifier = msg.From
-									}
-									log.Printf("Incoming message from whitelisted user %s: %s", userIdentifier, string(payloadJSON))
-								}
+							// Parse syrus command from message
+							prefix, command, _ := parseSyrusCommand(msg.Text.Body) // args reserved for future commands
+							if prefix != "" {
+								// Log syrus command received
+								log.Printf("Syrus command received from %s: prefix='%s', command='%s', message='%s'", msg.From, prefix, command, msg.Text.Body)
 
-								// Send "Received" message back to sender
-								sendReceivedMessage(msg.From)
+								// Check if sender is whitelisted in hosts table
+								name, exists := checkHostExists(msg.From)
+								if exists {
+									// Log the full incoming message payload for whitelisted users
+									payloadJSON, err := json.MarshalIndent(webhookPayload, "", "  ")
+									if err != nil {
+										log.Printf("Error marshaling webhook payload for logging: %v", err)
+									} else {
+										userIdentifier := name
+										if userIdentifier == "" {
+											userIdentifier = msg.From
+										}
+										log.Printf("Incoming message from whitelisted user %s: %s", userIdentifier, string(payloadJSON))
+									}
+
+									// Send "Received" message back to sender
+									sendReceivedMessage(msg.From)
+
+									// Handle debug command
+									if command == "debug" {
+										debugResponse := formatDebugPayload(webhookPayload)
+										sendMessage(msg.From, debugResponse)
+									}
+									// Future: Handle other commands here
+								}
+								// If not whitelisted, silently ignore even syrus commands
 							}
-							// If not whitelisted, silently ignore
+							// If not a syrus command, silently ignore
 						}
 					}
 				}
@@ -223,8 +284,8 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 	}, nil
 }
 
-func sendReceivedMessage(recipientPhoneNumber string) {
-	// Get environment variables
+// sendMessage sends a custom text message to a WhatsApp user
+func sendMessage(recipientPhoneNumber string, messageBody string) {
 	accessToken := os.Getenv("SYRUS_WA_TOKEN")
 	phoneNumberID := os.Getenv("SYRUS_PHONE_ID")
 
@@ -243,21 +304,21 @@ func sendReceivedMessage(recipientPhoneNumber string) {
 		To:               recipientPhoneNumber,
 		Type:             "text",
 		Text: WhatsAppMessageText{
-			Body: "Received",
+			Body: messageBody,
 		},
 	}
 
 	// Convert to JSON
 	jsonData, err := json.Marshal(messageRequest)
 	if err != nil {
-		log.Printf("Error marshaling message request: %v", err)
+		log.Printf("Error marshaling message request")
 		return
 	}
 
 	// Create HTTP request
 	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		log.Printf("Error creating HTTP request: %v", err)
+		log.Printf("Error creating HTTP request")
 		return
 	}
 
@@ -273,16 +334,20 @@ func sendReceivedMessage(recipientPhoneNumber string) {
 	// Send request
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Printf("Error sending WhatsApp message: %v", err)
 		return
 	}
 	defer resp.Body.Close()
 
-	// Check for successful response
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		// Successfully sent acknowledgment
+		log.Printf("Successfully sent message to %s", recipientPhoneNumber)
 	} else {
 		log.Printf("Failed to send message. Status: %d", resp.StatusCode)
 	}
+}
+
+func sendReceivedMessage(recipientPhoneNumber string) {
+	sendMessage(recipientPhoneNumber, "Received")
 }
 
 func main() {

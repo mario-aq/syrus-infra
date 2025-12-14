@@ -232,20 +232,42 @@ Should return: `test123`
 
 Send a WhatsApp message to your business number and check:
 1. CloudWatch logs for the Lambda function
-2. **Only if the sender's WhatsApp ID exists in the hosts table**: The sender should receive an automatic "Received" message
+2. **Only messages starting with `$yrus` or `/syrus` from whitelisted users**: The sender should receive an automatic "Received" message
 
-**Note**: Messages from users not in the hosts table will be silently ignored (no acknowledgment sent).
+#### Command Format
+
+Syrus responds to messages that start with:
+- `$yrus` - Dollar sign prefix
+- `/syrus` - Slash prefix
+
+**Examples:**
+- `$yrus` - Basic command (responds with "Received")
+- `$yrus help` - Help command (responds with "Received")
+- `/syrus debug` - Debug command (responds with "Received" + full webhook payload)
+- `$yrusdebug` - Also works (no space required)
+
+**Note**: Only whitelisted users (in hosts table) will receive responses. Messages from non-whitelisted users or messages without valid prefixes are silently ignored.
 
 #### Message Logging
 
-When a whitelisted user sends a message, the Lambda function logs the complete incoming webhook payload in CloudWatch Logs for debugging and monitoring purposes. The log includes the user's name from the hosts table (if available) or their waId.
+The Lambda function provides comprehensive logging for debugging and monitoring:
 
-**Log Format:**
+**Syrus Command Detection:**
+```
+Syrus command received from [waId]: prefix='[prefix]', command='[command]', message='[full message]'
+```
+
+**Whitelisted User Processing:**
 ```
 Incoming message from whitelisted user [NAME|waId]: [full JSON payload]
 ```
 
-**Example with name:**
+**Example command detection:**
+```
+Syrus command received from 19547088572: prefix='$yrus', command='debug', message='$yrus debug test'
+```
+
+**Example whitelisted user processing:**
 ```
 Incoming message from whitelisted user Mario Ricart: {
   "object": "whatsapp_business_account",
@@ -262,11 +284,6 @@ Incoming message from whitelisted user Mario Ricart: {
     }]
   }]
 }
-```
-
-**Example with waId (if no name):**
-```
-Incoming message from whitelisted user 19547088572: {...}
 ```
 
 ### Resource Tagging
