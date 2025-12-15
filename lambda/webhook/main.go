@@ -302,26 +302,19 @@ func handlePostRequest(request events.APIGatewayProxyRequest) (events.APIGateway
 				if change.Field == "messages" && len(change.Value.Messages) > 0 {
 					for _, msg := range change.Value.Messages {
 						// Check if sender is whitelisted in hosts table
-						name, exists := checkHostExists(msg.From)
+						_, exists := checkHostExists(msg.From)
 						if exists {
-							// Log the full incoming message payload for whitelisted users
-							payloadJSON, err := json.MarshalIndent(webhookPayload, "", "  ")
-							if err != nil {
-								log.Printf("Error marshaling webhook payload for logging: %v", err)
-							} else {
-								userIdentifier := name
-								if userIdentifier == "" {
-									userIdentifier = msg.From
-								}
-								log.Printf("Incoming message from whitelisted user %s: %s", userIdentifier, string(payloadJSON))
-							}
-
 							// Handle debug command
 							if strings.HasPrefix(msg.Text.Body, "$debug") {
 								debugResponse := formatDebugPayload(*webhookPayload)
 								sendMessage(msg.From, debugResponse)
 							}
-							// Send "Received" message back to sender
+
+							// TODO
+							// 1. get campaign
+							// 2. route the message to either configuring, play, cinematic queues
+							// 3. respond 200 to the webhook
+
 							sendReceivedMessage(msg.From)
 							// Future: Handle other commands here
 
