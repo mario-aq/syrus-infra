@@ -97,41 +97,6 @@ type WhatsAppMessageResponse struct {
 	} `json:"messages"`
 }
 
-// parseSyrusCommand parses messages that start with $yrus or /syrus
-// Returns prefix, command, and arguments. Returns empty strings if not a syrus command.
-func parseSyrusCommand(body string) (prefix string, command string, args []string) {
-	// Check for $yrus prefix
-	if strings.HasPrefix(body, "$yrus") {
-		prefix = "$yrus"
-		remaining := strings.TrimSpace(body[len(prefix):])
-		if remaining == "" {
-			return prefix, "", []string{}
-		}
-		parts := strings.Fields(remaining)
-		if len(parts) == 0 {
-			return prefix, "", []string{}
-		}
-		return prefix, parts[0], parts[1:]
-	}
-
-	// Check for /syrus prefix
-	if strings.HasPrefix(body, "/syrus") {
-		prefix = "/syrus"
-		remaining := strings.TrimSpace(body[len(prefix):])
-		if remaining == "" {
-			return prefix, "", []string{}
-		}
-		parts := strings.Fields(remaining)
-		if len(parts) == 0 {
-			return prefix, "", []string{}
-		}
-		return prefix, parts[0], parts[1:]
-	}
-
-	// Not a syrus command
-	return "", "", []string{}
-}
-
 // formatDebugPayload formats the complete webhook payload for debug responses
 func formatDebugPayload(payload WebhookPayload) string {
 	payloadJSON, err := json.MarshalIndent(payload, "", "  ")
@@ -222,151 +187,159 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 
 	// Handle POST requests for messages
 	if request.HTTPMethod == "POST" {
-		// Log incoming request for debugging
-		log.Printf("POST request received")
-		log.Printf("Headers: %+v", request.Headers)
-		log.Printf("Body length: %d", len(request.Body))
-		log.Printf("IsBase64Encoded: %v", request.IsBase64Encoded)
-		if len(request.Body) > 0 && len(request.Body) < 500 {
-			log.Printf("Body preview: %s", request.Body)
-		}
-
-		// Verify signature first
-		signatureHeader := ""
-		if request.Headers != nil {
-			// REST API headers are case-insensitive but may be normalized
-			// Check multiple possible header name formats
-			for key, value := range request.Headers {
-				keyLower := strings.ToLower(key)
-				if keyLower == "x-hub-signature-256" {
-					signatureHeader = value
-					log.Printf("Found signature header: %s = %s", key, value)
-					break
-				}
-			}
-		}
-
-		if signatureHeader == "" {
-			log.Printf("Missing X-Hub-Signature-256 header. Available headers: %v", request.Headers)
-			return events.APIGatewayProxyResponse{
-				StatusCode: 401,
-				Body:       `{"error": "Unauthorized"}`,
-			}, nil
-		}
-
-		// Get app secret from SSM
-		stage := os.Getenv("SYRUS_STAGE")
-		if stage == "" {
-			stage = "dev"
-		}
-		appSecret, err := getAppSecret(stage)
-		if err != nil {
-			log.Printf("Failed to get app secret: %v", err)
-			return events.APIGatewayProxyResponse{
-				StatusCode: 500,
-				Body:       `{"error": "Internal server error"}`,
-			}, nil
-		}
-
-		// Handle base64 encoded body if needed
-		body := request.Body
-		if request.IsBase64Encoded {
-			decoded, err := base64.StdEncoding.DecodeString(body)
-			if err != nil {
-				log.Printf("Failed to decode base64 body: %v", err)
-				return events.APIGatewayProxyResponse{
-					StatusCode: 400,
-					Body:       `{"error": "Invalid request body"}`,
-				}, nil
-			}
-			body = string(decoded)
-			log.Printf("Decoded base64 body, new length: %d", len(body))
-		}
-
-		// Verify signature using the raw body
-		if !verifySignature(signatureHeader, body, appSecret) {
-			log.Printf("Signature verification failed - header: %s, body length: %d", signatureHeader, len(body))
-			return events.APIGatewayProxyResponse{
-				StatusCode: 401,
-				Body:       `{"error": "Unauthorized"}`,
-			}, nil
-		}
-
-		// Parse the webhook payload (use decoded body if it was base64)
-		var webhookPayload WebhookPayload
-		if err := json.Unmarshal([]byte(body), &webhookPayload); err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       `{"error": "Invalid webhook payload"}`,
-			}, nil
-		}
-
-		// Validate schema (use decoded body)
-		if err := validateSchema(body); err != nil {
-			log.Printf("Schema validation failed: %v", err)
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       `{"error": "Invalid webhook payload"}`,
-			}, nil
-		}
-
-		// Process messages if any
-		if len(webhookPayload.Entry) > 0 {
-			for _, entry := range webhookPayload.Entry {
-				for _, change := range entry.Changes {
-					if change.Field == "messages" && len(change.Value.Messages) > 0 {
-						for _, msg := range change.Value.Messages {
-							// Parse syrus command from message
-							prefix, command, _ := parseSyrusCommand(msg.Text.Body) // args reserved for future commands
-							if prefix != "" {
-								// Check if sender is whitelisted in hosts table
-								name, exists := checkHostExists(msg.From)
-								if exists {
-									// Log the full incoming message payload for whitelisted users
-									payloadJSON, err := json.MarshalIndent(webhookPayload, "", "  ")
-									if err != nil {
-										log.Printf("Error marshaling webhook payload for logging: %v", err)
-									} else {
-										userIdentifier := name
-										if userIdentifier == "" {
-											userIdentifier = msg.From
-										}
-										log.Printf("Incoming message from whitelisted user %s: %s", userIdentifier, string(payloadJSON))
-									}
-
-									// Send "Received" message back to sender
-									sendReceivedMessage(msg.From)
-
-									// Handle debug command
-									if command == "debug" {
-										debugResponse := formatDebugPayload(webhookPayload)
-										sendMessage(msg.From, debugResponse)
-									}
-									// Future: Handle other commands here
-								}
-								// If not whitelisted, silently ignore even syrus commands
-							}
-							// If not a syrus command, silently ignore
-						}
-					}
-				}
-			}
-		}
-
-		// Return 200 OK immediately to acknowledge receipt
-		return events.APIGatewayProxyResponse{
-			StatusCode: 200,
-			Headers: map[string]string{
-				"Content-Type": "application/json",
-			},
-			Body: `{"status": "ok"}`,
-		}, nil
+		return handlePostRequest(request)
 	}
 
 	// Method not allowed
 	return events.APIGatewayProxyResponse{
 		StatusCode: 405,
 		Body:       "Method Not Allowed",
+	}, nil
+}
+
+func extractSignatureHeader(request events.APIGatewayProxyRequest) (string, error) {
+	signatureHeader := ""
+	// REST API headers are case-insensitive but may be normalized
+	// Check multiple possible header name formats
+	for key, value := range request.Headers {
+		keyLower := strings.ToLower(key)
+		if keyLower == "x-hub-signature-256" {
+			signatureHeader = value
+			log.Printf("Found signature header: %s = %s", key, value)
+			break
+		}
+	}
+
+	if signatureHeader == "" {
+		log.Printf("Missing X-Hub-Signature-256 header. Available headers: %v", request.Headers)
+		return "", fmt.Errorf("missing X-Hub-Signature-256 header")
+	}
+
+	return signatureHeader, nil
+}
+
+func validateRequest(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, *WebhookPayload) {
+	// Extract signature header from request
+	signatureHeader, err := extractSignatureHeader(request)
+	if err != nil {
+		log.Printf("Failed to extract signature header: %v", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: 401,
+			Body:       `{"error": "Unauthorized"}`,
+		}, nil
+	}
+
+	// Get app secret from SSM
+	stage := os.Getenv("SYRUS_STAGE")
+	if stage == "" {
+		stage = "dev"
+	}
+	appSecret, err := getAppSecret(stage)
+	if err != nil {
+		log.Printf("Failed to get app secret: %v", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: 500,
+			Body:       `{"error": "Internal server error"}`,
+		}, nil
+	}
+
+	// Handle base64 encoded body if needed
+	body := request.Body
+	if request.IsBase64Encoded {
+		decoded, err := base64.StdEncoding.DecodeString(body)
+		if err != nil {
+			log.Printf("Failed to decode base64 body: %v", err)
+			return events.APIGatewayProxyResponse{
+				StatusCode: 400,
+				Body:       `{"error": "Invalid request body"}`,
+			}, nil
+		}
+		body = string(decoded)
+		log.Printf("Decoded base64 body, new length: %d", len(body))
+	}
+
+	// Verify signature using the raw body
+	if !verifySignature(signatureHeader, body, appSecret) {
+		log.Printf("Signature verification failed - header: %s, body length: %d", signatureHeader, len(body))
+		return events.APIGatewayProxyResponse{
+			StatusCode: 401,
+			Body:       `{"error": "Unauthorized"}`,
+		}, nil
+	}
+
+	// Parse the webhook payload (use decoded body if it was base64)
+	var webhookPayload WebhookPayload
+	if err := json.Unmarshal([]byte(body), &webhookPayload); err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 400,
+			Body:       `{"error": "Invalid webhook payload"}`,
+		}, nil
+	}
+
+	// Validate schema (use decoded body)
+	if err := validateSchema(body); err != nil {
+		log.Printf("Schema validation failed: %v", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: 400,
+			Body:       `{"error": "Invalid webhook payload"}`,
+		}, nil
+	}
+
+	return events.APIGatewayProxyResponse{}, &webhookPayload
+}
+
+func handlePostRequest(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	// Validate request
+	errResponse, webhookPayload := validateRequest(request)
+	if errResponse.StatusCode != 0 {
+		return errResponse, nil
+	}
+
+	// Process messages if any
+	if len(webhookPayload.Entry) > 0 {
+		for _, entry := range webhookPayload.Entry {
+			for _, change := range entry.Changes {
+				if change.Field == "messages" && len(change.Value.Messages) > 0 {
+					for _, msg := range change.Value.Messages {
+						// Check if sender is whitelisted in hosts table
+						name, exists := checkHostExists(msg.From)
+						if exists {
+							// Log the full incoming message payload for whitelisted users
+							payloadJSON, err := json.MarshalIndent(webhookPayload, "", "  ")
+							if err != nil {
+								log.Printf("Error marshaling webhook payload for logging: %v", err)
+							} else {
+								userIdentifier := name
+								if userIdentifier == "" {
+									userIdentifier = msg.From
+								}
+								log.Printf("Incoming message from whitelisted user %s: %s", userIdentifier, string(payloadJSON))
+							}
+
+							// Handle debug command
+							if strings.HasPrefix(msg.Text.Body, "$debug") {
+								debugResponse := formatDebugPayload(*webhookPayload)
+								sendMessage(msg.From, debugResponse)
+							}
+							// Send "Received" message back to sender
+							sendReceivedMessage(msg.From)
+							// Future: Handle other commands here
+
+						}
+						// If not whitelisted, silently ignore even syrus commands
+					}
+				}
+			}
+		}
+	}
+
+	// Return 200 OK immediately to acknowledge receipt
+	return events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+		Body: `{"status": "ok"}`,
 	}, nil
 }
 
