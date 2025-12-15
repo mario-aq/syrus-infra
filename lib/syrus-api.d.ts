@@ -10,7 +10,6 @@ export interface WebhookApiProps {
 export declare class SyrusApi extends Construct {
     readonly api: apigateway.RestApi;
     readonly lambdaFunction: lambda.Function;
-    readonly authorizerFunction: lambda.Function;
     readonly customDomainUrl: string;
     constructor(scope: Construct, id: string, props: WebhookApiProps);
 }

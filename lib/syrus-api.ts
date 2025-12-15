@@ -21,7 +21,6 @@ export interface WebhookApiProps {
 export class SyrusApi extends Construct {
   public readonly api: apigateway.RestApi;
   public readonly lambdaFunction: lambda.Function;
-  public readonly authorizerFunction: lambda.Function;
   public readonly customDomainUrl: string;
 
   constructor(scope: Construct, id: string, props: WebhookApiProps) {
@@ -41,34 +40,6 @@ export class SyrusApi extends Construct {
       domainName: domainName,
       validation: acm.CertificateValidation.fromDns(hostedZone),
     });
-
-    // Create the authorizer Lambda function
-    this.authorizerFunction = new lambda.Function(this, 'SyrusAuthorizerFunction', {
-      runtime: lambda.Runtime.PROVIDED_AL2023,
-      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/authorizer')),
-      handler: 'bootstrap',
-      environment: {
-        SYRUS_STAGE: stageConfig.stage,
-      },
-      timeout: Duration.seconds(10),
-      memorySize: 256,
-    });
-
-    // Grant authorizer permission to read SSM parameters
-    this.authorizerFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: [
-        'ssm:GetParameter',
-        'ssm:GetParameters',
-      ],
-      resources: [
-        `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/syrus/${stageConfig.stage}/whatsapp/*`,
-      ],
-    }));
-
-    // Add tags to authorizer Lambda function
-    Tags.of(this.authorizerFunction).add('App', 'Syrus');
-    Tags.of(this.authorizerFunction).add('Service', 'WhatsAppBot');
-    Tags.of(this.authorizerFunction).add('Stage', stageConfig.stage);
 
     // Create the webhook Lambda function
     this.lambdaFunction = new lambda.Function(this, 'SyrusFunction', {
@@ -115,7 +86,7 @@ export class SyrusApi extends Construct {
     Tags.of(this.lambdaFunction).add('Stage', stageConfig.stage);
     Tags.of(this.lambdaFunction).add('LastUpdated', new Date().toISOString());
 
-    // Create REST API first
+    // Create REST API
     this.api = new apigateway.RestApi(this, 'SyrusApi', {
       restApiName: `syrus-api-${stageConfig.stage}`,
       description: 'Syrus API for WhatsApp webhooks',
@@ -126,14 +97,7 @@ export class SyrusApi extends Construct {
       },
     });
 
-    // Grant API Gateway permission to invoke the authorizer
-    this.authorizerFunction.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));
-
-    // Note: We're not using the authorizer for POST requests since REST API
-    // request authorizers don't reliably receive the request body.
-    // Signature validation is done in the webhook Lambda function instead.
-
-    // Create Lambda integrations
+    // Create Lambda integration
     const lambdaIntegration = new apigateway.LambdaIntegration(this.lambdaFunction, {
       requestTemplates: { 'application/json': '{ "statusCode": "200" }' },
     });
@@ -142,14 +106,13 @@ export class SyrusApi extends Construct {
     const webhooksResource = this.api.root.addResource('webhooks');
     const waResource = webhooksResource.addResource('wa');
 
-    // Add GET method for webhook verification (no authorizer)
+    // Add GET method for webhook verification
     waResource.addMethod('GET', lambdaIntegration, {
       authorizationType: apigateway.AuthorizationType.NONE,
     });
 
-    // Add POST method for webhook messages (no authorizer - signature validation in Lambda)
-    // Signature validation is done in the webhook Lambda function since REST API
-    // request authorizers don't reliably receive the request body
+    // Add POST method for webhook messages
+    // Signature validation is done in the webhook Lambda function
     waResource.addMethod('POST', lambdaIntegration, {
       authorizationType: apigateway.AuthorizationType.NONE,
     });
