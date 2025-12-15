@@ -292,3 +292,142 @@ All resources are tagged with:
 
 - **Development**: `DESTROY` - Resources are deleted when stack is destroyed
 - **Production**: `RETAIN` - Resources persist when stack is destroyed for safety
+
+## Inference System (Infrastructure Only)
+
+Infrastructure components for a future Inference System. This section includes only infrastructure resources (queues, tables, compute) with no application logic, models, or inference code.
+
+### SQS FIFO Queues
+
+Two FIFO queues are created for message processing:
+
+**Inference Queue**:
+- Name: `syrus-inference-{stage}.fifo`
+- Dead Letter Queue: `syrus-inference-dlq-{stage}.fifo`
+- Purpose: Receives messages for inference processing
+- Configuration:
+  - FIFO ordering with `MessageGroupId = campaignId` (preserves ordering per campaign)
+  - Content-based deduplication: disabled
+  - Visibility timeout: 60 seconds
+  - Retention period: 4 days
+  - Encryption: SQS-managed (SSE-SQS)
+  - Max receive count before DLQ: 5
+
+**Messaging Queue**:
+- Name: `syrus-messaging-{stage}.fifo`
+- Dead Letter Queue: `syrus-messaging-dlq-{stage}.fifo`
+- Purpose: Sends processed messages to messaging layer
+- Configuration: Same as inference queue
+
+**Important**: FIFO queues provide at-least-once delivery. The dedup table (below) enforces exactly-once processing semantics.
+
+### DynamoDB Dedup Table
+
+**Table Name**: `syrus-dedup-{stage}`
+
+**Schema**:
+- Partition Key: `dedupKey` (string)
+- TTL Attribute: `expiresAt` (number, epoch seconds)
+
+**Dedup Key Format**:
+
+Deduplication is scoped per queue role, not global. Keys follow the format:
+
+```
+<queueRole>#<wamid>
+```
+
+Examples:
+- `ingest#wamid.ABC123`
+- `inference#wamid.ABC123`
+- `messaging#wamid.ABC123`
+
+**Configuration**:
+- Billing mode: PROVISIONED (5 RCU, 5 WCU)
+- TTL: Enabled on `expiresAt` attribute (24 hours)
+- Point-in-time recovery: OFF
+- Deletion protection: OFF
+
+**Usage**: Before processing a message, check if a dedup key exists. If it exists, skip processing (already handled). If not, process the message and write the dedup key with `expiresAt` set to 24 hours from now.
+
+### EC2 Worker Instance
+
+A placeholder EC2 instance intended to act as a future background worker.
+
+**Instance Configuration**:
+- Type: `t3.micro`
+- AMI: Amazon Linux 2023 (latest)
+- Root volume: 16 GB gp3
+- Access: AWS Systems Manager (SSM) only (no SSH keypair)
+
+**IAM Permissions**:
+- `AmazonSSMManagedInstanceCore` (for SSM access)
+- SQS permissions:
+  - `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `sqs:ChangeMessageVisibility`, `sqs:GetQueueAttributes` on inference queue
+  - `sqs:SendMessage` on messaging queue
+- DynamoDB permissions:
+  - `dynamodb:PutItem`, `dynamodb:GetItem`, `dynamodb:UpdateItem` on dedup table
+
+**User Data**:
+- Installs `jq`
+- Creates placeholder systemd service: `/etc/systemd/system/syrus-worker.service`
+- Service uses `ExecStart=/bin/true` (placeholder - no actual worker logic)
+- Service is enabled and started automatically
+- User data logs to `/var/log/user-data.log`
+
+**Networking Modes**:
+
+The worker can be deployed in two network modes, controlled by CDK context flag `workerNetworkMode`:
+
+1. **Public Mode** (default):
+   - Uses default VPC
+   - Public subnet
+   - Security group: No inbound rules, outbound HTTPS (443) only
+   - No NAT Gateway required
+
+2. **Isolated Mode**:
+   - Creates dedicated VPC with isolated subnets only
+   - No Internet Gateway
+   - No NAT Gateway
+   - VPC endpoints for: SSM, EC2Messages, SSMMessages, SQS, CloudWatch Logs
+   - Security group: Egress only to VPC endpoints
+   - Maximum network isolation
+
+To use isolated mode:
+```bash
+cdk deploy --context workerNetworkMode=isolated
+```
+
+**Connecting to Worker**:
+
+Access the instance via AWS Systems Manager Session Manager:
+
+```bash
+# Get instance ID from CloudFormation outputs
+aws ssm start-session --target <instance-id>
+```
+
+### CloudFormation Outputs
+
+The following outputs are available for the Inference System:
+
+- `InferenceQueueUrl` / `InferenceQueueArn`: Inference queue URL and ARN
+- `InferenceDlqUrl` / `InferenceDlqArn`: Inference DLQ URL and ARN
+- `MessagingQueueUrl` / `MessagingQueueArn`: Messaging queue URL and ARN
+- `MessagingDlqUrl` / `MessagingDlqArn`: Messaging DLQ URL and ARN
+- `DedupTableName` / `DedupTableArn`: Dedup table name and ARN
+- `WorkerInstanceId`: EC2 worker instance ID
+
+All outputs are exported with the pattern: `Syrus{ResourceName}-{stage}`
+
+### Design Principles
+
+1. **FIFO Ordering**: Messages are ordered per campaign using `MessageGroupId = campaignId`
+2. **Exactly-Once Processing**: FIFO queues provide at-least-once delivery; the dedup table enforces exactly-once processing effects
+3. **Cost Optimization**: 
+   - No NAT Gateway
+   - No ALB/NLB
+   - Single EC2 instance
+   - PROVISIONED DynamoDB capacity (5 RCU/WCU)
+   - SQS SSE-SQS encryption (no KMS costs)
+4. **Infrastructure Only**: No application logic, models, or inference code is included in this infrastructure
