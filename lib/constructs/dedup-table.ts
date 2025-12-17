@@ -43,7 +43,7 @@ export class DedupTable extends Construct {
 
     // Add tags
     Tags.of(this.table).add('App', 'Syrus');
-    Tags.of(this.table).add('Service', 'WhatsAppBot');
+    Tags.of(this.table).add('Service', 'DiscordBot');
     Tags.of(this.table).add('Stage', props.stage);
   }
 }

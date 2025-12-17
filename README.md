@@ -141,10 +141,9 @@ npm run synth
 - ✅ **SSM Parameters**: Created for WhatsApp credentials
 
 **Next Steps:**
-1. Set your real WhatsApp credentials using `npm run setup-secrets`
-2. Configure the webhook URL in WhatsApp Business API
-3. Test webhook verification: `GET /webhooks/wa?hub.mode=subscribe&hub.verify_token=YOUR_TOKEN&hub.challenge=test123`
-4. Send test messages to see "Received" responses
+1. Create Discord public key SSM parameter: `/syrus/dev/discord/public-key`
+2. Configure the interactions endpoint URL in Discord Developer Portal: `https://api-dev.syrus.chat/webhooks/d`
+3. Test Discord interaction verification (Discord will send a PING)
 
 ### CloudFormation Outputs
 

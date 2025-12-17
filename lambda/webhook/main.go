@@ -1,19 +1,15 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
+	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -23,83 +19,39 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm"
 )
 
-// WhatsApp webhook payload structures
-type WebhookPayload struct {
-	Object string         `json:"object"`
-	Entry  []WebhookEntry `json:"entry"`
+// Discord interaction structures
+type DiscordInteraction struct {
+	ID        string                 `json:"id"`
+	Type      int                    `json:"type"` // 1 = PING, 2 = APPLICATION_COMMAND, etc.
+	Data      map[string]interface{} `json:"data,omitempty"`
+	GuildID   string                 `json:"guild_id,omitempty"`
+	ChannelID string                 `json:"channel_id,omitempty"`
+	Member    *DiscordMember         `json:"member,omitempty"`
+	User      *DiscordUser           `json:"user,omitempty"`
+	Token     string                 `json:"token"`
 }
 
-type WebhookEntry struct {
-	ID      string          `json:"id"`
-	Changes []WebhookChange `json:"changes"`
+type DiscordMember struct {
+	User DiscordUser `json:"user"`
 }
 
-type WebhookChange struct {
-	Value WebhookValue `json:"value"`
-	Field string       `json:"field"`
+type DiscordUser struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
 }
 
-type WebhookValue struct {
-	MessagingProduct string              `json:"messaging_product"`
-	Metadata         WebhookMetadata     `json:"metadata"`
-	Contacts         []WebhookContact    `json:"contacts"`
-	Messages         []IndividualMessage `json:"messages"`
+// getMapKeys returns the keys of a map as a slice of strings
+func getMapKeys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
-type WebhookMetadata struct {
-	DisplayPhoneNumber string `json:"display_phone_number"`
-	PhoneNumberID      string `json:"phone_number_id"`
-}
-
-type WebhookContact struct {
-	Profile WebhookProfile `json:"profile"`
-	WaID    string         `json:"wa_id"`
-}
-
-type WebhookProfile struct {
-	Name string `json:"name"`
-}
-
-type IndividualMessage struct {
-	From      string      `json:"from"`
-	ID        string      `json:"id"`
-	Timestamp string      `json:"timestamp"`
-	Text      WebhookText `json:"text,omitempty"`
-	Type      string      `json:"type"`
-}
-
-type WebhookText struct {
-	Body string `json:"body"`
-}
-
-// WhatsApp API response structures
-type WhatsAppMessageRequest struct {
-	MessagingProduct string              `json:"messaging_product"`
-	RecipientType    string              `json:"recipient_type"`
-	To               string              `json:"to"`
-	Type             string              `json:"type"`
-	Text             WhatsAppMessageText `json:"text"`
-}
-
-type WhatsAppMessageText struct {
-	PreviewURL bool   `json:"preview_url,omitempty"`
-	Body       string `json:"body"`
-}
-
-type WhatsAppMessageResponse struct {
-	MessagingProduct string `json:"messaging_product"`
-	Contacts         []struct {
-		Input string `json:"input"`
-		WaID  string `json:"wa_id"`
-	} `json:"contacts"`
-	Messages []struct {
-		ID string `json:"id"`
-	} `json:"messages"`
-}
-
-// formatDebugPayload formats the complete webhook payload for debug responses
-func formatDebugPayload(payload WebhookPayload) string {
-	payloadJSON, err := json.MarshalIndent(payload, "", "  ")
+// formatDebugPayload formats the complete interaction payload for debug responses
+func formatDebugPayload(interaction DiscordInteraction) string {
+	payloadJSON, err := json.MarshalIndent(interaction, "", "  ")
 	if err != nil {
 		return fmt.Sprintf("Error formatting payload: %v", err)
 	}
@@ -107,8 +59,8 @@ func formatDebugPayload(payload WebhookPayload) string {
 	return fmt.Sprintf("Received:\n%s\n\n===>\nResponse:\nDebug mode - full payload logged above", string(payloadJSON))
 }
 
-// checkHostExists checks if a WhatsApp user ID exists in the hosts table and returns name if found
-func checkHostExists(waId string) (string, bool) {
+// checkHostExists checks if a Discord user ID exists in the hosts table and returns name if found
+func checkHostExists(userID string) (string, bool) {
 	hostsTable := os.Getenv("SYRUS_HOSTS_TABLE")
 	if hostsTable == "" {
 		log.Printf("SYRUS_HOSTS_TABLE environment variable not set")
@@ -125,12 +77,16 @@ func checkHostExists(waId string) (string, bool) {
 	// Create DynamoDB client
 	svc := dynamodb.New(sess)
 
-	// Query the hosts table
+	// Query the hosts table (id is partition key, source is sort key)
+	// For Discord users, source should be "discord"
 	result, err := svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(hostsTable),
 		Key: map[string]*dynamodb.AttributeValue{
-			"waId": {
-				S: aws.String(waId),
+			"id": {
+				S: aws.String(userID),
+			},
+			"source": {
+				S: aws.String("discord"),
 			},
 		},
 	})
@@ -154,266 +110,54 @@ func checkHostExists(waId string) (string, bool) {
 	return name, true
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	// Handle GET requests for webhook verification
-	if request.HTTPMethod == "GET" {
-		mode := ""
-		token := ""
-		challenge := ""
-		if request.QueryStringParameters != nil {
-			mode = request.QueryStringParameters["hub.mode"]
-			token = request.QueryStringParameters["hub.verify_token"]
-			challenge = request.QueryStringParameters["hub.challenge"]
-		}
-
-		verifyToken := os.Getenv("SYRUS_VERIFY_TOKEN")
-
-		if mode == "subscribe" && token == verifyToken {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 200,
-				Headers: map[string]string{
-					"Content-Type": "text/plain",
-				},
-				Body: challenge,
-			}, nil
-		}
-
-		log.Printf("Webhook verification failed - invalid token or mode")
-		return events.APIGatewayProxyResponse{
-			StatusCode: 403,
-			Body:       "Forbidden",
-		}, nil
-	}
-
-	// Handle POST requests for messages
-	if request.HTTPMethod == "POST" {
-		return handlePostRequest(request)
-	}
-
-	// Method not allowed
-	return events.APIGatewayProxyResponse{
-		StatusCode: 405,
-		Body:       "Method Not Allowed",
-	}, nil
-}
-
-func extractSignatureHeader(request events.APIGatewayProxyRequest) (string, error) {
-	signatureHeader := ""
-	// REST API headers are case-insensitive but may be normalized
-	// Check multiple possible header name formats
-	for key, value := range request.Headers {
-		keyLower := strings.ToLower(key)
-		if keyLower == "x-hub-signature-256" {
-			signatureHeader = value
-			log.Printf("Found signature header: %s = %s", key, value)
-			break
-		}
-	}
-
-	if signatureHeader == "" {
-		log.Printf("Missing X-Hub-Signature-256 header. Available headers: %v", request.Headers)
-		return "", fmt.Errorf("missing X-Hub-Signature-256 header")
-	}
-
-	return signatureHeader, nil
-}
-
-func validateRequest(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, *WebhookPayload) {
-	// Extract signature header from request
-	signatureHeader, err := extractSignatureHeader(request)
+// getDiscordPublicKey retrieves the Discord public key from SSM Parameter Store
+func getDiscordPublicKey(stage string) (ed25519.PublicKey, error) {
+	sess, err := session.NewSession()
 	if err != nil {
-		log.Printf("Failed to extract signature header: %v", err)
-		return events.APIGatewayProxyResponse{
-			StatusCode: 401,
-			Body:       `{"error": "Unauthorized"}`,
-		}, nil
+		return nil, fmt.Errorf("failed to create AWS session: %w", err)
 	}
 
-	// Get app secret from SSM
-	stage := os.Getenv("SYRUS_STAGE")
-	if stage == "" {
-		stage = "dev"
-	}
-	appSecret, err := getAppSecret(stage)
+	svc := ssm.New(sess)
+	paramName := fmt.Sprintf("/syrus/%s/discord/public-key", stage)
+	result, err := svc.GetParameter(&ssm.GetParameterInput{
+		Name:           aws.String(paramName),
+		WithDecryption: aws.Bool(false), // Public key doesn't need decryption
+	})
+
 	if err != nil {
-		log.Printf("Failed to get app secret: %v", err)
-		return events.APIGatewayProxyResponse{
-			StatusCode: 500,
-			Body:       `{"error": "Internal server error"}`,
-		}, nil
+		return nil, fmt.Errorf("failed to get parameter %s: %w", paramName, err)
 	}
 
-	// Handle base64 encoded body if needed
-	body := request.Body
-	if request.IsBase64Encoded {
-		decoded, err := base64.StdEncoding.DecodeString(body)
-		if err != nil {
-			log.Printf("Failed to decode base64 body: %v", err)
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       `{"error": "Invalid request body"}`,
-			}, nil
-		}
-		body = string(decoded)
-		log.Printf("Decoded base64 body, new length: %d", len(body))
+	if result.Parameter == nil || result.Parameter.Value == nil {
+		return nil, fmt.Errorf("parameter %s not found or has no value", paramName)
 	}
 
-	// Verify signature using the raw body
-	if !verifySignature(signatureHeader, body, appSecret) {
-		log.Printf("Signature verification failed - header: %s, body length: %d", signatureHeader, len(body))
-		return events.APIGatewayProxyResponse{
-			StatusCode: 401,
-			Body:       `{"error": "Unauthorized"}`,
-		}, nil
+	// Decode hex-encoded public key
+	publicKeyHex := strings.TrimSpace(*result.Parameter.Value)
+	publicKeyBytes, err := hex.DecodeString(publicKeyHex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode public key hex: %w", err)
 	}
 
-	// Parse the webhook payload (use decoded body if it was base64)
-	var webhookPayload WebhookPayload
-	if err := json.Unmarshal([]byte(body), &webhookPayload); err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       `{"error": "Invalid webhook payload"}`,
-		}, nil
+	if len(publicKeyBytes) != ed25519.PublicKeySize {
+		return nil, fmt.Errorf("invalid public key size: expected %d bytes, got %d", ed25519.PublicKeySize, len(publicKeyBytes))
 	}
 
-	// Validate schema (use decoded body)
-	if err := validateSchema(body); err != nil {
-		log.Printf("Schema validation failed: %v", err)
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       `{"error": "Invalid webhook payload"}`,
-		}, nil
-	}
-
-	return events.APIGatewayProxyResponse{}, &webhookPayload
+	return ed25519.PublicKey(publicKeyBytes), nil
 }
 
-func handlePostRequest(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	// Validate request
-	errResponse, webhookPayload := validateRequest(request)
-	if errResponse.StatusCode != 0 {
-		return errResponse, nil
-	}
-
-	// Process messages if any
-	if len(webhookPayload.Entry) > 0 {
-		for _, entry := range webhookPayload.Entry {
-			for _, change := range entry.Changes {
-				if change.Field == "messages" && len(change.Value.Messages) > 0 {
-					for _, msg := range change.Value.Messages {
-						// Check if sender is whitelisted in hosts table
-						_, exists := checkHostExists(msg.From)
-						if exists {
-							// Handle debug command
-							if strings.HasPrefix(msg.Text.Body, "$debug") {
-								debugResponse := formatDebugPayload(*webhookPayload)
-								sendMessage(msg.From, debugResponse)
-							}
-
-							// TODO
-							// 1. get campaign
-							// 2. route the message to either configuring, play, cinematic queues
-							// 3. respond 200 to the webhook
-
-							sendReceivedMessage(msg.From)
-							// Future: Handle other commands here
-
-						}
-						// If not whitelisted, silently ignore even syrus commands
-					}
-				}
-			}
-		}
-	}
-
-	// Return 200 OK immediately to acknowledge receipt
-	return events.APIGatewayProxyResponse{
-		StatusCode: 200,
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-		},
-		Body: `{"status": "ok"}`,
-	}, nil
-}
-
-// sendMessage sends a custom text message to a WhatsApp user
-func sendMessage(recipientPhoneNumber string, messageBody string) {
-	accessToken := os.Getenv("SYRUS_WA_TOKEN")
-	phoneNumberID := os.Getenv("SYRUS_PHONE_ID")
-
-	if accessToken == "" || phoneNumberID == "" {
-		log.Printf("Missing WhatsApp credentials")
-		return
-	}
-
-	// WhatsApp API URL
-	apiURL := fmt.Sprintf("https://graph.facebook.com/v18.0/%s/messages", phoneNumberID)
-
-	// Create the message payload
-	messageRequest := WhatsAppMessageRequest{
-		MessagingProduct: "whatsapp",
-		RecipientType:    "individual",
-		To:               recipientPhoneNumber,
-		Type:             "text",
-		Text: WhatsAppMessageText{
-			Body: messageBody,
-		},
-	}
-
-	// Convert to JSON
-	jsonData, err := json.Marshal(messageRequest)
-	if err != nil {
-		log.Printf("Error marshaling message request")
-		return
-	}
-
-	// Create HTTP request
-	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
-	if err != nil {
-		log.Printf("Error creating HTTP request")
-		return
-	}
-
-	// Set headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-
-	// Create HTTP client for WhatsApp API
-	client := &http.Client{
-		Timeout: 15 * time.Second,
-	}
-
-	// Send request
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("Error sending WhatsApp message: %v", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		log.Printf("Successfully sent message to %s", recipientPhoneNumber)
-	} else {
-		log.Printf("Failed to send message. Status: %d", resp.StatusCode)
-	}
-}
-
-func sendReceivedMessage(recipientPhoneNumber string) {
-	sendMessage(recipientPhoneNumber, "Received")
-}
-
-// getAppSecret retrieves the WhatsApp app secret from SSM Parameter Store
-func getAppSecret(stage string) (string, error) {
+// getDiscordAppID retrieves the Discord application ID from SSM Parameter Store
+func getDiscordAppID(stage string) (string, error) {
 	sess, err := session.NewSession()
 	if err != nil {
 		return "", fmt.Errorf("failed to create AWS session: %w", err)
 	}
 
 	svc := ssm.New(sess)
-	paramName := fmt.Sprintf("/syrus/%s/whatsapp/app-secret", stage)
+	paramName := fmt.Sprintf("/syrus/%s/discord/app-id", stage)
 	result, err := svc.GetParameter(&ssm.GetParameterInput{
 		Name:           aws.String(paramName),
-		WithDecryption: aws.Bool(true),
+		WithDecryption: aws.Bool(false),
 	})
 
 	if err != nil {
@@ -424,55 +168,332 @@ func getAppSecret(stage string) (string, error) {
 		return "", fmt.Errorf("parameter %s not found or has no value", paramName)
 	}
 
-	return *result.Parameter.Value, nil
+	return strings.TrimSpace(*result.Parameter.Value), nil
 }
 
-// verifySignature verifies the WhatsApp webhook signature using X-Hub-Signature-256 header
-func verifySignature(signatureHeader, body, appSecret string) bool {
-	if signatureHeader == "" {
+// verifyDiscordSignature verifies the Discord interaction signature using Ed25519
+// Uses raw bytes to avoid any string encoding issues
+func verifyDiscordSignature(signature string, timestamp string, bodyBytes []byte, publicKey ed25519.PublicKey) bool {
+	if signature == "" || timestamp == "" {
 		return false
 	}
 
-	if !strings.HasPrefix(signatureHeader, "sha256=") {
-		log.Printf("Invalid signature format: %s", signatureHeader)
+	// Decode hex-encoded signature
+	signatureBytes, err := hex.DecodeString(signature)
+	if err != nil {
+		log.Printf("Invalid signature format: %v", err)
 		return false
 	}
-	expectedSignature := strings.TrimPrefix(signatureHeader, "sha256=")
 
-	h := hmac.New(sha256.New, []byte(appSecret))
-	h.Write([]byte(body))
-	computedSignature := hex.EncodeToString(h.Sum(nil))
+	if len(signatureBytes) != ed25519.SignatureSize {
+		log.Printf("Invalid signature size: expected %d bytes, got %d", ed25519.SignatureSize, len(signatureBytes))
+		return false
+	}
 
-	return hmac.Equal([]byte(expectedSignature), []byte(computedSignature))
+	// CRITICAL: Use raw bytes, not string concatenation
+	// Discord signs: timestamp (as bytes) + body (as bytes)
+	timestampBytes := []byte(timestamp)
+	message := append(timestampBytes, bodyBytes...)
+	return ed25519.Verify(publicKey, message, signatureBytes)
 }
 
-// validateSchema validates the webhook payload schema
-func validateSchema(body string) error {
-	var payload WebhookPayload
-	if err := json.Unmarshal([]byte(body), &payload); err != nil {
-		return fmt.Errorf("invalid JSON payload: %w", err)
-	}
-
-	if payload.Object == "" {
-		return fmt.Errorf("missing 'object' field")
-	}
-
-	if len(payload.Entry) == 0 {
-		return fmt.Errorf("missing or empty 'entry' array")
-	}
-
-	for i, entry := range payload.Entry {
-		if len(entry.Changes) == 0 {
-			return fmt.Errorf("entry[%d] has no changes", i)
+// extractDiscordHeaders extracts Discord signature headers from the HTTP API v2 request
+func extractDiscordHeaders(headers map[string]string) (signature, timestamp string, err error) {
+	// HTTP API v2 headers are case-sensitive, but we check both cases
+	for key, value := range headers {
+		keyLower := strings.ToLower(key)
+		if keyLower == "x-signature-ed25519" {
+			signature = value
+		} else if keyLower == "x-signature-timestamp" {
+			timestamp = value
 		}
-		for j, change := range entry.Changes {
-			if change.Value.MessagingProduct != "whatsapp" {
-				return fmt.Errorf("entry[%d].changes[%d].value.messaging_product must be 'whatsapp', got: %s", i, j, change.Value.MessagingProduct)
+	}
+
+	if signature == "" {
+		return "", "", fmt.Errorf("missing X-Signature-Ed25519 header")
+	}
+	if timestamp == "" {
+		return "", "", fmt.Errorf("missing X-Signature-Timestamp header")
+	}
+
+	return signature, timestamp, nil
+}
+
+func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+	// Log all incoming requests for debugging
+	log.Printf("HTTP Method: %s", request.RequestContext.HTTP.Method)
+	log.Printf("Path: %s", request.RawPath)
+	log.Printf("Headers: %v", request.Headers)
+	log.Printf("Body length: %d", len(request.Body))
+	log.Printf("IsBase64Encoded: %v", request.IsBase64Encoded)
+	if len(request.Body) > 0 && len(request.Body) < 1000 {
+		log.Printf("Body: %s", request.Body)
+	} else if len(request.Body) > 0 {
+		bodyPreviewLen := 500
+		if len(request.Body) < bodyPreviewLen {
+			bodyPreviewLen = len(request.Body)
+		}
+		log.Printf("Body (first %d chars): %s", bodyPreviewLen, request.Body[:bodyPreviewLen])
+	}
+	log.Printf("========================")
+
+	// Discord only uses POST
+	if request.RequestContext.HTTP.Method != "POST" {
+		response := events.APIGatewayV2HTTPResponse{
+			StatusCode: 405,
+			Body:       `{"error": "Method Not Allowed"}`,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		}
+		log.Printf("=== OUTGOING RESPONSE ===")
+		log.Printf("Status Code: %d", response.StatusCode)
+		log.Printf("Body: %s", response.Body)
+		log.Printf("========================")
+		return response, nil
+	}
+
+	// Get raw body bytes (HTTP API v2 may send base64 encoded)
+	bodyBytes := []byte(request.Body)
+	if request.IsBase64Encoded {
+		decoded, err := base64.StdEncoding.DecodeString(request.Body)
+		if err != nil {
+			log.Printf("Failed to decode base64 body: %v", err)
+			response := events.APIGatewayV2HTTPResponse{
+				StatusCode: 400,
+				Body:       `{"error": "Invalid request body"}`,
+				Headers: map[string]string{
+					"Content-Type": "application/json",
+				},
+			}
+			log.Printf("=== OUTGOING RESPONSE ===")
+			log.Printf("Status Code: %d", response.StatusCode)
+			log.Printf("Body: %s", response.Body)
+			log.Printf("========================")
+			return response, nil
+		}
+		bodyBytes = decoded
+		log.Printf("Decoded base64 body, new length: %d", len(bodyBytes))
+	}
+
+	// CRITICAL: Verify signature FIRST for ALL requests (including PING)
+	// Discord requires signature verification even for PING to ensure security.
+	// Discord tests that unsigned/invalid requests are rejected (401), not accepted.
+	signature, timestamp, err := extractDiscordHeaders(request.Headers)
+	if err != nil {
+		log.Printf("Failed to extract Discord headers: %v", err)
+		response := events.APIGatewayV2HTTPResponse{
+			StatusCode: 401,
+			Body:       `{"error": "Unauthorized"}`,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		}
+		log.Printf("=== OUTGOING RESPONSE ===")
+		log.Printf("Status Code: %d", response.StatusCode)
+		log.Printf("Body: %s", response.Body)
+		log.Printf("========================")
+		return response, nil
+	}
+
+	// Get Discord public key from SSM
+	stage := os.Getenv("SYRUS_STAGE")
+	if stage == "" {
+		stage = "dev"
+	}
+	publicKey, err := getDiscordPublicKey(stage)
+	if err != nil {
+		log.Printf("Failed to get Discord public key: %v", err)
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: 500,
+			Body:       `{"error": "Internal server error"}`,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		}, nil
+	}
+
+	// Verify signature using raw body bytes (NOT string concatenation)
+	if !verifyDiscordSignature(signature, timestamp, bodyBytes, publicKey) {
+		log.Printf("Discord signature verification failed")
+		response := events.APIGatewayV2HTTPResponse{
+			StatusCode: 401,
+			Body:       `{"error": "Unauthorized"}`,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		}
+		log.Printf("=== OUTGOING RESPONSE ===")
+		log.Printf("Status Code: %d", response.StatusCode)
+		log.Printf("Body: %s", response.Body)
+		log.Printf("========================")
+		return response, nil
+	}
+
+	log.Printf("Discord signature verified successfully")
+
+	// Parse JSON to check interaction type (AFTER signature verification)
+	var interaction DiscordInteraction
+	if err := json.Unmarshal(bodyBytes, &interaction); err != nil {
+		log.Printf("Failed to parse interaction JSON: %v", err)
+		response := events.APIGatewayV2HTTPResponse{
+			StatusCode: 400,
+			Body:       `{"error": "Invalid interaction payload"}`,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		}
+		log.Printf("=== OUTGOING RESPONSE ===")
+		log.Printf("Status Code: %d", response.StatusCode)
+		log.Printf("Body: %s", response.Body)
+		log.Printf("========================")
+		return response, nil
+	}
+
+	log.Printf("Interaction type: %d", interaction.Type)
+
+	// Handle PING (type 1) - Discord verification ping
+	// Must respond with {"type":1} after signature verification passes
+	if interaction.Type == 1 {
+		log.Printf("Received PING interaction, responding with PONG")
+		response := events.APIGatewayV2HTTPResponse{
+			StatusCode: 200,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+			Body: `{"type":1}`,
+		}
+		log.Printf("=== OUTGOING RESPONSE ===")
+		log.Printf("Status Code: %d", response.StatusCode)
+		log.Printf("Headers: %v", response.Headers)
+		log.Printf("Body: %s", response.Body)
+		log.Printf("========================")
+		return response, nil
+	}
+
+	// Get user ID from interaction (can be in user or member.user)
+	userID := ""
+	if interaction.User != nil {
+		userID = interaction.User.ID
+	} else if interaction.Member != nil && interaction.Member.User.ID != "" {
+		userID = interaction.Member.User.ID
+	}
+
+	if userID == "" {
+		log.Printf("No user ID found in interaction")
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: 400,
+			Body:       `{"error": "Missing user information"}`,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		}, nil
+	}
+
+	// Check if user is whitelisted in hosts table
+	_, exists := checkHostExists(userID)
+	if !exists {
+		log.Printf("User %s is not whitelisted, ignoring interaction", userID)
+		// Return 200 OK but don't process (silently ignore)
+		response := events.APIGatewayV2HTTPResponse{
+			StatusCode: 200,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+			Body: `{"type": 4, "data": {"content": "You are not authorized to use this bot."}}`,
+		}
+		log.Printf("=== OUTGOING RESPONSE ===")
+		log.Printf("Status Code: %d", response.StatusCode)
+		log.Printf("Headers: %v", response.Headers)
+		log.Printf("Body: %s", response.Body)
+		log.Printf("========================")
+		return response, nil
+	}
+
+	// Handle commands (check if interaction data contains a command)
+	if interaction.Data != nil {
+		// Log the interaction data to see what we're receiving
+		dataJSON, _ := json.Marshal(interaction.Data)
+		log.Printf("Interaction data: %s", string(dataJSON))
+
+		if commandName, ok := interaction.Data["name"].(string); ok {
+			log.Printf("Command name detected: %s", commandName)
+			switch commandName {
+			case "debug":
+				debugResponse := formatDebugPayload(interaction)
+				log.Printf("Debug command received from user %s: %s", userID, debugResponse)
+				// Return debug response to Discord
+				responseBody, _ := json.Marshal(map[string]interface{}{
+					"type": 4, // CHANNEL_MESSAGE_WITH_SOURCE
+					"data": map[string]interface{}{
+						"content": fmt.Sprintf("```\n%s\n```", debugResponse),
+					},
+				})
+				response := events.APIGatewayV2HTTPResponse{
+					StatusCode: 200,
+					Headers: map[string]string{
+						"Content-Type": "application/json",
+					},
+					Body: string(responseBody),
+				}
+				log.Printf("=== OUTGOING RESPONSE ===")
+				log.Printf("Status Code: %d", response.StatusCode)
+				log.Printf("Headers: %v", response.Headers)
+				log.Printf("Body: %s", response.Body)
+				log.Printf("========================")
+				return response, nil
+			case "ping":
+				log.Printf("Ping command received from user %s", userID)
+				responseBody, _ := json.Marshal(map[string]interface{}{
+					"type": 4, // CHANNEL_MESSAGE_WITH_SOURCE
+					"data": map[string]interface{}{
+						"content": "Pong! 🏓",
+					},
+				})
+				response := events.APIGatewayV2HTTPResponse{
+					StatusCode: 200,
+					Headers: map[string]string{
+						"Content-Type": "application/json",
+					},
+					Body: string(responseBody),
+				}
+				log.Printf("=== OUTGOING RESPONSE ===")
+				log.Printf("Status Code: %d", response.StatusCode)
+				log.Printf("Headers: %v", response.Headers)
+				log.Printf("Body: %s", response.Body)
+				log.Printf("========================")
+				return response, nil
 			}
 		}
 	}
 
-	return nil
+	// TODO
+	// 1. get campaign
+	// 2. route the message to either configuring, play, cinematic queues
+	// 3. respond 200 to the webhook
+
+	// Return "Received" message to Discord
+	// Type 4 = CHANNEL_MESSAGE_WITH_SOURCE (responds to the interaction)
+	responseBody, _ := json.Marshal(map[string]interface{}{
+		"type": 4,
+		"data": map[string]interface{}{
+			"content": "Received",
+		},
+	})
+
+	response := events.APIGatewayV2HTTPResponse{
+		StatusCode: 200,
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+		Body: string(responseBody),
+	}
+	log.Printf("=== OUTGOING RESPONSE ===")
+	log.Printf("Status Code: %d", response.StatusCode)
+	log.Printf("Headers: %v", response.Headers)
+	log.Printf("Body: %s", response.Body)
+	log.Printf("========================")
+	return response, nil
 }
 
 func main() {

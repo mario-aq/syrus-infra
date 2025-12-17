@@ -249,12 +249,12 @@ export class WorkerInstance extends Construct {
 
     // Add tags
     Tags.of(this.instance).add('App', 'Syrus');
-    Tags.of(this.instance).add('Service', 'WhatsAppBot');
+    Tags.of(this.instance).add('Service', 'DiscordBot');
     Tags.of(this.instance).add('Stage', props.stage);
     Tags.of(this.instance).add('Name', `syrus-worker-${props.stage}`);
 
     Tags.of(workerRole).add('App', 'Syrus');
-    Tags.of(workerRole).add('Service', 'WhatsAppBot');
+    Tags.of(workerRole).add('Service', 'DiscordBot');
     Tags.of(workerRole).add('Stage', props.stage);
   }
 }

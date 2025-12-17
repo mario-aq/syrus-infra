@@ -7,48 +7,24 @@ import (
 )
 
 func TestFormatDebugPayload(t *testing.T) {
-	// Create a sample webhook payload
-	payload := WebhookPayload{
-		Object: "whatsapp_business_account",
-		Entry: []WebhookEntry{
-			{
-				ID: "123456789",
-				Changes: []WebhookChange{
-					{
-						Value: WebhookValue{
-							MessagingProduct: "whatsapp",
-							Metadata: WebhookMetadata{
-								DisplayPhoneNumber: "15551234567",
-								PhoneNumberID:      "123456789",
-							},
-							Contacts: []WebhookContact{
-								{
-									Profile: WebhookProfile{
-										Name: "John Doe",
-									},
-									WaID: "15559876543",
-								},
-							},
-							Messages: []IndividualMessage{
-								{
-									From:      "15559876543",
-									ID:        "wamid.xxx",
-									Timestamp: "1734123456",
-									Text: WebhookText{
-										Body: "/syrus debug test",
-									},
-									Type: "text",
-								},
-							},
-						},
-						Field: "messages",
-					},
-				},
-			},
+	// Create a sample Discord interaction payload
+	interaction := DiscordInteraction{
+		ID:   "123456789012345678",
+		Type: 2, // APPLICATION_COMMAND
+		Data: map[string]interface{}{
+			"name": "debug",
+			"id":   "987654321098765432",
 		},
+		GuildID:   "111111111111111111",
+		ChannelID: "222222222222222222",
+		User: &DiscordUser{
+			ID:       "333333333333333333",
+			Username: "testuser",
+		},
+		Token: "interaction_token_here",
 	}
 
-	result := formatDebugPayload(payload)
+	result := formatDebugPayload(interaction)
 
 	// Check that result contains expected parts
 	if !contains(result, "Received:") {
@@ -63,12 +39,12 @@ func TestFormatDebugPayload(t *testing.T) {
 		t.Error("formatDebugPayload should contain 'Response:'")
 	}
 
-	if !contains(result, "whatsapp_business_account") {
-		t.Error("formatDebugPayload should contain the payload object")
+	if !contains(result, "123456789012345678") {
+		t.Error("formatDebugPayload should contain the interaction ID")
 	}
 
-	if !contains(result, "/syrus debug test") {
-		t.Error("formatDebugPayload should contain the original message")
+	if !contains(result, "debug") {
+		t.Error("formatDebugPayload should contain the command name")
 	}
 
 	// Verify it's valid JSON by trying to unmarshal the payload part
@@ -89,19 +65,19 @@ func TestFormatDebugPayload(t *testing.T) {
 		}
 	}
 
-	var parsedPayload WebhookPayload
+	var parsedInteraction DiscordInteraction
 	jsonStr := strings.TrimSpace(jsonContent.String())
 	if jsonStr == "" {
 		t.Error("formatDebugPayload should contain JSON payload")
 		return
 	}
 
-	if err := json.Unmarshal([]byte(jsonStr), &parsedPayload); err != nil {
+	if err := json.Unmarshal([]byte(jsonStr), &parsedInteraction); err != nil {
 		t.Errorf("formatDebugPayload should produce valid JSON, got error: %v", err)
 	}
 
-	if parsedPayload.Object != "whatsapp_business_account" {
-		t.Error("Parsed payload should match original")
+	if parsedInteraction.ID != "123456789012345678" {
+		t.Error("Parsed interaction should match original")
 	}
 }
 

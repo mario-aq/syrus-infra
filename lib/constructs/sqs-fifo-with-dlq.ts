@@ -64,11 +64,11 @@ export class SqsFifoWithDlq extends Construct {
 
     // Add tags
     Tags.of(this.queue).add('App', 'Syrus');
-    Tags.of(this.queue).add('Service', 'WhatsAppBot');
+    Tags.of(this.queue).add('Service', 'DiscordBot');
     Tags.of(this.queue).add('Stage', props.stage);
 
     Tags.of(this.dlq).add('App', 'Syrus');
-    Tags.of(this.dlq).add('Service', 'WhatsAppBot');
+    Tags.of(this.dlq).add('Service', 'DiscordBot');
     Tags.of(this.dlq).add('Stage', props.stage);
   }
 }

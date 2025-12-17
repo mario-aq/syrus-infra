@@ -3,7 +3,8 @@ import * as path from 'path';
 import { Duration } from 'aws-cdk-lib';
 import { Tags } from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
+import * as apigatewayv2Integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
@@ -19,7 +20,7 @@ export interface WebhookApiProps {
 }
 
 export class SyrusApi extends Construct {
-  public readonly api: apigateway.RestApi;
+  public readonly api: apigatewayv2.HttpApi;
   public readonly lambdaFunction: lambda.Function;
   public readonly customDomainUrl: string;
 
@@ -29,7 +30,7 @@ export class SyrusApi extends Construct {
     const { stageConfig, customDomain = false, hostsTableName } = props;
 
     // Custom domain setup
-    const domainName = stageConfig.stage === 'dev' ? 'api-dev.syrus.chat' : 'api.syrus.chat';
+    const domainName = 'webhooks.syrus.chat';
 
     const hostedZone = route53.HostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
       hostedZoneId: 'Z08867313GKFNLESF4SYL',
@@ -47,10 +48,9 @@ export class SyrusApi extends Construct {
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/webhook')),
       handler: 'bootstrap',
       environment: {
-        SYRUS_VERIFY_TOKEN: ssm.StringParameter.valueForStringParameter(this, `/syrus/${stageConfig.stage}/whatsapp/verify-token`),
-        SYRUS_WA_TOKEN: ssm.StringParameter.valueForStringParameter(this, `/syrus/${stageConfig.stage}/whatsapp/access-token`),
-        SYRUS_PHONE_ID: ssm.StringParameter.valueForStringParameter(this, `/syrus/${stageConfig.stage}/whatsapp/phone-number-id`),
-        SYRUS_HOSTS_TABLE: hostsTableName || `syrus-hosts-${stageConfig.stage}`,
+        SYRUS_DISCORD_PUBLIC_KEY_PARAM: `/syrus/${stageConfig.stage}/discord/public-key`,
+        SYRUS_DISCORD_APP_ID_PARAM: `/syrus/${stageConfig.stage}/discord/app-id`,
+        SYRUS_HOSTS_TABLE: hostsTableName || `syrus-${stageConfig.stage}-hosts`,
         SYRUS_STAGE: stageConfig.stage,
       },
       timeout: Duration.seconds(30),
@@ -58,22 +58,24 @@ export class SyrusApi extends Construct {
     });
 
     // Add DynamoDB permissions for hosts table access
+    const actualHostsTableName = hostsTableName || `syrus-${stageConfig.stage}-hosts`;
     this.lambdaFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: [
         'dynamodb:GetItem',
         'dynamodb:Query',
       ],
-      resources: [`arn:aws:dynamodb:${Stack.of(this).region}:${Stack.of(this).account}:table/syrus-hosts-${stageConfig.stage}`],
+      resources: [`arn:aws:dynamodb:${Stack.of(this).region}:${Stack.of(this).account}:table/${actualHostsTableName}`],
     }));
 
-    // Add SSM permissions for app secret access (for signature verification)
+    // Add SSM permissions for Discord public key and app ID access
     this.lambdaFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: [
         'ssm:GetParameter',
         'ssm:GetParameters',
       ],
       resources: [
-        `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/syrus/${stageConfig.stage}/whatsapp/*`,
+        `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/syrus/${stageConfig.stage}/discord/public-key`,
+        `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/syrus/${stageConfig.stage}/discord/app-id`,
       ],
     }));
 
@@ -82,88 +84,69 @@ export class SyrusApi extends Construct {
 
     // Add tags to Lambda function
     Tags.of(this.lambdaFunction).add('App', 'Syrus');
-    Tags.of(this.lambdaFunction).add('Service', 'WhatsAppBot');
+    Tags.of(this.lambdaFunction).add('Service', 'DiscordBot');
     Tags.of(this.lambdaFunction).add('Stage', stageConfig.stage);
     Tags.of(this.lambdaFunction).add('LastUpdated', new Date().toISOString());
 
-    // Create REST API
-    this.api = new apigateway.RestApi(this, 'SyrusApi', {
-      restApiName: `syrus-api-${stageConfig.stage}`,
-      description: 'Syrus API for WhatsApp webhooks',
-      defaultCorsPreflightOptions: {
-        allowOrigins: apigateway.Cors.ALL_ORIGINS,
-        allowMethods: apigateway.Cors.ALL_METHODS,
-        allowHeaders: ['Content-Type', 'X-Amz-Date', 'Authorization', 'X-Api-Key', 'X-Amz-Security-Token', 'X-Hub-Signature-256'],
+    // Create HTTP API (v2) - required for Discord Ed25519 signature verification
+    // HTTP API passes raw request body byte-for-byte without transformations
+    this.api = new apigatewayv2.HttpApi(this, 'SyrusApi', {
+      apiName: `syrus-api-${stageConfig.stage}`,
+      description: 'Syrus API for Discord interactions',
+      corsPreflight: {
+        allowOrigins: ['*'],
+        allowMethods: [apigatewayv2.CorsHttpMethod.POST],
+        allowHeaders: ['Content-Type', 'X-Signature-Ed25519', 'X-Signature-Timestamp'],
       },
     });
 
-    // Create Lambda integration
-    const lambdaIntegration = new apigateway.LambdaIntegration(this.lambdaFunction, {
-      requestTemplates: { 'application/json': '{ "statusCode": "200" }' },
-    });
+    // Create Lambda integration with HTTP API
+    // No request/response transformations - raw body passes through
+    const lambdaIntegration = new apigatewayv2Integrations.HttpLambdaIntegration(
+      'LambdaIntegration',
+      this.lambdaFunction
+    );
 
-    // Create resource path: /webhooks/wa
-    const webhooksResource = this.api.root.addResource('webhooks');
-    const waResource = webhooksResource.addResource('wa');
-
-    // Add GET method for webhook verification
-    waResource.addMethod('GET', lambdaIntegration, {
-      authorizationType: apigateway.AuthorizationType.NONE,
-    });
-
-    // Add POST method for webhook messages
-    // Signature validation is done in the webhook Lambda function
-    waResource.addMethod('POST', lambdaIntegration, {
-      authorizationType: apigateway.AuthorizationType.NONE,
-    });
-
-    // Configure throttling using UsagePlan
-    const usagePlan = this.api.addUsagePlan('SyrusUsagePlan', {
-      name: `syrus-usage-plan-${stageConfig.stage}`,
-      throttle: {
-        rateLimit: 10,  // 10 requests per second
-        burstLimit: 20, // Burst limit of 20 requests
-      },
-    });
-
-    // Associate usage plan with the API stage
-    const stage = this.api.deploymentStage;
-    usagePlan.addApiStage({
-      stage: stage,
+    // Add POST route at /discord path for Discord interactions
+    this.api.addRoutes({
+      path: '/discord',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: lambdaIntegration,
     });
 
     if (customDomain) {
-      // Create custom domain for REST API
-      const domainNameResource = new apigateway.DomainName(this, 'SyrusCustomDomain', {
+      // Create custom domain for HTTP API
+      const domainNameResource = new apigatewayv2.DomainName(this, 'SyrusCustomDomain', {
         domainName: domainName,
         certificate: certificate,
-        securityPolicy: apigateway.SecurityPolicy.TLS_1_2,
       });
 
-      // Map the custom domain to the REST API
-      new apigateway.BasePathMapping(this, 'SyrusApiMapping', {
+      // Map the custom domain to the HTTP API
+      new apigatewayv2.ApiMapping(this, 'SyrusApiMapping', {
         domainName: domainNameResource,
-        restApi: this.api,
+        api: this.api,
       });
 
       // Create Route 53 record
-      const recordName = stageConfig.stage === 'dev' ? 'api-dev' : 'api';
       new route53.ARecord(this, 'SyrusApiRecord', {
         zone: hostedZone,
-        recordName: recordName,
-        target: route53.RecordTarget.fromAlias(new targets.ApiGatewayDomain(domainNameResource)),
+        recordName: 'webhooks',
+        target: route53.RecordTarget.fromAlias(new targets.ApiGatewayv2DomainProperties(
+          domainNameResource.regionalDomainName,
+          domainNameResource.regionalHostedZoneId
+        )),
       });
 
-      // Set the custom domain URL
-      this.customDomainUrl = `https://${domainName}/webhooks/wa`;
+      // Set the custom domain URL with /discord path
+      this.customDomainUrl = `https://${domainName}/discord`;
     } else {
-      // Use the default REST API endpoint
-      this.customDomainUrl = `${this.api.url}webhooks/wa`;
+      // Use the default HTTP API endpoint (root path)
+      this.customDomainUrl = `${this.api.url}`;
     }
 
     // Add tags to API Gateway
     Tags.of(this.api).add('App', 'Syrus');
-    Tags.of(this.api).add('Service', 'WhatsAppBot');
+    Tags.of(this.api).add('Service', 'DiscordBot');
     Tags.of(this.api).add('Stage', stageConfig.stage);
   }
 }

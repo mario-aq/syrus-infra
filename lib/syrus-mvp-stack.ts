@@ -20,11 +20,8 @@ export class SyrusMvpStack extends Stack {
     // Create the campaigns table
     const campaignsTable = createCampaignsTable(this, stageConfig);
 
-    // Create the hosts table for whitelisting WhatsApp users
+    // Create the hosts table for whitelisting Discord users
     const hostsTable = createHostsTable(this, stageConfig);
-
-    // Note: WhatsApp SSM parameters are created manually via setup-secrets.sh
-    // They should not be managed by CDK to avoid conflicts
 
     // Create the Syrus API with custom domain
     const syrusApi = new SyrusApi(this, 'SyrusApi', {

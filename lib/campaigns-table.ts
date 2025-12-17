@@ -4,7 +4,7 @@ import { Tags } from 'aws-cdk-lib';
 import { StageConfig } from './config';
 
 /**
- * Creates the Campaigns DynamoDB table with GSI for the Syrus WhatsApp bot
+ * Creates the Campaigns DynamoDB table with GSI for the Syrus Discord bot
  *
  * @param scope The CDK construct scope
  * @param stageConfig Configuration for the deployment stage
@@ -12,7 +12,7 @@ import { StageConfig } from './config';
  */
 export function createCampaignsTable(scope: Construct, stageConfig: StageConfig): dynamodb.Table {
   const table = new dynamodb.Table(scope, 'CampaignsTable', {
-    tableName: `syrus-campaigns-${stageConfig.stage}`,
+    tableName: `syrus-${stageConfig.stage}-campaigns`,
     partitionKey: {
       name: 'campaignId',
       type: dynamodb.AttributeType.STRING,
@@ -34,7 +34,7 @@ export function createCampaignsTable(scope: Construct, stageConfig: StageConfig)
   table.addGlobalSecondaryIndex({
     indexName: 'ByHostStatus',
     partitionKey: {
-      name: 'hostWaId',
+      name: 'hostId',
       type: dynamodb.AttributeType.STRING,
     },
     sortKey: {
@@ -48,14 +48,14 @@ export function createCampaignsTable(scope: Construct, stageConfig: StageConfig)
 
   // Add tags
   Tags.of(table).add('App', 'Syrus');
-  Tags.of(table).add('Service', 'WhatsAppBot');
+  Tags.of(table).add('Service', 'DiscordBot');
   Tags.of(table).add('Stage', stageConfig.stage);
 
   return table;
 }
 
 /**
- * Creates the Hosts DynamoDB table for whitelisting WhatsApp users
+ * Creates the Hosts DynamoDB table for whitelisting Discord users
  *
  * @param scope The CDK construct scope
  * @param stageConfig Configuration for the deployment stage
@@ -63,9 +63,13 @@ export function createCampaignsTable(scope: Construct, stageConfig: StageConfig)
  */
 export function createHostsTable(scope: Construct, stageConfig: StageConfig): dynamodb.Table {
   const table = new dynamodb.Table(scope, 'HostsTable', {
-    tableName: `syrus-hosts-${stageConfig.stage}`,
+    tableName: `syrus-${stageConfig.stage}-hosts`,
     partitionKey: {
-      name: 'waId',
+      name: 'id',
+      type: dynamodb.AttributeType.STRING,
+    },
+    sortKey: {
+      name: 'source',
       type: dynamodb.AttributeType.STRING,
     },
     billingMode: dynamodb.BillingMode.PROVISIONED,
@@ -80,7 +84,7 @@ export function createHostsTable(scope: Construct, stageConfig: StageConfig): dy
 
   // Add tags
   Tags.of(table).add('App', 'Syrus');
-  Tags.of(table).add('Service', 'WhatsAppBot');
+  Tags.of(table).add('Service', 'DiscordBot');
   Tags.of(table).add('Stage', stageConfig.stage);
 
   return table;
