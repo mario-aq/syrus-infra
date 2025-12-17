@@ -42,7 +42,7 @@ export class SqsFifoWithDlq extends Construct {
     this.dlq = new sqs.Queue(this, 'DLQ', {
       queueName: dlqName,
       fifo: true,
-      contentBasedDeduplication: false,
+      contentBasedDeduplication: true,
       encryption: sqs.QueueEncryption.SQS_MANAGED,
       retentionPeriod: retentionPeriod,
     });
@@ -52,7 +52,7 @@ export class SqsFifoWithDlq extends Construct {
     this.queue = new sqs.Queue(this, 'Queue', {
       queueName: queueName,
       fifo: true,
-      contentBasedDeduplication: false,
+      contentBasedDeduplication: true,
       encryption: sqs.QueueEncryption.SQS_MANAGED,
       visibilityTimeout: visibilityTimeout,
       retentionPeriod: retentionPeriod,

@@ -344,18 +344,16 @@ All resources are tagged with:
 - **Development**: `DESTROY` - Resources are deleted when stack is destroyed
 - **Production**: `RETAIN` - Resources persist when stack is destroyed for safety
 
-## Inference System (Infrastructure Only)
+## Messaging Infrastructure
 
-Infrastructure components for a future Inference System. This section includes only infrastructure resources (queues, tables, compute) with no application logic, models, or inference code.
+Infrastructure components for message processing and deduplication.
 
-### SQS FIFO Queues
+### SQS FIFO Queue
 
-Two FIFO queues are created for message processing:
-
-**Inference Queue**:
-- Name: `syrus-inference-{stage}.fifo`
-- Dead Letter Queue: `syrus-inference-dlq-{stage}.fifo`
-- Purpose: Receives messages for inference processing
+**Messaging Queue**:
+- Name: `syrus-messaging-{stage}.fifo`
+- Dead Letter Queue: `syrus-messaging-dlq-{stage}.fifo`
+- Purpose: Sends processed messages to messaging layer
 - Configuration:
   - FIFO ordering with `MessageGroupId = campaignId` (preserves ordering per campaign)
   - Content-based deduplication: disabled
@@ -363,12 +361,6 @@ Two FIFO queues are created for message processing:
   - Retention period: 4 days
   - Encryption: SQS-managed (SSE-SQS)
   - Max receive count before DLQ: 5
-
-**Messaging Queue**:
-- Name: `syrus-messaging-{stage}.fifo`
-- Dead Letter Queue: `syrus-messaging-dlq-{stage}.fifo`
-- Purpose: Sends processed messages to messaging layer
-- Configuration: Same as inference queue
 
 **Important**: FIFO queues provide at-least-once delivery. The dedup table (below) enforces exactly-once processing semantics.
 
@@ -385,13 +377,12 @@ Two FIFO queues are created for message processing:
 Deduplication is scoped per queue role, not global. Keys follow the format:
 
 ```
-<queueRole>#<wamid>
+<queueRole>#<messageId>
 ```
 
 Examples:
-- `ingest#wamid.ABC123`
-- `inference#wamid.ABC123`
-- `messaging#wamid.ABC123`
+- `ingest#msg.ABC123`
+- `messaging#msg.ABC123`
 
 **Configuration**:
 - Billing mode: PROVISIONED (5 RCU, 5 WCU)
@@ -460,14 +451,11 @@ aws ssm start-session --target <instance-id>
 
 ### CloudFormation Outputs
 
-The following outputs are available for the Inference System:
+The following outputs are available for the Messaging Infrastructure:
 
-- `InferenceQueueUrl` / `InferenceQueueArn`: Inference queue URL and ARN
-- `InferenceDlqUrl` / `InferenceDlqArn`: Inference DLQ URL and ARN
 - `MessagingQueueUrl` / `MessagingQueueArn`: Messaging queue URL and ARN
 - `MessagingDlqUrl` / `MessagingDlqArn`: Messaging DLQ URL and ARN
 - `DedupTableName` / `DedupTableArn`: Dedup table name and ARN
-- `WorkerInstanceId`: EC2 worker instance ID
 
 All outputs are exported with the pattern: `Syrus{ResourceName}-{stage}`
 
@@ -476,9 +464,5 @@ All outputs are exported with the pattern: `Syrus{ResourceName}-{stage}`
 1. **FIFO Ordering**: Messages are ordered per campaign using `MessageGroupId = campaignId`
 2. **Exactly-Once Processing**: FIFO queues provide at-least-once delivery; the dedup table enforces exactly-once processing effects
 3. **Cost Optimization**: 
-   - No NAT Gateway
-   - No ALB/NLB
-   - Single EC2 instance
    - PROVISIONED DynamoDB capacity (5 RCU/WCU)
    - SQS SSE-SQS encryption (no KMS costs)
-4. **Infrastructure Only**: No application logic, models, or inference code is included in this infrastructure
