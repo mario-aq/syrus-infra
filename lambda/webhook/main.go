@@ -422,22 +422,42 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 		if commandName, ok := interaction.Data["name"].(string); ok {
 			log.Printf("Command name detected: %s", commandName)
 			switch commandName {
-			case "debug":
-				debugResponse := formatDebugPayload(interaction)
+			case "syrus":
+				// Build response message
+				responseMessage := "Received"
 
-				// Return debug response to Discord
-				responseBody, _ := json.Marshal(map[string]interface{}{
-					"type": 4, // CHANNEL_MESSAGE_WITH_SOURCE
-					"data": map[string]interface{}{
-						"content": fmt.Sprintf("```\n%s\n```", debugResponse),
-					},
-				})
+				// Check for debug mode: if debug option is true, append interaction JSON
+				if options, ok := interaction.Data["options"].([]interface{}); ok {
+					// Look for the debug option
+					for _, option := range options {
+						if optionMap, ok := option.(map[string]interface{}); ok {
+							if name, ok := optionMap["name"].(string); ok && name == "debug" {
+								if debugValue, ok := optionMap["value"].(bool); ok && debugValue {
+									// Debug mode enabled - marshal the full interaction JSON
+									interactionJSON, err := json.MarshalIndent(interaction, "", "  ")
+									if err != nil {
+										log.Printf("Failed to marshal interaction JSON: %v", err)
+									} else {
+										responseMessage = fmt.Sprintf("Received\n\n```json\nInteractionPayload: %s\n```", string(interactionJSON))
+									}
+									break
+								}
+							}
+						}
+					}
+				}
+
+				if err := sendMessageToQueue(interaction.ChannelID, responseMessage, interaction.Token); err != nil {
+					log.Printf("Failed to send 'Received' message to queue: %v", err)
+				}
+
+				// Return type 5 (DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE) - will follow up via webhook
 				response := events.APIGatewayV2HTTPResponse{
 					StatusCode: 200,
 					Headers: map[string]string{
 						"Content-Type": "application/json",
 					},
-					Body: string(responseBody),
+					Body: `{"type": 5}`,
 				}
 
 				return response, nil
@@ -445,7 +465,6 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 				// Send "Pong! 🏓" message via queue with interaction token
 				if err := sendMessageToQueue(interaction.ChannelID, "Pong! 🏓", interaction.Token); err != nil {
 					log.Printf("Failed to send ping response to queue: %v", err)
-					// Still return 200 to acknowledge the interaction
 				}
 				// Return type 5 (DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE) - will follow up via webhook
 				response := events.APIGatewayV2HTTPResponse{
@@ -466,11 +485,9 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 	// 2. route the message to either configuring, play, cinematic queues
 	// 3. respond 200 to the webhook
 
-	// Send "Received" message via queue with interaction token
-	if err := sendMessageToQueue(interaction.ChannelID, "Received", interaction.Token); err != nil {
-		log.Printf("Failed to send 'Received' message to queue: %v", err)
-		// Still return 200 to acknowledge the interaction
-	}
+	// Log unhandled interaction with full payload
+	interactionJSON, _ := json.Marshal(interaction)
+	log.Printf("unhandled interaction type: %s", string(interactionJSON))
 
 	// Return type 5 (DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE) - will follow up via webhook
 	response := events.APIGatewayV2HTTPResponse{
@@ -478,7 +495,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 		Headers: map[string]string{
 			"Content-Type": "application/json",
 		},
-		Body: `{"type":5}`,
+		Body: `{"type": 4, "data": {}}`,
 	}
 
 	return response, nil
