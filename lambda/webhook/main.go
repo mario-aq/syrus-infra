@@ -147,31 +147,6 @@ func getDiscordPublicKey(stage string) (ed25519.PublicKey, error) {
 	return ed25519.PublicKey(publicKeyBytes), nil
 }
 
-// getDiscordAppID retrieves the Discord application ID from SSM Parameter Store
-func getDiscordAppID(stage string) (string, error) {
-	sess, err := session.NewSession()
-	if err != nil {
-		return "", fmt.Errorf("failed to create AWS session: %w", err)
-	}
-
-	svc := ssm.New(sess)
-	paramName := fmt.Sprintf("/syrus/%s/discord/app-id", stage)
-	result, err := svc.GetParameter(&ssm.GetParameterInput{
-		Name:           aws.String(paramName),
-		WithDecryption: aws.Bool(false),
-	})
-
-	if err != nil {
-		return "", fmt.Errorf("failed to get parameter %s: %w", paramName, err)
-	}
-
-	if result.Parameter == nil || result.Parameter.Value == nil {
-		return "", fmt.Errorf("parameter %s not found or has no value", paramName)
-	}
-
-	return strings.TrimSpace(*result.Parameter.Value), nil
-}
-
 // sendMessageToQueue sends a message to the messaging SQS queue
 func sendMessageToQueue(channelID string, content string, interactionToken string) error {
 	queueURL := os.Getenv("SYRUS_MESSAGING_QUEUE_URL")
