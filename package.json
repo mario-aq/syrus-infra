@@ -13,7 +13,14 @@
     "deploy:dev": "npm run build && (npm run build:lambda || echo '⚠️  Go not available - skipping lambda build') && AWS_PROFILE=arborquote cdk deploy Syrus-dev --require-approval never",
     "deploy:prod": "npm run build && (npm run build:lambda || echo '⚠️  Go not available - skipping lambda build') && AWS_PROFILE=arborquote cdk deploy Syrus-prod --require-approval never",
     "bootstrap": "AWS_PROFILE=arborquote cdk bootstrap",
-    "synth": "npm run build && cdk synth"
+    "synth": "npm run build && cdk synth",
+    "ssm:list": "./scripts/manage-ssm.sh list",
+    "ssm:list:dev": "./scripts/manage-ssm.sh list dev",
+    "ssm:list:prod": "./scripts/manage-ssm.sh list prod",
+    "ssm:get": "./scripts/manage-ssm.sh get",
+    "ssm:set": "./scripts/manage-ssm.sh set",
+    "ssm:delete": "./scripts/manage-ssm.sh delete",
+    "ssm:show-all": "./scripts/manage-ssm.sh show-all"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",

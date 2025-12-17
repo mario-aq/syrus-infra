@@ -1,6 +1,6 @@
 # syrus-infra
 
-AWS CDK v2 infrastructure for Syrus, a WhatsApp chatbot dungeon master.
+AWS CDK v2 infrastructure for Syrus, a Discord chatbot dungeon master.
 
 ## DynamoDB Campaigns Table
 
@@ -38,7 +38,7 @@ For MVP, each group/solo can only have one active campaign at a time. When a new
 ### Global Secondary Index (GSI)
 
 **Index Name**: `ByHostStatus`
-- **Partition Key**: `hostWaId` (string)
+- **Partition Key**: `hostId` (string)
 - **Sort Key**: `statusCampaign` (string)
 
 **Purpose**: Enables efficient querying of active campaigns for a specific host using `begins_with("active#")`.
@@ -130,25 +130,77 @@ npm run bootstrap
 npm run synth
 ```
 
+## SSM Parameter Management
+
+The project includes a script to manage SSM parameters for secrets and configuration.
+
+### Available Commands
+
+**List all parameters (excludes WhatsApp):**
+```bash
+npm run ssm:list          # List for default stage (dev)
+npm run ssm:list:dev      # List for dev stage
+npm run ssm:list:prod     # List for prod stage
+```
+
+**Get a specific parameter:**
+```bash
+npm run ssm:get discord/public-key dev
+```
+
+**Set/update a parameter:**
+```bash
+# String parameter
+npm run ssm:set discord/app-id "1450131305319760086" dev
+
+# SecureString parameter (for API keys)
+npm run ssm:set openai/api-key "$SYRUS_OPENAI_API_KEY" dev --secure
+```
+
+**Delete a parameter:**
+```bash
+npm run ssm:delete discord/app-id dev
+```
+
+**Show all parameters with values:**
+```bash
+npm run ssm:show-all dev
+```
+
+### Current SSM Parameters (dev stage)
+
+- `/syrus/dev/discord/public-key` (String) - Discord Ed25519 public key
+- `/syrus/dev/discord/app-id` (String) - Discord application ID
+- `/syrus/dev/openai/api-key` (SecureString) - OpenAI API key
+- `/syrus/dev/claude/api-key` (SecureString) - Claude API key
+
+### Direct Script Usage
+
+You can also use the script directly:
+
+```bash
+./scripts/manage-ssm.sh list dev
+./scripts/manage-ssm.sh get discord/public-key dev
+./scripts/manage-ssm.sh set openai/api-key "$SYRUS_OPENAI_API_KEY" dev --secure
+```
+
 ## Deployment Status ✅
 
 **Successfully Deployed Resources:**
-- ✅ **DynamoDB Table**: `syrus-campaigns-dev`
-- ✅ **API Gateway with Custom Domain**: `https://api-dev.syrus.chat/webhooks/wa`
-- ✅ **Lambda Function**: Go webhook handler with custom runtime
-- ✅ **Route 53 DNS Records**: `api-dev.syrus.chat` → API Gateway
+- ✅ **DynamoDB Tables**: 
+  - `syrus-dev-campaigns` (campaigns table)
+  - `syrus-dev-hosts` (user whitelist table)
+- ✅ **API Gateway HTTP API (v2)** with Custom Domain: `https://webhooks.syrus.chat/discord`
+- ✅ **Lambda Function**: Go webhook handler for Discord interactions
+- ✅ **Route 53 DNS Records**: `webhooks.syrus.chat` → API Gateway HTTP API
 - ✅ **SSL Certificate**: ACM certificate for custom domain
-- ✅ **SSM Parameters**: Created for WhatsApp credentials
-
-**Next Steps:**
-1. Create Discord public key SSM parameter: `/syrus/dev/discord/public-key`
-2. Configure the interactions endpoint URL in Discord Developer Portal: `https://api-dev.syrus.chat/webhooks/d`
-3. Test Discord interaction verification (Discord will send a PING)
+- ✅ **SSM Parameters**: Discord credentials and API keys
 
 ### CloudFormation Outputs
 
-- `CampaignsTableName`: Name of the DynamoDB campaigns table (`syrus-campaigns-dev`)
-- `WebhookApiUrl`: Custom domain webhook URL (`https://api-dev.syrus.chat/webhooks/wa`)
+- `CampaignsTableName`: Name of the DynamoDB campaigns table (`syrus-${stage}-campaigns`)
+- `HostsTableName`: Name of the DynamoDB hosts table (`syrus-${stage}-hosts`)
+- `WebhookApiUrl`: Custom domain webhook URL (`https://webhooks.syrus.chat/discord`)
 - `WebhookLambdaArn`: Lambda function ARN for webhook processing
 - Exported as: `SyrusTableName-${stage}`, `SyrusWebhookApiUrl-${stage}`, `SyrusWebhookLambdaArn-${stage}`
 
