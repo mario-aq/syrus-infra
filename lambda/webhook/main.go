@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/ssm"
 )
 
@@ -171,6 +172,52 @@ func getDiscordAppID(stage string) (string, error) {
 	return strings.TrimSpace(*result.Parameter.Value), nil
 }
 
+// sendMessageToQueue sends a message to the messaging SQS queue
+func sendMessageToQueue(channelID string, content string, interactionToken string) error {
+	queueURL := os.Getenv("SYRUS_MESSAGING_QUEUE_URL")
+	if queueURL == "" {
+		return fmt.Errorf("SYRUS_MESSAGING_QUEUE_URL environment variable not set")
+	}
+
+	// Create AWS session
+	sess, err := session.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create AWS session: %w", err)
+	}
+
+	// Create SQS client
+	svc := sqs.New(sess)
+
+	// Create message body
+	messageBody := map[string]interface{}{
+		"channel_id": channelID,
+		"content":    content,
+	}
+	if interactionToken != "" {
+		messageBody["interaction_token"] = interactionToken
+	}
+	messageBodyJSON, err := json.Marshal(messageBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal message body: %w", err)
+	}
+
+	// Send message to queue
+	// Use interaction ID as MessageGroupId for FIFO ordering (or use a fixed group for all messages)
+	_, err = svc.SendMessage(&sqs.SendMessageInput{
+		QueueUrl:               aws.String(queueURL),
+		MessageBody:            aws.String(string(messageBodyJSON)),
+		MessageGroupId:         aws.String("discord-responses"),                           // Fixed group for all Discord responses
+		MessageDeduplicationId: aws.String(fmt.Sprintf("%s-%d", channelID, len(content))), // Simple deduplication
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to send message to queue: %w", err)
+	}
+
+	log.Printf("Successfully sent message to queue for channel %s", channelID)
+	return nil
+}
+
 // verifyDiscordSignature verifies the Discord interaction signature using Ed25519
 // Uses raw bytes to avoid any string encoding issues
 func verifyDiscordSignature(signature string, timestamp string, bodyBytes []byte, publicKey ed25519.PublicKey) bool {
@@ -220,23 +267,6 @@ func extractDiscordHeaders(headers map[string]string) (signature, timestamp stri
 }
 
 func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
-	// Log all incoming requests for debugging
-	log.Printf("HTTP Method: %s", request.RequestContext.HTTP.Method)
-	log.Printf("Path: %s", request.RawPath)
-	log.Printf("Headers: %v", request.Headers)
-	log.Printf("Body length: %d", len(request.Body))
-	log.Printf("IsBase64Encoded: %v", request.IsBase64Encoded)
-	if len(request.Body) > 0 && len(request.Body) < 1000 {
-		log.Printf("Body: %s", request.Body)
-	} else if len(request.Body) > 0 {
-		bodyPreviewLen := 500
-		if len(request.Body) < bodyPreviewLen {
-			bodyPreviewLen = len(request.Body)
-		}
-		log.Printf("Body (first %d chars): %s", bodyPreviewLen, request.Body[:bodyPreviewLen])
-	}
-	log.Printf("========================")
-
 	// Discord only uses POST
 	if request.RequestContext.HTTP.Method != "POST" {
 		response := events.APIGatewayV2HTTPResponse{
@@ -246,10 +276,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 				"Content-Type": "application/json",
 			},
 		}
-		log.Printf("=== OUTGOING RESPONSE ===")
-		log.Printf("Status Code: %d", response.StatusCode)
-		log.Printf("Body: %s", response.Body)
-		log.Printf("========================")
+
 		return response, nil
 	}
 
@@ -266,14 +293,10 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 					"Content-Type": "application/json",
 				},
 			}
-			log.Printf("=== OUTGOING RESPONSE ===")
-			log.Printf("Status Code: %d", response.StatusCode)
-			log.Printf("Body: %s", response.Body)
-			log.Printf("========================")
+
 			return response, nil
 		}
 		bodyBytes = decoded
-		log.Printf("Decoded base64 body, new length: %d", len(bodyBytes))
 	}
 
 	// CRITICAL: Verify signature FIRST for ALL requests (including PING)
@@ -289,10 +312,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 				"Content-Type": "application/json",
 			},
 		}
-		log.Printf("=== OUTGOING RESPONSE ===")
-		log.Printf("Status Code: %d", response.StatusCode)
-		log.Printf("Body: %s", response.Body)
-		log.Printf("========================")
+
 		return response, nil
 	}
 
@@ -323,10 +343,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 				"Content-Type": "application/json",
 			},
 		}
-		log.Printf("=== OUTGOING RESPONSE ===")
-		log.Printf("Status Code: %d", response.StatusCode)
-		log.Printf("Body: %s", response.Body)
-		log.Printf("========================")
+
 		return response, nil
 	}
 
@@ -343,19 +360,13 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 				"Content-Type": "application/json",
 			},
 		}
-		log.Printf("=== OUTGOING RESPONSE ===")
-		log.Printf("Status Code: %d", response.StatusCode)
-		log.Printf("Body: %s", response.Body)
-		log.Printf("========================")
+
 		return response, nil
 	}
 
 	log.Printf("Interaction type: %d", interaction.Type)
 
-	// Handle PING (type 1) - Discord verification ping
-	// Must respond with {"type":1} after signature verification passes
 	if interaction.Type == 1 {
-		log.Printf("Received PING interaction, responding with PONG")
 		response := events.APIGatewayV2HTTPResponse{
 			StatusCode: 200,
 			Headers: map[string]string{
@@ -363,11 +374,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 			},
 			Body: `{"type":1}`,
 		}
-		log.Printf("=== OUTGOING RESPONSE ===")
-		log.Printf("Status Code: %d", response.StatusCode)
-		log.Printf("Headers: %v", response.Headers)
-		log.Printf("Body: %s", response.Body)
-		log.Printf("========================")
+
 		return response, nil
 	}
 
@@ -402,11 +409,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 			},
 			Body: `{"type": 4, "data": {"content": "You are not authorized to use this bot."}}`,
 		}
-		log.Printf("=== OUTGOING RESPONSE ===")
-		log.Printf("Status Code: %d", response.StatusCode)
-		log.Printf("Headers: %v", response.Headers)
-		log.Printf("Body: %s", response.Body)
-		log.Printf("========================")
+
 		return response, nil
 	}
 
@@ -421,7 +424,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 			switch commandName {
 			case "debug":
 				debugResponse := formatDebugPayload(interaction)
-				log.Printf("Debug command received from user %s: %s", userID, debugResponse)
+
 				// Return debug response to Discord
 				responseBody, _ := json.Marshal(map[string]interface{}{
 					"type": 4, // CHANNEL_MESSAGE_WITH_SOURCE
@@ -436,32 +439,23 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 					},
 					Body: string(responseBody),
 				}
-				log.Printf("=== OUTGOING RESPONSE ===")
-				log.Printf("Status Code: %d", response.StatusCode)
-				log.Printf("Headers: %v", response.Headers)
-				log.Printf("Body: %s", response.Body)
-				log.Printf("========================")
+
 				return response, nil
 			case "ping":
-				log.Printf("Ping command received from user %s", userID)
-				responseBody, _ := json.Marshal(map[string]interface{}{
-					"type": 4, // CHANNEL_MESSAGE_WITH_SOURCE
-					"data": map[string]interface{}{
-						"content": "Pong! 🏓",
-					},
-				})
+				// Send "Pong! 🏓" message via queue with interaction token
+				if err := sendMessageToQueue(interaction.ChannelID, "Pong! 🏓", interaction.Token); err != nil {
+					log.Printf("Failed to send ping response to queue: %v", err)
+					// Still return 200 to acknowledge the interaction
+				}
+				// Return type 5 (DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE) - will follow up via webhook
 				response := events.APIGatewayV2HTTPResponse{
 					StatusCode: 200,
 					Headers: map[string]string{
 						"Content-Type": "application/json",
 					},
-					Body: string(responseBody),
+					Body: `{"type":5}`,
 				}
-				log.Printf("=== OUTGOING RESPONSE ===")
-				log.Printf("Status Code: %d", response.StatusCode)
-				log.Printf("Headers: %v", response.Headers)
-				log.Printf("Body: %s", response.Body)
-				log.Printf("========================")
+
 				return response, nil
 			}
 		}
@@ -472,27 +466,21 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 	// 2. route the message to either configuring, play, cinematic queues
 	// 3. respond 200 to the webhook
 
-	// Return "Received" message to Discord
-	// Type 4 = CHANNEL_MESSAGE_WITH_SOURCE (responds to the interaction)
-	responseBody, _ := json.Marshal(map[string]interface{}{
-		"type": 4,
-		"data": map[string]interface{}{
-			"content": "Received",
-		},
-	})
+	// Send "Received" message via queue with interaction token
+	if err := sendMessageToQueue(interaction.ChannelID, "Received", interaction.Token); err != nil {
+		log.Printf("Failed to send 'Received' message to queue: %v", err)
+		// Still return 200 to acknowledge the interaction
+	}
 
+	// Return type 5 (DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE) - will follow up via webhook
 	response := events.APIGatewayV2HTTPResponse{
 		StatusCode: 200,
 		Headers: map[string]string{
 			"Content-Type": "application/json",
 		},
-		Body: string(responseBody),
+		Body: `{"type":5}`,
 	}
-	log.Printf("=== OUTGOING RESPONSE ===")
-	log.Printf("Status Code: %d", response.StatusCode)
-	log.Printf("Headers: %v", response.Headers)
-	log.Printf("Body: %s", response.Body)
-	log.Printf("========================")
+
 	return response, nil
 }
 

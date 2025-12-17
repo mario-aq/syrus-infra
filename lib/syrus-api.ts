@@ -10,13 +10,16 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { Stack } from 'aws-cdk-lib';
 import { StageConfig } from './config';
+import { QueueOutgoingMessagePolicy } from './constructs/queue-outgoing-message-policy';
 
 export interface WebhookApiProps {
   stageConfig: StageConfig;
   customDomain?: boolean;
   hostsTableName?: string;
+  messagingQueue?: sqs.IQueue;
 }
 
 export class SyrusApi extends Construct {
@@ -27,7 +30,7 @@ export class SyrusApi extends Construct {
   constructor(scope: Construct, id: string, props: WebhookApiProps) {
     super(scope, id);
 
-    const { stageConfig, customDomain = false, hostsTableName } = props;
+    const { stageConfig, customDomain = false, hostsTableName, messagingQueue } = props;
 
     // Custom domain setup
     const domainName = 'webhooks.syrus.chat';
@@ -52,6 +55,7 @@ export class SyrusApi extends Construct {
         SYRUS_DISCORD_APP_ID_PARAM: `/syrus/${stageConfig.stage}/discord/app-id`,
         SYRUS_HOSTS_TABLE: hostsTableName || `syrus-${stageConfig.stage}-hosts`,
         SYRUS_STAGE: stageConfig.stage,
+        ...(messagingQueue ? { SYRUS_MESSAGING_QUEUE_URL: messagingQueue.queueUrl } : {}),
       },
       timeout: Duration.seconds(30),
       memorySize: 256,
@@ -78,6 +82,14 @@ export class SyrusApi extends Construct {
         `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/syrus/${stageConfig.stage}/discord/app-id`,
       ],
     }));
+
+    // Add SQS permissions for messaging queue if provided
+    if (messagingQueue) {
+      const queuePolicy = new QueueOutgoingMessagePolicy(this, 'QueueOutgoingMessagePolicy', {
+        queue: messagingQueue,
+      });
+      queuePolicy.policy.attachToRole(this.lambdaFunction.role!);
+    }
 
     // Add SYRUS_STAGE environment variable
     this.lambdaFunction.addEnvironment('SYRUS_STAGE', stageConfig.stage);

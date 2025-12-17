@@ -1,5 +1,9 @@
 import { Construct } from 'constructs';
-import { Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
+import { Stack, StackProps, CfnOutput, Duration } from 'aws-cdk-lib';
+import * as path from 'path';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { createCampaignsTable, createHostsTable } from './campaigns-table';
 import { getStageConfig } from './config';
 import { SyrusApi } from './syrus-api';
@@ -22,11 +26,19 @@ export class SyrusMvpStack extends Stack {
     // Create the hosts table for whitelisting Discord users
     const hostsTable = createHostsTable(this, stageConfig);
 
+    // Messaging Infrastructure
+    // Create SQS FIFO queue for messaging (needed before SyrusApi)
+    const messagingQueue = new SqsFifoWithDlq(this, 'MessagingQueue', {
+      queueName: 'messaging',
+      stage: props.stage,
+    });
+
     // Create the Syrus API with custom domain
     const syrusApi = new SyrusApi(this, 'SyrusApi', {
       stageConfig,
       customDomain: true,
       hostsTableName: hostsTable.tableName,
+      messagingQueue: messagingQueue.queue,
     });
 
     // Add CloudFormation outputs
@@ -54,18 +66,51 @@ export class SyrusMvpStack extends Stack {
       exportName: `SyrusLambdaArn-${props.stage}`,
     });
 
-    // Messaging Infrastructure
-    // Create SQS FIFO queue for messaging
-    const messagingQueue = new SqsFifoWithDlq(this, 'MessagingQueue', {
-      queueName: 'messaging',
-      stage: props.stage,
-    });
-
     // Create dedup table
     const dedupTable = new DedupTable(this, 'DedupTable', {
       stage: props.stage,
       removalPolicy: stageConfig.removalPolicy,
     });
+
+    // Create messaging Lambda function
+    const messagingFunction = new lambda.Function(this, 'MessagingFunction', {
+      runtime: lambda.Runtime.PROVIDED_AL2023,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/messaging')),
+      handler: 'bootstrap',
+      environment: {
+        SYRUS_DISCORD_BOT_TOKEN_PARAM: `/syrus/${stageConfig.stage}/discord/bot-token`,
+        SYRUS_STAGE: stageConfig.stage,
+      },
+      timeout: Duration.seconds(30),
+      memorySize: 256,
+    });
+
+    // Add SSM permissions for Discord bot token and app ID access
+    messagingFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'ssm:GetParameter',
+      ],
+      resources: [
+        `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/syrus/${stageConfig.stage}/discord/bot-token`,
+        `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/syrus/${stageConfig.stage}/discord/app-id`,
+      ],
+    }));
+
+    // Add SQS permissions for messaging queue
+    messagingFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'sqs:ReceiveMessage',
+        'sqs:DeleteMessage',
+        'sqs:GetQueueAttributes',
+      ],
+      resources: [messagingQueue.queue.queueArn],
+    }));
+
+    // Add SQS event source mapping
+    messagingFunction.addEventSource(new lambdaEventSources.SqsEventSource(messagingQueue.queue, {
+      batchSize: 10, // SQS FIFO limit
+      reportBatchItemFailures: true,
+    }));
 
     // CloudFormation outputs for Messaging Infrastructure
     new CfnOutput(this, 'MessagingQueueUrl', {
@@ -102,6 +147,12 @@ export class SyrusMvpStack extends Stack {
       value: dedupTable.table.tableArn,
       description: 'ARN of the DynamoDB dedup table',
       exportName: `SyrusDedupTableArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'MessagingLambdaArn', {
+      value: messagingFunction.functionArn,
+      description: 'ARN of the messaging Lambda function',
+      exportName: `SyrusMessagingLambdaArn-${props.stage}`,
     });
   }
 }
