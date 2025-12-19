@@ -1,0 +1,187 @@
+curl -X POST \
+  "https://discord.com/api/v10/applications/$SYRUS_DISCORD_APP_ID/commands" \
+  -H "Authorization: Bot $SYRUS_DISCORD_BOT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "syrus",
+    "description": "Speak your intent. Syrus listens.",
+    "options": [
+      {
+        "type": 1,
+        "name": "declare",
+        "description": "Declare an action or intent within the story",
+        "options": [
+          {
+            "type": 3,
+            "name": "intent",
+            "description": "What you attempt to do",
+            "required": true
+          }
+        ]
+      },
+      {
+        "type": 1,
+        "name": "debug",
+        "description": "Peer behind the veil and inspect Syrus’ reasoning"
+      }
+    ]
+  }'
+
+
+// Create Campaign command
+curl -X POST \
+  "https://discord.com/api/v10/applications/$SYRUS_DISCORD_APP_ID/commands" \
+  -H "Authorization: Bot $SYRUS_DISCORD_BOT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "campaign",
+    "description": "Bind fate, gather allies, and shape a living campaign",
+    "options": [
+      {
+        "type": 1,
+        "name": "start",
+        "description": "Begin a new campaign",
+        "options": [
+          {
+            "type": 3,
+            "name": "type",
+            "description": "Scope of the tale to be told",
+            "required": true,
+            "choices": [
+              { "name": "Short", "value": "short" },
+              { "name": "Long", "value": "long" },
+              { "name": "Epic", "value": "epic" }
+            ]
+          },
+          {
+            "type": 3,
+            "name": "decisions",
+            "description": "Who shapes the party’s fate",
+            "required": false,
+            "choices": [
+              { "name": "Host", "value": "host" },
+              { "name": "Group", "value": "group" },
+              { "name": "Flexible", "value": "flexible" }
+            ]
+          }
+        ]
+      },
+      {
+        "type": 1,
+        "name": "pause",
+        "description": "Hold the campaign in stasis"
+      },
+      {
+        "type": 1,
+        "name": "resume",
+        "description": "Return the campaign to motion"
+      },
+      {
+        "type": 1,
+        "name": "end",
+        "description": "Conclude the campaign and seal its outcome"
+      },
+      {
+        "type": 1,
+        "name": "invite",
+        "description": "Invite a soul to join the party",
+        "options": [
+          {
+            "type": 6,
+            "name": "user",
+            "description": "The one you summon",
+            "required": true
+          }
+        ]
+      },
+      {
+        "type": 1,
+        "name": "join",
+        "description": "Accept an invitation and enter the tale"
+      },
+      {
+        "type": 1,
+        "name": "decline",
+        "description": "Refuse the call to adventure"
+      },
+      {
+        "type": 1,
+        "name": "kick",
+        "description": "Cast a member from the party",
+        "options": [
+          {
+            "type": 6,
+            "name": "user",
+            "description": "The one to be removed",
+            "required": true
+          }
+        ]
+      }
+    ]
+  }'
+
+
+// Create roll
+
+curl -X POST \
+  "https://discord.com/api/v10/applications/$SYRUS_DISCORD_APP_ID/commands" \
+  -H "Authorization: Bot $SYRUS_DISCORD_BOT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "roll",
+    "description": "Entrust fate to chance"
+  }'
+
+  // Create vote
+
+  curl -X POST \
+  "https://discord.com/api/v10/applications/$SYRUS_DISCORD_APP_ID/commands" \
+  -H "Authorization: Bot $SYRUS_DISCORD_BOT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "vote",
+    "description": "Cast your will in a decisive moment",
+    "options": [
+      {
+        "type": 3,
+        "name": "option",
+        "description": "Your chosen path",
+        "required": true
+      }
+    ]
+  }'
+
+// Create use
+curl -X POST \
+  "https://discord.com/api/v10/applications/$SYRUS_DISCORD_APP_ID/commands" \
+  -H "Authorization: Bot $SYRUS_DISCORD_BOT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "use",
+    "description": "Invoke a boon or item at a critical moment",
+    "options": [
+      {
+        "type": 3,
+        "name": "item",
+        "description": "What you invoke",
+        "required": true
+      },
+      {
+        "type": 3,
+        "name": "context",
+        "description": "How or why it is used",
+        "required": false
+      }
+    ]
+  }'
+
+  // Create Inventory
+
+curl -X POST \
+  "https://discord.com/api/v10/applications/$SYRUS_DISCORD_APP_ID/commands" \
+  -H "Authorization: Bot $SYRUS_DISCORD_BOT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "inventory",
+    "description": "Review what fate has granted you"
+  }'

@@ -16,6 +16,38 @@ NC='\033[0m' # No Color
 # Change to project root
 cd "$PROJECT_ROOT" || exit 1
 
+# First, build the shared models module
+echo -e "${GREEN}Building shared models module...${NC}"
+if [ -d "lib/go/models" ]; then
+    (
+        cd lib/go/models || exit 1
+        
+        # Run go mod tidy
+        if go mod tidy 2>/dev/null; then
+            echo -e "${GREEN}✓ Successfully tidied models module${NC}"
+        else
+            echo -e "${YELLOW}⚠ Could not tidy models module (Go may not be available)${NC}"
+        fi
+        
+        # Verify the models compile
+        if go build ./... 2>/dev/null; then
+            echo -e "${GREEN}✓ Models module compiles successfully${NC}"
+        else
+            echo -e "${RED}✗ Models module failed to compile${NC}"
+            exit 1
+        fi
+    )
+    
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Failed to build models module${NC}"
+        exit 1
+    fi
+    echo ""
+else
+    echo -e "${YELLOW}⚠ Shared models directory not found at lib/go/models${NC}"
+    echo ""
+fi
+
 # Find all Lambda directories with main.go files
 lambda_dirs=$(find lambda -name main.go -exec dirname {} \;)
 

@@ -1,0 +1,118 @@
+{
+  "boons": [
+    {
+      "boonId": "thread_rewound",
+      "name": "Thread Rewound",
+      "description": "Reroll the last d20 roll affecting you. You must accept the new result.",
+      "category": "fate_control",
+      "weight": 24,
+      "usage": {
+        "self_only": false,
+        "requires_roll": true,
+        "usable_out_of_window": true
+      }
+    },
+    {
+      "boonId": "hand_of_fate",
+      "name": "Hand of Fate",
+      "description": "Declare before rolling. Your next d20 roll becomes a natural 20.",
+      "category": "fate_control",
+      "weight": 7,
+      "usage": {
+        "self_only": false,
+        "requires_roll": true,
+        "usable_out_of_window": true
+      }
+    },
+    {
+      "boonId": "phoenix_spark",
+      "name": "Phoenix Spark",
+      "description": "Instantly revive an incapacitated character (including yourself) with 30% of their maximum HP. Removes the incapacitated state.",
+      "category": "survival",
+      "weight": 6,
+      "usage": {
+        "self_only": false,
+        "requires_target_incapacitated": true,
+        "usable_out_of_window": true
+      }
+    },
+    {
+      "boonId": "moment_unbroken",
+      "name": "Moment Unbroken",
+      "description": "Negate a single instance of incoming damage or remove one condition affecting you.",
+      "category": "defense",
+      "weight": 14,
+      "usage": {
+        "self_only": false,
+        "usable_out_of_window": true
+      }
+    },
+    {
+      "boonId": "second_breath",
+      "name": "Second Breath",
+      "description": "Instantly recover 5 HP or remove the Exhausted condition. Cannot exceed maximum HP.",
+      "category": "recovery",
+      "weight": 17,
+      "usage": {
+        "self_only": false,
+        "usable_out_of_window": true
+      }
+    },
+    {
+      "boonId": "veil_pierced",
+      "name": "Veil Pierced",
+      "description": "Gain advantage on a single Awareness, Lore, or Arcana roll.",
+      "category": "information",
+      "weight": 20,
+      "usage": {
+        "self_only": false,
+        "requires_roll": true,
+        "usable_out_of_window": false
+      }
+    },
+    {
+      "boonId": "strike_true",
+      "name": "Strike True",
+      "description": "After a successful hit, increase damage or force the target to make a Resist Roll or suffer a condition determined by Syrus.",
+      "category": "offense",
+      "weight": 13,
+      "usage": {
+        "self_only": false,
+        "requires_hit": true,
+        "usable_out_of_window": false
+      }
+    },
+    {
+      "boonId": "fates_sidestep",
+      "name": "Fate’s Sidestep",
+      "description": "Convert a failed Reflex or Stealth roll into a partial success, introducing a meaningful complication.",
+      "category": "mobility",
+      "weight": 9,
+      "usage": {
+        "self_only": false,
+        "requires_failed_roll": true,
+        "usable_out_of_window": true
+      }
+    },
+    {
+      "boonId": "ember_of_resolve",
+      "name": "Ember of Resolve",
+      "description": "Gain advantage on your next Will or Focus Resist Roll.",
+      "category": "resilience",
+      "weight": 22,
+      "usage": {
+        "self_only": false,
+        "requires_roll": true,
+        "usable_out_of_window": false
+      }
+    }
+  ],
+  "global_rules": {
+    "max_boons_held_per_character": 2,
+    "max_boons_per_syrus_response": 1,
+    "boons_single_use": true,
+    "boons_stackable": false,
+    "cannot_override_final_death": true,
+    "reset_window_on_syrus_response": true
+  }
+}

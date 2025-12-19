@@ -20,6 +20,7 @@ export interface WebhookApiProps {
   customDomain?: boolean;
   hostsTableName?: string;
   messagingQueue?: sqs.IQueue;
+  configuringQueue?: sqs.IQueue;
 }
 
 export class SyrusApi extends Construct {
@@ -30,7 +31,7 @@ export class SyrusApi extends Construct {
   constructor(scope: Construct, id: string, props: WebhookApiProps) {
     super(scope, id);
 
-    const { stageConfig, customDomain = false, hostsTableName, messagingQueue } = props;
+    const { stageConfig, customDomain = false, hostsTableName, messagingQueue, configuringQueue } = props;
 
     // Custom domain setup
     const domainName = 'webhooks.syrus.chat';
@@ -56,6 +57,7 @@ export class SyrusApi extends Construct {
         SYRUS_HOSTS_TABLE: hostsTableName || `syrus-${stageConfig.stage}-hosts`,
         SYRUS_STAGE: stageConfig.stage,
         ...(messagingQueue ? { SYRUS_MESSAGING_QUEUE_URL: messagingQueue.queueUrl } : {}),
+        ...(configuringQueue ? { SYRUS_CONFIGURING_QUEUE_URL: configuringQueue.queueUrl } : {}),
       },
       timeout: Duration.seconds(30),
       memorySize: 256,
@@ -89,6 +91,14 @@ export class SyrusApi extends Construct {
         queue: messagingQueue,
       });
       queuePolicy.policy.attachToRole(this.lambdaFunction.role!);
+    }
+
+    // Add SQS permissions for configuring queue if provided
+    if (configuringQueue) {
+      const configuringQueuePolicy = new QueueOutgoingMessagePolicy(this, 'ConfiguringQueueOutgoingMessagePolicy', {
+        queue: configuringQueue,
+      });
+      configuringQueuePolicy.policy.attachToRole(this.lambdaFunction.role!);
     }
 
     // Add SYRUS_STAGE environment variable

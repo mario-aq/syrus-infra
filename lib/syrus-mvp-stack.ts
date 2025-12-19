@@ -33,12 +33,20 @@ export class SyrusMvpStack extends Stack {
       stage: props.stage,
     });
 
+    // Configuring Infrastructure
+    // Create SQS FIFO queue for configuring (needed before SyrusApi)
+    const configuringQueue = new SqsFifoWithDlq(this, 'ConfiguringQueue', {
+      queueName: 'configuring',
+      stage: props.stage,
+    });
+
     // Create the Syrus API with custom domain
     const syrusApi = new SyrusApi(this, 'SyrusApi', {
       stageConfig,
       customDomain: true,
       hostsTableName: hostsTable.tableName,
       messagingQueue: messagingQueue.queue,
+      configuringQueue: configuringQueue.queue,
     });
 
     // Add CloudFormation outputs
@@ -112,6 +120,70 @@ export class SyrusMvpStack extends Stack {
       reportBatchItemFailures: true,
     }));
 
+    // Create configuring Lambda function
+    const configuringFunction = new lambda.Function(this, 'ConfiguringFunction', {
+      runtime: lambda.Runtime.PROVIDED_AL2023,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/configuring')),
+      handler: 'bootstrap',
+      environment: {
+        SYRUS_HOSTS_TABLE: hostsTable.tableName,
+        SYRUS_CAMPAIGNS_TABLE: campaignsTable.tableName,
+        SYRUS_MESSAGING_QUEUE_URL: messagingQueue.queue.queueUrl,
+        SYRUS_DEDUP_TABLE: dedupTable.table.tableName,
+        SYRUS_STAGE: stageConfig.stage,
+      },
+      timeout: Duration.seconds(30),
+      memorySize: 256,
+    });
+
+    // Add DynamoDB permissions for hosts and campaigns tables
+    configuringFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'dynamodb:GetItem',
+      ],
+      resources: [hostsTable.tableArn],
+    }));
+
+    configuringFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'dynamodb:GetItem',
+        'dynamodb:PutItem',
+      ],
+      resources: [campaignsTable.tableArn],
+    }));
+
+    // Add SQS permissions for configuring queue (read) and messaging queue (write)
+    configuringFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'sqs:ReceiveMessage',
+        'sqs:DeleteMessage',
+        'sqs:GetQueueAttributes',
+      ],
+      resources: [configuringQueue.queue.queueArn],
+    }));
+
+    configuringFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'sqs:SendMessage',
+      ],
+      resources: [messagingQueue.queue.queueArn],
+    }));
+
+    // Add DynamoDB permissions for dedup table
+    configuringFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'dynamodb:GetItem',
+        'dynamodb:PutItem',
+      ],
+      resources: [dedupTable.table.tableArn],
+    }));
+
+    // Add SQS event source mapping for configuring queue
+    configuringFunction.addEventSource(new lambdaEventSources.SqsEventSource(configuringQueue.queue, {
+      batchSize: 10, // SQS FIFO limit
+      reportBatchItemFailures: true,
+    }));
+
     // CloudFormation outputs for Messaging Infrastructure
     new CfnOutput(this, 'MessagingQueueUrl', {
       value: messagingQueue.queue.queueUrl,
@@ -153,6 +225,37 @@ export class SyrusMvpStack extends Stack {
       value: messagingFunction.functionArn,
       description: 'ARN of the messaging Lambda function',
       exportName: `SyrusMessagingLambdaArn-${props.stage}`,
+    });
+
+    // CloudFormation outputs for Configuring Infrastructure
+    new CfnOutput(this, 'ConfiguringQueueUrl', {
+      value: configuringQueue.queue.queueUrl,
+      description: 'URL of the configuring FIFO queue',
+      exportName: `SyrusConfiguringQueueUrl-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'ConfiguringQueueArn', {
+      value: configuringQueue.queue.queueArn,
+      description: 'ARN of the configuring FIFO queue',
+      exportName: `SyrusConfiguringQueueArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'ConfiguringDlqUrl', {
+      value: configuringQueue.dlq.queueUrl,
+      description: 'URL of the configuring dead letter queue',
+      exportName: `SyrusConfiguringDlqUrl-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'ConfiguringDlqArn', {
+      value: configuringQueue.dlq.queueArn,
+      description: 'ARN of the configuring dead letter queue',
+      exportName: `SyrusConfiguringDlqArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'ConfiguringLambdaArn', {
+      value: configuringFunction.functionArn,
+      description: 'ARN of the configuring Lambda function',
+      exportName: `SyrusConfiguringLambdaArn-${props.stage}`,
     });
   }
 }

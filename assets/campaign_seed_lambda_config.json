@@ -1,0 +1,80 @@
+{
+  "campaign_length_profiles": {
+    "short": {
+      "label": "short",
+      "estimated_duration_hours": 1,
+      "selection": {
+        "objective": { "min": 1, "max": 1 },
+        "twists": { "min": 1, "max": 2 },
+        "antagonists": { "min": 1, "max": 2 },
+        "set_pieces": { "min": 1, "max": 2 },
+        "constraints": { "min": 0, "max": 1 },
+        "featured_areas": { "min": 4, "max": 6 }
+      },
+      "guardrails": {
+        "max_primary_antagonists": 1,
+        "require_direct_antagonist": true
+      }
+    },
+
+    "long": {
+      "label": "long",
+      "estimated_duration_hours": 3,
+      "selection": {
+        "objective": { "min": 1, "max": 1 },
+        "twists": { "min": 2, "max": 3 },
+        "antagonists": { "min": 2, "max": 3 },
+        "set_pieces": { "min": 2, "max": 3 },
+        "constraints": { "min": 1, "max": 2 },
+        "featured_areas": { "min": 6, "max": 10 }
+      },
+      "guardrails": {
+        "max_primary_antagonists": 2,
+        "require_direct_antagonist": true,
+        "require_indirect_antagonist": false
+      }
+    },
+
+    "epic": {
+      "label": "epic",
+      "estimated_duration_hours": 6,
+      "selection": {
+        "objective": { "min": 1, "max": 1 },
+        "twists": { "min": 3, "max": 4 },
+        "antagonists": { "min": 3, "max": 4 },
+        "set_pieces": { "min": 3, "max": 5 },
+        "constraints": { "min": 2, "max": 3 },
+        "featured_areas": { "min": 10, "max": 14 }
+      },
+      "guardrails": {
+        "max_primary_antagonists": 2,
+        "require_direct_antagonist": true,
+        "require_indirect_antagonist": true
+      }
+    }
+  },
+
+  "play_style_modifiers": {
+    "sync": {
+      "adjustments": {
+        "set_pieces": 1,
+        "twists": 0
+      },
+      "notes": "Favor cinematic scenes and immediate pressure."
+    },
+    "async": {
+      "adjustments": {
+        "set_pieces": 0,
+        "twists": 1
+      },
+      "notes": "Favor narrative hooks and evolving complications."
+    }
+  },
+
+  "global_limits": {
+    "max_maps_per_campaign": 1,
+    "max_featured_areas_hard_cap": 14,
+    "max_twists_hard_cap": 4,
+    "max_antagonists_hard_cap": 4
+  }
+}

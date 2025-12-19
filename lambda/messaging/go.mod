@@ -2,6 +2,8 @@ module syrus-messaging
 
 go 1.21
 
+replace github.com/loros/syrus-models => ../../lib/go/models
+
 require (
 	github.com/aws/aws-lambda-go v1.47.0
 	github.com/aws/aws-sdk-go v1.50.0

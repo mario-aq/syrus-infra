@@ -89,12 +89,16 @@ func getDiscordAppID(stage string) (string, error) {
 // Otherwise, uses channel messages endpoint
 func sendDiscordMessage(channelID string, message DiscordMessage, botToken string, interactionToken string, applicationID string) error {
 	var url string
+	var method string
+
 	if interactionToken != "" && applicationID != "" {
-		// Use webhook endpoint to resolve the interaction
-		url = fmt.Sprintf("https://discord.com/api/v10/webhooks/%s/%s", applicationID, interactionToken)
+		// Use webhook endpoint to edit the original deferred interaction response
+		url = fmt.Sprintf("https://discord.com/api/v10/webhooks/%s/%s/messages/@original", applicationID, interactionToken)
+		method = "PATCH"
 	} else {
 		// Use channel messages endpoint
 		url = fmt.Sprintf("https://discord.com/api/v10/channels/%s/messages", channelID)
+		method = "POST"
 	}
 
 	// Marshal message to JSON
@@ -104,7 +108,7 @@ func sendDiscordMessage(channelID string, message DiscordMessage, botToken strin
 	}
 
 	// Create HTTP request
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
