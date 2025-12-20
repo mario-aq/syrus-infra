@@ -1,0 +1,112 @@
+{
+  "campaignLengthProfiles": {
+    "short": {
+      "label": "short",
+      "estimatedDurationHours": 1,
+      "selection": {
+        "objective": { "min": 1, "max": 1 },
+        "twists": { "min": 1, "max": 2 },
+        "antagonists": { "min": 1, "max": 2 },
+        "setPieces": { "min": 1, "max": 2 },
+        "constraints": { "min": 0, "max": 1 },
+        "featuredAreas": { "min": 4, "max": 6 }
+      },
+      "guardrails": {
+        "maxPrimaryAntagonists": 1,
+        "requireDirectAntagonist": true
+      }
+    },
+
+    "long": {
+      "label": "long",
+      "estimatedDurationHours": 3,
+      "selection": {
+        "objective": { "min": 1, "max": 1 },
+        "twists": { "min": 2, "max": 3 },
+        "antagonists": { "min": 2, "max": 3 },
+        "setPieces": { "min": 2, "max": 3 },
+        "constraints": { "min": 1, "max": 2 },
+        "featuredAreas": { "min": 6, "max": 10 }
+      },
+      "guardrails": {
+        "maxPrimaryAntagonists": 2,
+        "requireDirectAntagonist": true,
+        "requireIndirectAntagonist": false
+      }
+    },
+
+    "epic": {
+      "label": "epic",
+      "estimatedDurationHours": 6,
+      "selection": {
+        "objective": { "min": 1, "max": 1 },
+        "twists": { "min": 3, "max": 4 },
+        "antagonists": { "min": 3, "max": 4 },
+        "setPieces": { "min": 3, "max": 5 },
+        "constraints": { "min": 2, "max": 3 },
+        "featuredAreas": { "min": 10, "max": 14 }
+      },
+      "guardrails": {
+        "maxPrimaryAntagonists": 2,
+        "requireDirectAntagonist": true,
+        "requireIndirectAntagonist": true
+      }
+    }
+  },
+
+  "beatProfiles": {
+    "short": {
+      "acts": 3,
+      "beatsPerAct": {
+        "min": 4,
+        "max": 6
+      },
+      "avgMinutesPerBeat": 3,
+      "notes": "Fast escalation, minimal detours, pressure stays high."
+    },
+
+    "long": {
+      "acts": 4,
+      "beatsPerAct": {
+        "min": 6,
+        "max": 9
+      },
+      "avgMinutesPerBeat": 4,
+      "notes": "Room for investigation, reversals, and mid-act complications."
+    },
+
+    "epic": {
+      "acts": 4,
+      "beatsPerAct": {
+        "min": 9,
+        "max": 13
+      },
+      "avgMinutesPerBeat": 5,
+      "notes": "Slow burn, layered conflicts, multiple reversals per act."
+    }
+  },
+
+  "playStyleModifiers": {
+    "sync": {
+      "adjustments": {
+        "setPieces": 1,
+        "twists": 0
+      },
+      "notes": "Favor cinematic scenes and immediate pressure."
+    },
+    "async": {
+      "adjustments": {
+        "setPieces": 0,
+        "twists": 1
+      },
+      "notes": "Favor narrative hooks and evolving complications."
+    }
+  },
+
+  "globalLimits": {
+    "maxMapsPerCampaign": 1,
+    "maxFeaturedAreasHardCap": 14,
+    "maxTwistsHardCap": 4,
+    "maxAntagonistsHardCap": 4
+  }
+}

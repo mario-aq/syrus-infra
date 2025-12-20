@@ -1,0 +1,396 @@
+{
+  "objectiveSeeds": [
+    {
+      "objectiveId": "recover_lost_relic",
+      "name": "Recover the Lost Relic",
+      "description": "A powerful or significant artifact has been lost, stolen, or hidden. The party must locate and secure it.",
+      "stakes": {
+        "on_success": "The relic is secured and its influence contained.",
+        "on_failure": "The relic empowers an enemy or destabilizes the region."
+      },
+      "complexity": "standard"
+    },
+    {
+      "objectiveId": "protect_vulnerable_settlement",
+      "name": "Protect the Vulnerable",
+      "description": "A community or individual is under imminent threat.",
+      "stakes": {
+        "on_success": "Lives are saved and trust is earned.",
+        "on_failure": "Loss, fear, or displacement spreads."
+      },
+      "complexity": "low"
+    },
+    {
+      "objectiveId": "expose_hidden_truth",
+      "name": "Expose the Hidden Truth",
+      "description": "A secret threatens to reshape power or belief if revealed.",
+      "stakes": {
+        "on_success": "The truth alters the balance of power.",
+        "on_failure": "Falsehood hardens into accepted reality."
+      },
+      "complexity": "high"
+    },
+    {
+      "objectiveId": "escape_encroaching_doom",
+      "name": "Escape the Encroaching Doom",
+      "description": "A growing danger must be fled or outrun before it closes in.",
+      "stakes": {
+        "on_success": "The party survives and retains agency.",
+        "on_failure": "They are trapped, scattered, or consumed."
+      },
+      "complexity": "standard"
+    },
+    {
+      "objectiveId": "break_the_siege",
+      "name": "Break the Siege",
+      "description": "A stronghold, district, or sanctuary is under sustained pressure; the party must end the siege or slip through it.",
+      "stakes": {
+        "on_success": "The besieged endure and the enemy loses momentum.",
+        "on_failure": "The defense collapses and innocents pay the price."
+      },
+      "complexity": "standard"
+    },
+    {
+      "objectiveId": "stop_the_ritual",
+      "name": "Stop the Convergence",
+      "description": "A rite, machine, or phenomenon nears completion; the party must interrupt it before it reshapes reality.",
+      "stakes": {
+        "on_success": "The threat is delayed or neutralized.",
+        "on_failure": "The world changes in a lasting way."
+      },
+      "complexity": "high"
+    },
+    {
+      "objectiveId": "escort_the_key",
+      "name": "Escort the Key",
+      "description": "A person, object, or message must reach a destination intact despite pursuit and sabotage.",
+      "stakes": {
+        "on_success": "The key arrives and unlocks a decisive advantage.",
+        "on_failure": "The key is captured or destroyed, shifting the balance."
+      },
+      "complexity": "standard"
+    },
+    {
+      "objectiveId": "secure_the_treaty",
+      "name": "Secure the Treaty",
+      "description": "A fragile alliance or agreement must be forged under pressure, deceit, and competing interests.",
+      "stakes": {
+        "on_success": "Peace, access, or unity is achieved.",
+        "on_failure": "War, isolation, or betrayal follows."
+      },
+      "complexity": "high"
+    },
+    {
+      "objectiveId": "cleanse_the_blight",
+      "name": "Cleanse the Blight",
+      "description": "A spreading corruption poisons land, minds, or institutions; the party must find and sever its source.",
+      "stakes": {
+        "on_success": "The blight recedes and survivors recover.",
+        "on_failure": "The corruption becomes permanent and expands."
+      },
+      "complexity": "standard"
+    },
+    {
+      "objectiveId": "steal_the_blueprint",
+      "name": "Steal the Blueprint",
+      "description": "A plan, ledger, or design will enable catastrophe if completed; the party must steal or destroy it.",
+      "stakes": {
+        "on_success": "The enemy’s advantage is denied.",
+        "on_failure": "A devastating tool enters play."
+      },
+      "complexity": "high"
+    }
+  ],
+
+  "twistCandidates": [
+    {
+      "twistId": "false_villain",
+      "name": "The Villain Is a Decoy",
+      "description": "The apparent antagonist is not the true source of the threat.",
+      "severity": "medium",
+      "recommendedAct": 2
+    },
+    {
+      "twistId": "time_pressure",
+      "name": "Time Is Running Out",
+      "description": "Events progress toward disaster if the party delays.",
+      "severity": "high",
+      "recommendedAct": 1
+    },
+    {
+      "twistId": "ally_betrayal",
+      "name": "An Ally Turns",
+      "description": "A trusted figure reveals conflicting loyalties at a critical moment.",
+      "severity": "high",
+      "recommendedAct": 3
+    },
+    {
+      "twistId": "unintended_consequence",
+      "name": "Success Has a Cost",
+      "description": "Achieving the goal triggers an unforeseen consequence that must be faced.",
+      "severity": "medium",
+      "recommendedAct": 3
+    },
+    {
+      "twistId": "misunderstood_enemy",
+      "name": "The Enemy Is Not What They Seem",
+      "description": "The antagonist’s motives complicate the moral landscape and solutions.",
+      "severity": "medium",
+      "recommendedAct": 2
+    },
+    {
+      "twistId": "the_key_is_a_person",
+      "name": "The Key Is Someone",
+      "description": "The critical ‘object’ is a living person or sentient being with agency and demands.",
+      "severity": "high",
+      "recommendedAct": 2
+    },
+    {
+      "twistId": "competing_hunters",
+      "name": "Another Party Wants the Same Prize",
+      "description": "Rivals pursue the same objective, forcing tradeoffs, bargains, or conflict.",
+      "severity": "medium",
+      "recommendedAct": 2
+    },
+    {
+      "twistId": "location_shifts",
+      "name": "The Ground Refuses to Stay Still",
+      "description": "Routes, rooms, or landmarks rearrange; navigation and assumptions fail.",
+      "severity": "medium",
+      "recommendedAct": 1
+    },
+    {
+      "twistId": "the_patron_is_complicit",
+      "name": "Your Patron Is Complicit",
+      "description": "The one who sent the party benefits from the threat—or helped cause it.",
+      "severity": "high",
+      "recommendedAct": 3
+    },
+    {
+      "twistId": "mercy_backfires",
+      "name": "Mercy Returns With Teeth",
+      "description": "A spared foe, freed captive, or forgiven rival returns with consequences.",
+      "severity": "medium",
+      "recommendedAct": 4
+    }
+  ],
+
+  "antagonistCandidates": [
+    {
+      "antagonistId": "ashen_cabal",
+      "name": "The Ashen Cabal",
+      "nature": "secretive faction",
+      "goal": "Control forbidden power.",
+      "methods": ["infiltration", "rituals", "assassination"],
+      "threatLevel": "high",
+      "presenceStyle": "indirect"
+    },
+    {
+      "antagonistId": "void_behemoth",
+      "name": "The Void Behemoth",
+      "nature": "ancient creature",
+      "goal": "Feed on instability within the Weave.",
+      "methods": ["corruption", "devastation"],
+      "threatLevel": "extreme",
+      "presenceStyle": "catastrophic"
+    },
+    {
+      "antagonistId": "crownless_regent",
+      "name": "The Crownless Regent",
+      "nature": "rival leader",
+      "goal": "Seize authority through fear or manipulation.",
+      "methods": ["political pressure", "enforcers", "blackmail"],
+      "threatLevel": "standard",
+      "presenceStyle": "direct"
+    },
+    {
+      "antagonistId": "fractured_order",
+      "name": "The Fractured Order",
+      "nature": "broken institution",
+      "goal": "Preserve control despite internal decay.",
+      "methods": ["bureaucratic force", "detention", "propaganda"],
+      "threatLevel": "standard",
+      "presenceStyle": "systemic"
+    },
+    {
+      "antagonistId": "iron_bailiffs",
+      "name": "The Iron Bailiffs",
+      "nature": "militant syndicate",
+      "goal": "Collect debts and expand control under ‘lawful’ pretense.",
+      "methods": ["extortion", "seizure", "public examples"],
+      "threatLevel": "standard",
+      "presenceStyle": "direct"
+    },
+    {
+      "antagonistId": "the_blistering_fog",
+      "name": "The Blistering Fog",
+      "nature": "hostile phenomenon",
+      "goal": "Spread, suffocate, and erase paths and memory.",
+      "methods": ["disorientation", "attrition", "separation"],
+      "threatLevel": "high",
+      "presenceStyle": "environmental"
+    },
+    {
+      "antagonistId": "the_glass_oracle",
+      "name": "The Glass Oracle",
+      "nature": "scheming seer",
+      "goal": "Manipulate outcomes to force a foretold future.",
+      "methods": ["misdirection", "prophecy traps", "paid agents"],
+      "threatLevel": "high",
+      "presenceStyle": "indirect"
+    },
+    {
+      "antagonistId": "the_hollow_host",
+      "name": "The Hollow Host",
+      "nature": "mind-linked swarm",
+      "goal": "Assimilate communities into a single will.",
+      "methods": ["conversion", "infection", "overwhelm"],
+      "threatLevel": "extreme",
+      "presenceStyle": "relentless"
+    },
+    {
+      "antagonistId": "rift_poachers",
+      "name": "Rift Poachers",
+      "nature": "opportunist band",
+      "goal": "Harvest unstable sites and sell what should remain buried.",
+      "methods": ["ambush", "sabotage", "scavenging"],
+      "threatLevel": "standard",
+      "presenceStyle": "direct"
+    },
+    {
+      "antagonistId": "the_last_warden",
+      "name": "The Last Warden",
+      "nature": "fanatical guardian",
+      "goal": "Prevent anyone from touching a sealed truth—at any cost.",
+      "methods": ["trials", "traps", "unyielding force"],
+      "threatLevel": "high",
+      "presenceStyle": "territorial"
+    }
+  ],
+
+  "setPieceCandidates": [
+    {
+      "setPieceId": "collapsing_crossing",
+      "name": "The Collapsing Crossing",
+      "primaryChallenge": "movement and coordination",
+      "failureConsequence": "separation, injury, or loss of resources",
+      "recommendedAct": 1
+    },
+    {
+      "setPieceId": "interrupted_ritual",
+      "name": "The Interrupted Ritual",
+      "primaryChallenge": "time pressure and disruption",
+      "failureConsequence": "ritual completes with lasting effects",
+      "recommendedAct": 3
+    },
+    {
+      "setPieceId": "public_reckoning",
+      "name": "The Public Reckoning",
+      "primaryChallenge": "social pressure and reputation",
+      "failureConsequence": "loss of allies or standing",
+      "recommendedAct": 2
+    },
+    {
+      "setPieceId": "sealed_passage",
+      "name": "The Sealed Passage",
+      "primaryChallenge": "problem solving under stress",
+      "failureConsequence": "route collapse or ambush",
+      "recommendedAct": 2
+    },
+    {
+      "setPieceId": "midnight_exchange",
+      "name": "The Midnight Exchange",
+      "primaryChallenge": "negotiation under threat",
+      "failureConsequence": "deal turns into a trap or chase",
+      "recommendedAct": 2
+    },
+    {
+      "setPieceId": "heist_in_plain_sight",
+      "name": "The Heist in Plain Sight",
+      "primaryChallenge": "deception and timing",
+      "failureConsequence": "alarm raised, pursuit begins",
+      "recommendedAct": 2
+    },
+    {
+      "setPieceId": "stormlock_countdown",
+      "name": "The Stormlock Countdown",
+      "primaryChallenge": "race against an advancing hazard",
+      "failureConsequence": "area becomes inaccessible or deadly",
+      "recommendedAct": 1
+    },
+    {
+      "setPieceId": "split_the_party_by_force",
+      "name": "The Forced Split",
+      "primaryChallenge": "coordination while separated",
+      "failureConsequence": "one group is cornered or misled",
+      "recommendedAct": 3
+    },
+    {
+      "setPieceId": "trial_of_names",
+      "name": "The Trial of Names",
+      "primaryChallenge": "truth, memory, and resolve",
+      "failureConsequence": "a secret is exposed or access is denied",
+      "recommendedAct": 3
+    },
+    {
+      "setPieceId": "phase_shift_showdown",
+      "name": "The Phase-Shift Showdown",
+      "primaryChallenge": "adapting to changing battlefield conditions",
+      "failureConsequence": "enemy gains a decisive advantage",
+      "recommendedAct": 4
+    }
+  ],
+
+  "optionalConstraints": [
+    {
+      "constraintId": "low_combat",
+      "description": "Combat should be rare and dangerous.",
+      "effects": ["fewer battles", "greater narrative consequences"]
+    },
+    {
+      "constraintId": "high_political_fallout",
+      "description": "Actions have visible social and political repercussions.",
+      "effects": ["reputation pressure", "faction reactions"]
+    },
+    {
+      "constraintId": "limited_resources",
+      "description": "Healing, rest, and supplies are scarce.",
+      "effects": ["attrition pressure", "hard choices"]
+    },
+    {
+      "constraintId": "mythic_intervention_allowed",
+      "description": "Final death reversal may be possible at great cost.",
+      "effects": ["enable_mythic_cost_table"]
+    },
+    {
+      "constraintId": "no_kill_focus",
+      "description": "Preferred solutions emphasize restraint and non-lethal outcomes when possible.",
+      "effects": ["more social resolutions", "mercy consequences"]
+    },
+    {
+      "constraintId": "high_mystery",
+      "description": "Information is fragmented; investigation and inference are central.",
+      "effects": ["more clues", "false leads", "revelations gated by choices"]
+    },
+    {
+      "constraintId": "tight_timer",
+      "description": "Delays materially worsen the situation.",
+      "effects": ["time-based escalations", "closing opportunities"]
+    },
+    {
+      "constraintId": "single_location",
+      "description": "The campaign is anchored in one primary location with deep exploration.",
+      "effects": ["fewer travel beats", "denser scenes"]
+    },
+    {
+      "constraintId": "hostile_environment",
+      "description": "The environment itself is a persistent threat.",
+      "effects": ["navigation pressure", "weather/terrain hazards", "attrition"]
+    },
+    {
+      "constraintId": "social_secrets",
+      "description": "NPCs and factions conceal motives; trust is a resource.",
+      "effects": ["betrayal risk", "leverage economy", "relationship shifts"]
+    }
+  ]
+}

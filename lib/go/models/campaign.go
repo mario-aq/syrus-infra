@@ -100,6 +100,7 @@ type Blueprint struct {
 	Title             string                   `json:"title" dynamodbav:"title"`
 	Premise           string                   `json:"premise" dynamodbav:"premise"`
 	ThematicPillars   []string                 `json:"thematicPillars" dynamodbav:"thematicPillars"`
+	BeatQualification BeatQualification        `json:"beatQualification" dynamodbav:"beatQualification"`
 	IngredientBinding IngredientBinding        `json:"ingredientBinding" dynamodbav:"ingredientBinding"`
 	Acts              []Act                    `json:"acts" dynamodbav:"acts"`
 	MajorForces       map[string]MajorForce    `json:"majorForces" dynamodbav:"majorForces"`
@@ -109,6 +110,12 @@ type Blueprint struct {
 	EndStates         EndStates                `json:"endStates" dynamodbav:"endStates"`
 	MemoryDirectives  MemoryDirectives         `json:"memoryDirectives" dynamodbav:"memoryDirectives"`
 	ImagePlan         map[string]ImagePlanItem `json:"imagePlan" dynamodbav:"imagePlan"`
+}
+
+// BeatQualification defines what counts as a beat
+type BeatQualification struct {
+	CountsWhen       []string `json:"countsWhen" dynamodbav:"countsWhen"`
+	DoesNotCountWhen []string `json:"doesNotCountWhen" dynamodbav:"doesNotCountWhen"`
 }
 
 // IngredientBinding represents campaign ingredients
@@ -121,15 +128,36 @@ type IngredientBinding struct {
 
 // Act represents a campaign act
 type Act struct {
-	ActNumber        int        `json:"actNumber" dynamodbav:"actNumber"`
-	Name             string     `json:"name" dynamodbav:"name"`
-	PrimaryArea      string     `json:"primaryArea" dynamodbav:"primaryArea"`
-	NarrativePurpose string     `json:"narrativePurpose" dynamodbav:"narrativePurpose"`
-	PrimaryDanger    string     `json:"primaryDanger,omitempty" dynamodbav:"primaryDanger,omitempty"`
-	ExpectedBeats    int        `json:"expectedBeats" dynamodbav:"expectedBeats"`
-	BeatVariance     int        `json:"beatVariance" dynamodbav:"beatVariance"`
-	Completion       Completion `json:"completion" dynamodbav:"completion"`
-	Escalation       Escalation `json:"escalation" dynamodbav:"escalation"`
+	ActNumber        int              `json:"actNumber" dynamodbav:"actNumber"`
+	Name             string           `json:"name" dynamodbav:"name"`
+	PrimaryArea      string           `json:"primaryArea" dynamodbav:"primaryArea"`
+	NarrativePurpose string           `json:"narrativePurpose" dynamodbav:"narrativePurpose"`
+	PrimaryDanger    string           `json:"primaryDanger,omitempty" dynamodbav:"primaryDanger,omitempty"`
+	ExpectedBeats    int              `json:"expectedBeats" dynamodbav:"expectedBeats"`
+	BeatVariance     int              `json:"beatVariance" dynamodbav:"beatVariance"`
+	LateActSignals   LateActSignals   `json:"lateActSignals" dynamodbav:"lateActSignals"`
+	BeatGuidance     BeatGuidance     `json:"beatGuidance" dynamodbav:"beatGuidance"`
+	Completion       Completion       `json:"completion" dynamodbav:"completion"`
+	FailureFallback  *FailureFallback `json:"failureFallback,omitempty" dynamodbav:"failureFallback,omitempty"`
+	Escalation       Escalation       `json:"escalation" dynamodbav:"escalation"`
+}
+
+// LateActSignals defines when to apply pressure to advance the act
+type LateActSignals struct {
+	SoftPressureAtBeat int `json:"softPressureAtBeat" dynamodbav:"softPressureAtBeat"`
+	HardPressureAtBeat int `json:"hardPressureAtBeat" dynamodbav:"hardPressureAtBeat"`
+}
+
+// BeatGuidance provides narrative guidance for act progression
+type BeatGuidance struct {
+	Purpose             string   `json:"purpose" dynamodbav:"purpose"`
+	ExpectedProgression []string `json:"expectedProgression" dynamodbav:"expectedProgression"`
+	AllowedResolutions  []string `json:"allowedResolutions" dynamodbav:"allowedResolutions"`
+}
+
+// FailureFallback defines conditions to advance act despite failure
+type FailureFallback struct {
+	AdvanceActOn []string `json:"advanceActOn" dynamodbav:"advanceActOn"`
 }
 
 // Completion represents act completion criteria
@@ -227,7 +255,7 @@ type RelationshipAxis struct {
 type ImagePlanItem struct {
 	Description string `json:"description" dynamodbav:"description"`
 	SendWhen    string `json:"sendWhen" dynamodbav:"sendWhen"`
-	S3Key       string `json:"s3_key" dynamodbav:"s3_key"`
+	S3Key       string `json:"s3Key" dynamodbav:"s3Key"`
 }
 
 // RuntimeState represents the runtime state of the campaign

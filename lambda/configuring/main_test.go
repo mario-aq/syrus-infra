@@ -134,10 +134,10 @@ func TestConfiguringMessageParsing(t *testing.T) {
 		{
 			name: "valid message with options",
 			messageJSON: `{
-				"channel_id": "123456789",
-				"host_id": "987654321",
-				"interaction_id": "int_123",
-				"interaction_token": "token_abc",
+				"channelId": "123456789",
+				"hostId": "987654321",
+				"interactionId": "int_123",
+				"interactionToken": "token_abc",
 				"options": [
 					{
 						"name": "start",
@@ -153,11 +153,11 @@ func TestConfiguringMessageParsing(t *testing.T) {
 		{
 			name: "valid message with deprecated campaign_type",
 			messageJSON: `{
-				"channel_id": "123456789",
-				"host_id": "987654321",
-				"interaction_id": "int_123",
-				"interaction_token": "token_abc",
-				"campaign_type": "short",
+				"channelId": "123456789",
+				"hostId": "987654321",
+				"interactionId": "int_123",
+				"interactionToken": "token_abc",
+				"campaignType": "short",
 				"options": []
 			}`,
 			expectError: false,

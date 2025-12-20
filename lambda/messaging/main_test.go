@@ -40,7 +40,7 @@ func TestProcessSQSMessage_WithInteractionToken(t *testing.T) {
 	messageBody := SQSMessageBody{
 		ChannelID:        "123456789012345678",
 		Content:          "Test message",
-		InteractionToken: "interaction_token_123",
+		InteractionToken: "interactionToken123",
 	}
 
 	bodyJSON, _ := json.Marshal(messageBody)

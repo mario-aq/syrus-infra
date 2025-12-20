@@ -41,6 +41,13 @@ export class SyrusMvpStack extends Stack {
       stage: props.stage,
     });
 
+    // Birthing Infrastructure
+    // Create SQS FIFO queue for birthing
+    const birthingQueue = new SqsFifoWithDlq(this, 'BirthingQueue', {
+      queueName: 'birthing',
+      stage: props.stage,
+    });
+
     // Create the Syrus API with custom domain
     const syrusApi = new SyrusApi(this, 'SyrusApi', {
       stageConfig,
@@ -138,6 +145,7 @@ export class SyrusMvpStack extends Stack {
         SYRUS_MESSAGING_QUEUE_URL: messagingQueue.queue.queueUrl,
         SYRUS_DEDUP_TABLE: dedupTable.table.tableName,
         SYRUS_CONFIRMATIONS_TABLE: confirmationsTable.table.tableName,
+        SYRUS_BIRTHING_QUEUE_URL: birthingQueue.queue.queueUrl,
         SYRUS_STAGE: stageConfig.stage,
       },
       timeout: Duration.seconds(30),
@@ -196,8 +204,52 @@ export class SyrusMvpStack extends Stack {
       resources: [confirmationsTable.table.tableArn],
     }));
 
+    // Grant configuring Lambda permission to write to birthing queue
+    configuringFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'sqs:SendMessage',
+      ],
+      resources: [birthingQueue.queue.queueArn],
+    }));
+
     // Add SQS event source mapping for configuring queue
     configuringFunction.addEventSource(new lambdaEventSources.SqsEventSource(configuringQueue.queue, {
+      batchSize: 10, // SQS FIFO limit
+      reportBatchItemFailures: true,
+    }));
+
+    // Create birthing Lambda function
+    const birthingFunction = new lambda.Function(this, 'BirthingFunction', {
+      runtime: lambda.Runtime.PROVIDED_AL2023,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/birthing')),
+      handler: 'bootstrap',
+      environment: {
+        SYRUS_CAMPAIGNS_TABLE: campaignsTable.tableName,
+        SYRUS_MESSAGING_QUEUE_URL: messagingQueue.queue.queueUrl,
+        SYRUS_DEDUP_TABLE: dedupTable.table.tableName,
+        SYRUS_STAGE: stageConfig.stage,
+      },
+      timeout: Duration.seconds(30),
+      memorySize: 256,
+    });
+
+    // Grant birthing Lambda permissions
+    campaignsTable.grantReadData(birthingFunction);
+    dedupTable.table.grantReadWriteData(birthingFunction);
+    messagingQueue.queue.grantSendMessages(birthingFunction);
+
+    // Grant birthing Lambda read/delete permissions for its queue (event source)
+    birthingFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'sqs:ReceiveMessage',
+        'sqs:DeleteMessage',
+        'sqs:GetQueueAttributes',
+      ],
+      resources: [birthingQueue.queue.queueArn],
+    }));
+
+    // Add SQS event source mapping for birthing queue
+    birthingFunction.addEventSource(new lambdaEventSources.SqsEventSource(birthingQueue.queue, {
       batchSize: 10, // SQS FIFO limit
       reportBatchItemFailures: true,
     }));
@@ -274,6 +326,37 @@ export class SyrusMvpStack extends Stack {
       value: configuringFunction.functionArn,
       description: 'ARN of the configuring Lambda function',
       exportName: `SyrusConfiguringLambdaArn-${props.stage}`,
+    });
+
+    // CloudFormation outputs for Birthing Infrastructure
+    new CfnOutput(this, 'BirthingQueueUrl', {
+      value: birthingQueue.queue.queueUrl,
+      description: 'URL of the birthing FIFO queue',
+      exportName: `SyrusBirthingQueueUrl-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'BirthingQueueArn', {
+      value: birthingQueue.queue.queueArn,
+      description: 'ARN of the birthing FIFO queue',
+      exportName: `SyrusBirthingQueueArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'BirthingDlqUrl', {
+      value: birthingQueue.dlq.queueUrl,
+      description: 'URL of the birthing dead letter queue',
+      exportName: `SyrusBirthingDlqUrl-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'BirthingDlqArn', {
+      value: birthingQueue.dlq.queueArn,
+      description: 'ARN of the birthing dead letter queue',
+      exportName: `SyrusBirthingDlqArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'BirthingLambdaArn', {
+      value: birthingFunction.functionArn,
+      description: 'ARN of the birthing Lambda function',
+      exportName: `SyrusBirthingLambdaArn-${props.stage}`,
     });
 
     new CfnOutput(this, 'ConfirmationsTableName', {

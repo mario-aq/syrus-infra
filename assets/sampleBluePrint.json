@@ -6,6 +6,21 @@
     "Tides of Power",
     "Sacrifice for Clarity"
   ],
+
+  "beatQualification": {
+    "countsWhen": [
+      "meaningful_world_change",
+      "irreversible_choice",
+      "new_information_with_consequences",
+      "escalation_or_resolution_of_threat"
+    ],
+    "doesNotCountWhen": [
+      "pure_dialogue_without_commitment",
+      "clarification_questions",
+      "minor_flavor_actions"
+    ]
+  },
+
   "ingredientBinding": {
     "objectiveSeed": "Cleanse the Blight",
     "twists": [
@@ -21,6 +36,7 @@
       "Interrupted Ritual"
     ]
   },
+
   "acts": [
     {
       "actNumber": 1,
@@ -30,10 +46,41 @@
       "primaryDanger": "Rift Poachers",
       "expectedBeats": 11,
       "beatVariance": 2,
+
+      "lateActSignals": {
+        "softPressureAtBeat": 8,
+        "hardPressureAtBeat": 10
+      },
+
+      "beatGuidance": {
+        "purpose": "Introduce corruption and urgency",
+        "expectedProgression": [
+          "arrival",
+          "discovery",
+          "first_contact",
+          "investigation",
+          "escalation"
+        ],
+        "allowedResolutions": [
+          "discovery",
+          "escape",
+          "confrontation",
+          "bargain"
+        ]
+      },
+
       "completion": {
         "type": "trigger",
         "condition": "Discovery of a map or trail linked to a spreading rift"
       },
+
+      "failureFallback": {
+        "advanceActOn": [
+          "excessive_delay",
+          "pressure_overflow"
+        ]
+      },
+
       "escalation": {
         "onDelay": "increaseDanger",
         "maxDelays": 2,
@@ -44,13 +91,39 @@
         ]
       }
     },
+
     {
       "actNumber": 2,
       "name": "Webs in the Harbor",
       "primaryArea": "Harbor of Knots",
       "narrativePurpose": "Political entanglement and the Key",
+      "primaryDanger": "Rift Poachers",
       "expectedBeats": 12,
       "beatVariance": 2,
+
+      "lateActSignals": {
+        "softPressureAtBeat": 9,
+        "hardPressureAtBeat": 11
+      },
+
+      "beatGuidance": {
+        "purpose": "Political entanglement and the Key",
+        "expectedProgression": [
+          "infiltration",
+          "negotiation",
+          "revelation",
+          "betrayal",
+          "choice"
+        ],
+        "allowedResolutions": [
+          "alliance",
+          "extraction",
+          "exposure",
+          "deal",
+          "partial_failure"
+        ]
+      },
+
       "completion": {
         "type": "decision",
         "prompt": "How will you handle the Key?",
@@ -61,6 +134,14 @@
         ],
         "condition": "Fate of the Key is determined (secured, allied, or lost)"
       },
+
+      "failureFallback": {
+        "advanceActOn": [
+          "excessive_delay",
+          "pressure_overflow"
+        ]
+      },
+
       "escalation": {
         "onDelay": "increaseDanger",
         "maxDelays": 2,
@@ -71,16 +152,50 @@
         ]
       }
     },
+
     {
       "actNumber": 3,
       "name": "Seals and Sacrifice",
       "primaryArea": "Tide-Cave Mouth",
+      "narrativePurpose": "Test moral boundaries and commitment",
+      "primaryDanger": "The Last Warden",
       "expectedBeats": 11,
       "beatVariance": 1,
+
+      "lateActSignals": {
+        "softPressureAtBeat": 7,
+        "hardPressureAtBeat": 9
+      },
+
+      "beatGuidance": {
+        "purpose": "Test moral boundaries and commitment",
+        "expectedProgression": [
+          "descent",
+          "revelation",
+          "temptation",
+          "sacrifice",
+          "consequence"
+        ],
+        "allowedResolutions": [
+          "ritual_interrupted",
+          "ritual_completed",
+          "compromise",
+          "sacrifice_made",
+          "escape"
+        ]
+      },
+
       "completion": {
         "type": "trigger",
         "condition": "Ritual is interrupted or completes"
       },
+
+      "failureFallback": {
+        "advanceActOn": [
+          "pressure_overflow"
+        ]
+      },
+
       "escalation": {
         "onDelay": "increaseDanger",
         "maxDelays": 2,
@@ -91,16 +206,44 @@
         ]
       }
     },
+
     {
       "actNumber": 4,
       "name": "Storm at the Summit",
       "primaryArea": "Stormcaller Bluff",
+      "narrativePurpose": "Resolve all threads and determine the coast’s fate",
+      "primaryDanger": "The Last Warden",
       "expectedBeats": 11,
       "beatVariance": 1,
+
+      "lateActSignals": {
+        "softPressureAtBeat": 6,
+        "hardPressureAtBeat": 8
+      },
+
+      "beatGuidance": {
+        "purpose": "Resolve all threads and determine the coast’s fate",
+        "expectedProgression": [
+          "convergence",
+          "confrontation",
+          "climax",
+          "resolution",
+          "aftermath"
+        ],
+        "allowedResolutions": [
+          "victory",
+          "pyrrhic_victory",
+          "compromise",
+          "transformation",
+          "sacrifice"
+        ]
+      },
+
       "completion": {
         "type": "beats",
         "condition": "Final confrontation resolves and the blight’s legacy is chosen"
       },
+
       "escalation": {
         "onDelay": "increaseDanger",
         "maxDelays": 2,
@@ -112,6 +255,7 @@
       }
     }
   ],
+
   "majorForces": {
     "The Last Warden": {
       "initialPresence": {
@@ -131,6 +275,7 @@
         "location": "Stormcaller Bluff"
       }
     },
+
     "Rift Poachers": {
       "initialPresence": {
         "act": 1,
@@ -151,6 +296,7 @@
       ]
     }
   },
+
   "npcs": {
     "NPC-01": {
       "name": "Vellum Marrow",
@@ -168,6 +314,7 @@
       "identityHidden": true
     }
   },
+
   "boonPlan": [
     {
       "trigger": "DefeatRiftPoacherLieutenant",
@@ -188,43 +335,9 @@
           "description": "Avoid a catastrophic consequence that would otherwise be unavoidable."
         }
       ]
-    },
-    {
-      "trigger": "ExtractKeyQuietly",
-      "boons": [
-        {
-          "name": "Veil Pierced",
-          "weight": 3,
-          "description": "Uncover concealed political or personal truths without triggering retaliation."
-        },
-        {
-          "name": "Thread Rewound",
-          "weight": 2,
-          "description": "Undo or soften the immediate fallout of a past decision."
-        },
-        {
-          "name": "Moment Unbroken",
-          "weight": 1,
-          "description": "Freeze a fragile situation, preventing escalation for one critical beat."
-        }
-      ]
-    },
-    {
-      "trigger": "RoleplayedSacrifice",
-      "boons": [
-        {
-          "name": "Hand of Fate",
-          "weight": 1,
-          "description": "Force destiny’s hand—one future event must resolve in your favor."
-        },
-        {
-          "name": "Ember of Resolve",
-          "weight": 3,
-          "description": "Gain unwavering clarity and strength when acting in line with the sacrifice made."
-        }
-      ]
     }
   ],
+
   "failurePaths": [
     {
       "id": "KeyTurns",
@@ -237,11 +350,13 @@
       "consequence": "Blight becomes semi-permanent"
     }
   ],
+
   "endStates": {
     "success": "Blight cleansed; coast heals",
     "compromised": "Blight contained; world altered",
     "failure": "Blight spreads; coast lost"
   },
+
   "memoryDirectives": {
     "canonicalFacts": [
       "blightOrigin",
@@ -265,20 +380,13 @@
       "RitualPartiallyCompleted"
     ],
     "actSummaryFocus": {
-      "1": [
-        "Response to corruption"
-      ],
-      "2": [
-        "Treatment of the Key"
-      ],
-      "3": [
-        "Handling forbidden knowledge"
-      ],
-      "4": [
-        "Final choice"
-      ]
+      "1": ["Response to corruption"],
+      "2": ["Treatment of the Key"],
+      "3": ["Handling forbidden knowledge"],
+      "4": ["Final choice"]
     }
   },
+
   "imagePlan": {
     "Campaign.Intro": {
       "description": "Stormbreak Coast at dusk",

@@ -165,11 +165,11 @@ func sendMessageToQueue(channelID string, content string, interactionToken strin
 
 	// Create message body
 	messageBody := map[string]interface{}{
-		"channel_id": channelID,
-		"content":    content,
+		"channelId": channelID,
+		"content":   content,
 	}
 	if interactionToken != "" {
-		messageBody["interaction_token"] = interactionToken
+		messageBody["interactionToken"] = interactionToken
 	}
 	messageBodyJSON, err := json.Marshal(messageBody)
 	if err != nil {
@@ -208,11 +208,11 @@ func sendToConfiguringQueue(channelID, hostID, interactionID, interactionToken s
 	svc := sqs.New(sess)
 
 	message := map[string]interface{}{
-		"channel_id":        channelID,
-		"host_id":           hostID,
-		"interaction_id":    interactionID,
-		"interaction_token": interactionToken,
-		"options":           options,
+		"channelId":        channelID,
+		"hostId":           hostID,
+		"interactionId":    interactionID,
+		"interactionToken": interactionToken,
+		"options":          options,
 	}
 
 	messageBodyJSON, err := json.Marshal(message)

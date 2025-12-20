@@ -153,6 +153,45 @@ func sendToMessagingQueue(channelID, content, interactionToken string) error {
 	return nil
 }
 
+// sendToBirthingQueue sends a campaign configuration request to the birthing queue
+func sendToBirthingQueue(campaignID, interactionID string) error {
+	queueURL := os.Getenv("SYRUS_BIRTHING_QUEUE_URL")
+	if queueURL == "" {
+		return fmt.Errorf("SYRUS_BIRTHING_QUEUE_URL environment variable not set")
+	}
+
+	sess, err := session.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create AWS session: %w", err)
+	}
+
+	svc := sqs.New(sess)
+
+	message := models.BirthingMessage{
+		CampaignID:    campaignID,
+		InteractionID: interactionID,
+	}
+
+	messageBodyJSON, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("failed to marshal message body: %w", err)
+	}
+
+	_, err = svc.SendMessage(&sqs.SendMessageInput{
+		QueueUrl:               aws.String(queueURL),
+		MessageBody:            aws.String(string(messageBodyJSON)),
+		MessageGroupId:         aws.String(campaignID),    // Group by campaignId
+		MessageDeduplicationId: aws.String(interactionID), // Dedupe by interactionId
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to send message to birthing queue: %w", err)
+	}
+
+	log.Printf("Sent birthing request for campaign %s", campaignID)
+	return nil
+}
+
 // checkDedup checks if a message has already been processed
 func checkDedup(interactionID string) (bool, error) {
 	dedupTable := os.Getenv("SYRUS_DEDUP_TABLE")
@@ -380,13 +419,13 @@ func processSQSMessage(message events.SQSMessage, stage string) error {
 
 	// Validate required fields
 	if messageBody.ChannelID == "" {
-		return fmt.Errorf("missing required field: channel_id")
+		return fmt.Errorf("missing required field: channelId")
 	}
 	if messageBody.HostID == "" {
-		return fmt.Errorf("missing required field: host_id")
+		return fmt.Errorf("missing required field: hostId")
 	}
 	if messageBody.InteractionID == "" {
-		return fmt.Errorf("missing required field: interaction_id")
+		return fmt.Errorf("missing required field: interactionId")
 	}
 	if len(messageBody.Options) == 0 {
 		return fmt.Errorf("missing required field: options")
@@ -544,6 +583,12 @@ func handleStartCampaign(messageBody models.ConfiguringMessage, stage string) er
 	if err := writeDedup(messageBody.InteractionID); err != nil {
 		log.Printf("Warning: failed to write to dedup table: %v", err)
 		// Don't fail the entire operation if dedup write fails
+	}
+
+	// Send to birthing queue for blueprint generation
+	if err := sendToBirthingQueue(messageBody.ChannelID, messageBody.InteractionID); err != nil {
+		log.Printf("Warning: failed to send to birthing queue: %v", err)
+		// Don't fail campaign creation if birthing queue fails
 	}
 
 	// Send success message to the channel

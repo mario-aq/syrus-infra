@@ -245,10 +245,10 @@ func TestSendToConfiguringQueue_MessageFormat(t *testing.T) {
 
 	// Create the message structure that sendToConfiguringQueue would create
 	message := map[string]interface{}{
-		"channel_id":        "123456789",
-		"host_id":           "987654321",
-		"interaction_id":    "int_123",
-		"interaction_token": "token_abc",
+		"channelId":        "123456789",
+		"hostId":           "987654321",
+		"interactionId":    "int_123",
+		"interactionToken": "token_abc",
 		"options":           options,
 	}
 
@@ -265,17 +265,17 @@ func TestSendToConfiguringQueue_MessageFormat(t *testing.T) {
 	}
 
 	// Verify required fields
-	if parsed["channel_id"] != "123456789" {
-		t.Error("channel_id not preserved")
+	if parsed["channelId"] != "123456789" {
+		t.Error("channelId not preserved")
 	}
-	if parsed["host_id"] != "987654321" {
-		t.Error("host_id not preserved")
+	if parsed["hostId"] != "987654321" {
+		t.Error("hostId not preserved")
 	}
-	if parsed["interaction_id"] != "int_123" {
-		t.Error("interaction_id not preserved")
+	if parsed["interactionId"] != "int_123" {
+		t.Error("interactionId not preserved")
 	}
-	if parsed["interaction_token"] != "token_abc" {
-		t.Error("interaction_token not preserved")
+	if parsed["interactionToken"] != "token_abc" {
+		t.Error("interactionToken not preserved")
 	}
 
 	// Verify options array

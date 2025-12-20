@@ -27,11 +27,11 @@ type DiscordMessage struct {
 
 // SQSMessageBody represents the message structure in SQS
 type SQSMessageBody struct {
-	ChannelID        string                   `json:"channel_id"`
+	ChannelID        string                   `json:"channelId"`
 	Content          string                   `json:"content"`
 	Embeds           []map[string]interface{} `json:"embeds,omitempty"`
 	Components       []map[string]interface{} `json:"components,omitempty"`
-	InteractionToken string                   `json:"interaction_token,omitempty"`
+	InteractionToken string                   `json:"interactionToken,omitempty"`
 }
 
 // getDiscordBotToken retrieves the Discord bot token from SSM Parameter Store
@@ -151,7 +151,7 @@ func processSQSMessage(message events.SQSMessage, botToken string, stage string)
 
 	// Validate required fields
 	if messageBody.ChannelID == "" {
-		return fmt.Errorf("missing required field: channel_id")
+		return fmt.Errorf("missing required field: channelId")
 	}
 	if messageBody.Content == "" && len(messageBody.Embeds) == 0 {
 		return fmt.Errorf("missing required field: content or embeds")
