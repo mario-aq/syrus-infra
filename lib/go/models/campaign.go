@@ -26,10 +26,23 @@ const (
 	CampaignTypeEpic CampaignType = "epic"
 )
 
+// DecisionModel represents who controls the decision-making in the campaign
+type DecisionModel string
+
+const (
+	// DecisionModelHost indicates the host makes all decisions
+	DecisionModelHost DecisionModel = "host"
+	// DecisionModelGroup indicates the group votes on decisions
+	DecisionModelGroup DecisionModel = "group"
+	// DecisionModelFlexible indicates a flexible decision-making model
+	DecisionModelFlexible DecisionModel = "flexible"
+)
+
 // Campaign represents the complete campaign structure
 type Campaign struct {
 	CampaignID    string         `json:"campaignId" dynamodbav:"campaignId"`
 	CampaignType  CampaignType   `json:"campaignType" dynamodbav:"campaignType"`
+	DecisionModel DecisionModel  `json:"decisionModel" dynamodbav:"decisionModel"`
 	Status        CampaignStatus `json:"status" dynamodbav:"status"`
 	Lifecycle     Lifecycle      `json:"lifecycle" dynamodbav:"lifecycle"`
 	CreatedAt     time.Time      `json:"createdAt" dynamodbav:"createdAt"`

@@ -9,6 +9,7 @@ import { getStageConfig } from './config';
 import { SyrusApi } from './syrus-api';
 import { SqsFifoWithDlq } from './constructs/sqs-fifo-with-dlq';
 import { DedupTable } from './constructs/dedup-table';
+import { ConfirmationsTable } from './constructs/confirmations-table';
 
 interface SyrusMvpStackProps extends StackProps {
   stage: string;
@@ -80,6 +81,12 @@ export class SyrusMvpStack extends Stack {
       removalPolicy: stageConfig.removalPolicy,
     });
 
+    // Create confirmations table
+    const confirmationsTable = new ConfirmationsTable(this, 'ConfirmationsTable', {
+      stage: props.stage,
+      removalPolicy: stageConfig.removalPolicy,
+    });
+
     // Create messaging Lambda function
     const messagingFunction = new lambda.Function(this, 'MessagingFunction', {
       runtime: lambda.Runtime.PROVIDED_AL2023,
@@ -130,6 +137,7 @@ export class SyrusMvpStack extends Stack {
         SYRUS_CAMPAIGNS_TABLE: campaignsTable.tableName,
         SYRUS_MESSAGING_QUEUE_URL: messagingQueue.queue.queueUrl,
         SYRUS_DEDUP_TABLE: dedupTable.table.tableName,
+        SYRUS_CONFIRMATIONS_TABLE: confirmationsTable.table.tableName,
         SYRUS_STAGE: stageConfig.stage,
       },
       timeout: Duration.seconds(30),
@@ -176,6 +184,16 @@ export class SyrusMvpStack extends Stack {
         'dynamodb:PutItem',
       ],
       resources: [dedupTable.table.tableArn],
+    }));
+
+    // Add DynamoDB permissions for confirmations table
+    configuringFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'dynamodb:GetItem',
+        'dynamodb:PutItem',
+        'dynamodb:DeleteItem',
+      ],
+      resources: [confirmationsTable.table.tableArn],
     }));
 
     // Add SQS event source mapping for configuring queue
@@ -256,6 +274,18 @@ export class SyrusMvpStack extends Stack {
       value: configuringFunction.functionArn,
       description: 'ARN of the configuring Lambda function',
       exportName: `SyrusConfiguringLambdaArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'ConfirmationsTableName', {
+      value: confirmationsTable.table.tableName,
+      description: 'Name of the DynamoDB confirmations table',
+      exportName: `SyrusConfirmationsTableName-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'ConfirmationsTableArn', {
+      value: confirmationsTable.table.tableArn,
+      description: 'ARN of the DynamoDB confirmations table',
+      exportName: `SyrusConfirmationsTableArn-${props.stage}`,
     });
   }
 }

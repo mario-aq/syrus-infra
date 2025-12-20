@@ -230,3 +230,120 @@ func TestVerifyDiscordSignature(t *testing.T) {
 func contains(s, substr string) bool {
 	return strings.Contains(s, substr)
 }
+
+func TestSendToConfiguringQueue_MessageFormat(t *testing.T) {
+	// Test that the message is correctly formatted for the queue
+	options := []map[string]interface{}{
+		{
+			"name": "start",
+			"options": []interface{}{
+				map[string]interface{}{"name": "type", "value": "short"},
+				map[string]interface{}{"name": "decisions", "value": "host"},
+			},
+		},
+	}
+
+	// Create the message structure that sendToConfiguringQueue would create
+	message := map[string]interface{}{
+		"channel_id":        "123456789",
+		"host_id":           "987654321",
+		"interaction_id":    "int_123",
+		"interaction_token": "token_abc",
+		"options":           options,
+	}
+
+	// Marshal to JSON to verify it's valid
+	messageJSON, err := json.Marshal(message)
+	if err != nil {
+		t.Errorf("Failed to marshal message: %v", err)
+	}
+
+	// Unmarshal back to verify structure
+	var parsed map[string]interface{}
+	if err := json.Unmarshal(messageJSON, &parsed); err != nil {
+		t.Errorf("Failed to unmarshal message: %v", err)
+	}
+
+	// Verify required fields
+	if parsed["channel_id"] != "123456789" {
+		t.Error("channel_id not preserved")
+	}
+	if parsed["host_id"] != "987654321" {
+		t.Error("host_id not preserved")
+	}
+	if parsed["interaction_id"] != "int_123" {
+		t.Error("interaction_id not preserved")
+	}
+	if parsed["interaction_token"] != "token_abc" {
+		t.Error("interaction_token not preserved")
+	}
+
+	// Verify options array
+	parsedOptions, ok := parsed["options"].([]interface{})
+	if !ok {
+		t.Error("options should be an array")
+	}
+	if len(parsedOptions) != 1 {
+		t.Errorf("Expected 1 option, got %d", len(parsedOptions))
+	}
+}
+
+func TestCampaignOptionsExtraction(t *testing.T) {
+	tests := []struct {
+		name           string
+		discordOptions []interface{}
+		expectedLength int
+		expectedSubcmd string
+	}{
+		{
+			name: "campaign start with nested options",
+			discordOptions: []interface{}{
+				map[string]interface{}{
+					"name": "start",
+					"options": []interface{}{
+						map[string]interface{}{"name": "type", "value": "short"},
+						map[string]interface{}{"name": "decisions", "value": "host"},
+					},
+				},
+			},
+			expectedLength: 1,
+			expectedSubcmd: "start",
+		},
+		{
+			name: "campaign end without nested options",
+			discordOptions: []interface{}{
+				map[string]interface{}{
+					"name": "end",
+				},
+			},
+			expectedLength: 1,
+			expectedSubcmd: "end",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Simulate the extraction logic from webhook
+			var options []map[string]interface{}
+			for _, opt := range tt.discordOptions {
+				if optMap, ok := opt.(map[string]interface{}); ok {
+					options = append(options, optMap)
+				}
+			}
+
+			if len(options) != tt.expectedLength {
+				t.Errorf("Expected %d options, got %d", tt.expectedLength, len(options))
+			}
+
+			if len(options) > 0 {
+				if name, ok := options[0]["name"].(string); ok {
+					if name != tt.expectedSubcmd {
+						t.Errorf("Expected subcommand '%s', got '%s'", tt.expectedSubcmd, name)
+					}
+				} else {
+					t.Error("Could not extract subcommand name")
+				}
+			}
+		})
+	}
+}

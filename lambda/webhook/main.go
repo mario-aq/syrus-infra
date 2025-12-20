@@ -194,7 +194,7 @@ func sendMessageToQueue(channelID string, content string, interactionToken strin
 }
 
 // sendToConfiguringQueue sends a campaign configuration request
-func sendToConfiguringQueue(channelID, hostID, interactionID, interactionToken, campaignType string) error {
+func sendToConfiguringQueue(channelID, hostID, interactionID, interactionToken string, options []map[string]interface{}) error {
 	queueURL := os.Getenv("SYRUS_CONFIGURING_QUEUE_URL")
 	if queueURL == "" {
 		return fmt.Errorf("SYRUS_CONFIGURING_QUEUE_URL environment variable not set")
@@ -212,7 +212,7 @@ func sendToConfiguringQueue(channelID, hostID, interactionID, interactionToken, 
 		"host_id":           hostID,
 		"interaction_id":    interactionID,
 		"interaction_token": interactionToken,
-		"campaign_type":     campaignType,
+		"options":           options,
 	}
 
 	messageBodyJSON, err := json.Marshal(message)
@@ -231,7 +231,7 @@ func sendToConfiguringQueue(channelID, hostID, interactionID, interactionToken, 
 		return fmt.Errorf("failed to send message to configuring queue: %w", err)
 	}
 
-	log.Printf("Sent campaign configuration request for channel %s, type %s", channelID, campaignType)
+	log.Printf("Sent campaign configuration request for channel %s", channelID)
 	return nil
 }
 
@@ -494,59 +494,37 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 
 				return response, nil
 			case "campaign":
-				// Extract the subcommand
-				var subcommand string
-				var campaignType string
-
-				if options, ok := interaction.Data["options"].([]interface{}); ok && len(options) > 0 {
-					if firstOption, ok := options[0].(map[string]interface{}); ok {
-						subcommand, _ = firstOption["name"].(string)
-
-						// Extract nested options (for start subcommand)
-						if subOptions, ok := firstOption["options"].([]interface{}); ok {
-							for _, opt := range subOptions {
-								if optMap, ok := opt.(map[string]interface{}); ok {
-									if name, _ := optMap["name"].(string); name == "type" {
-										campaignType, _ = optMap["value"].(string)
-									}
-								}
-							}
+				// Extract options array from interaction data
+				var options []map[string]interface{}
+				if opts, ok := interaction.Data["options"].([]interface{}); ok {
+					for _, opt := range opts {
+						if optMap, ok := opt.(map[string]interface{}); ok {
+							options = append(options, optMap)
 						}
 					}
 				}
 
-				switch subcommand {
-				case "start":
-					if campaignType == "" {
-						log.Printf("Missing campaign type for /campaign start")
-						break
-					}
-
-					// Send to configuring queue
-					if err := sendToConfiguringQueue(
-						interaction.ChannelID,
-						interaction.Member.User.ID,
-						interaction.ID,
-						interaction.Token,
-						campaignType,
-					); err != nil {
-						log.Printf("Failed to send to configuring queue: %v", err)
-					}
-
-					// Return type 5 (DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE)
-					// The configuring Lambda will send the actual response after validation
-					response := events.APIGatewayV2HTTPResponse{
-						StatusCode: 200,
-						Headers: map[string]string{
-							"Content-Type": "application/json",
-						},
-						Body: `{"type":5}`,
-					}
-					return response, nil
-
-				default:
-					log.Printf("Unhandled campaign subcommand: %s", subcommand)
+				// Send to configuring queue with raw options
+				if err := sendToConfiguringQueue(
+					interaction.ChannelID,
+					interaction.Member.User.ID,
+					interaction.ID,
+					interaction.Token,
+					options,
+				); err != nil {
+					log.Printf("Failed to send to configuring queue: %v", err)
 				}
+
+				// Return type 5 (DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE)
+				// The configuring Lambda will handle subcommand parsing and send the actual response
+				response := events.APIGatewayV2HTTPResponse{
+					StatusCode: 200,
+					Headers: map[string]string{
+						"Content-Type": "application/json",
+					},
+					Body: `{"type":5}`,
+				}
+				return response, nil
 			}
 		}
 	}

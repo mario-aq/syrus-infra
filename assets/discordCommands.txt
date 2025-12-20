@@ -79,7 +79,15 @@ curl -X POST \
       {
         "type": 1,
         "name": "end",
-        "description": "Conclude the campaign and seal its outcome"
+        "description": "Begin the ending of a campaign",
+        "options": [
+          {
+            "type": 5,
+            "name": "confirm",
+            "description": "Confirm the campaign’s end. This cannot be undone.",
+            "required": false
+          }
+        ]
       },
       {
         "type": 1,
