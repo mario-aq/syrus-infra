@@ -215,22 +215,10 @@ func TestGenerateBlueprintSeeds(t *testing.T) {
 				if seeds.Constraints == nil {
 					t.Error("Constraints is nil")
 				}
-
-				// Verify counts are reasonable (non-negative)
-				if len(seeds.Twists) < 0 {
-					t.Error("Negative number of twists")
-				}
-				if len(seeds.Antagonists) < 0 {
-					t.Error("Negative number of antagonists")
-				}
-				if len(seeds.SetPieces) < 0 {
-					t.Error("Negative number of set pieces")
-				}
-				if len(seeds.Constraints) < 0 {
-					t.Error("Negative number of constraints")
+				if seeds.BeatProfile == (models.BeatProfile{}) {
+					t.Error("BeatProfile is zero value")
 				}
 
-				// Verify no duplicate IDs in each category
 				checkDuplicateTwists := make(map[string]bool)
 				for _, twist := range seeds.Twists {
 					if checkDuplicateTwists[twist.TwistID] {
