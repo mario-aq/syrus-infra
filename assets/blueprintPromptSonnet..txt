@@ -289,12 +289,15 @@ Memory preserves consequence, not detail.
 Define mythic visual anchors.
 
 For each image:
-	•	imageId
-	•	description
-	•	sendWhen
-	•	narrativePurpose
+	•	imageId (unique identifier, e.g. "intro", "act2-climax", "final-confrontation")
+	•	description (narrative description of the visual)
+	•	prompt (complete, detailed prompt for OpenAI DALL-E 3, optimized for epic fantasy art style with cinematic composition)
+	•	sendWhen (narrative trigger condition, e.g. "campaign_start", "act_2_climax")
+	•	narrativePurpose (why this image matters to the story)
 
 Images must mark narrative thresholds, not decoration.
+
+The prompt field must be ready to send directly to DALL-E 3. Use rich visual language, specify art style, lighting, composition, and mood. Example: "Epic fantasy art, dramatic lighting, cinematic wide angle composition showing [scene details], dark atmospheric color palette, highly detailed, digital art"
 
 ⸻
 

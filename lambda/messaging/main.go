@@ -3,9 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strings"
@@ -15,6 +18,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/ssm"
 )
 
@@ -34,6 +38,45 @@ type SQSMessageBody struct {
 	Components       []map[string]interface{} `json:"components,omitempty"`
 	InteractionToken string                   `json:"interactionToken,omitempty"`
 	Flags            int                      `json:"flags,omitempty"` // Discord message flags
+	Attachments      []Attachment             `json:"attachments,omitempty"`
+}
+
+// Attachment represents a file attachment
+type Attachment struct {
+	Name        string `json:"name"`
+	Data        string `json:"data"`        // S3 key OR base64-encoded data
+	ContentType string `json:"contentType"` // e.g., "image/png"
+}
+
+var (
+	awsSession       *session.Session
+	s3Client         *s3.S3
+	modelCacheBucket string
+)
+
+func init() {
+	awsSession = session.Must(session.NewSession())
+	s3Client = s3.New(awsSession)
+	modelCacheBucket = os.Getenv("SYRUS_MODEL_CACHE_BUCKET")
+}
+
+// getImageFromS3 retrieves an image from S3 and returns it as base64-encoded string
+func getImageFromS3(s3Key string) (string, error) {
+	result, err := s3Client.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(modelCacheBucket),
+		Key:    aws.String(s3Key),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to get object from S3: %w", err)
+	}
+	defer result.Body.Close()
+
+	imageData, err := io.ReadAll(result.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read S3 object body: %w", err)
+	}
+
+	return base64.StdEncoding.EncodeToString(imageData), nil
 }
 
 // getDiscordBotToken retrieves the Discord bot token from SSM Parameter Store
@@ -89,7 +132,7 @@ func getDiscordAppID(stage string) (string, error) {
 // sendDiscordMessage sends a message to Discord
 // If interactionToken is provided, uses webhook endpoint to resolve the interaction
 // Otherwise, uses channel messages endpoint
-func sendDiscordMessage(channelID string, message DiscordMessage, botToken string, interactionToken string, applicationID string) error {
+func sendDiscordMessage(channelID string, message DiscordMessage, botToken string, interactionToken string, applicationID string, attachments []Attachment) error {
 	var url string
 	var method string
 
@@ -103,29 +146,100 @@ func sendDiscordMessage(channelID string, message DiscordMessage, botToken strin
 		method = "POST"
 	}
 
-	// Marshal message to JSON
-	jsonData, err := json.Marshal(message)
-	if err != nil {
-		return fmt.Errorf("failed to marshal message: %w", err)
+	var req *http.Request
+	var err error
+
+	// If we have attachments, use multipart form data
+	if len(attachments) > 0 {
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
+
+		// Add JSON payload
+		payloadJSON, err := json.Marshal(message)
+		if err != nil {
+			return fmt.Errorf("failed to marshal message: %w", err)
+		}
+		if err := writer.WriteField("payload_json", string(payloadJSON)); err != nil {
+			return fmt.Errorf("failed to write payload_json: %w", err)
+		}
+
+		// Add attachments
+		for i, attachment := range attachments {
+			var fileData []byte
+			var err error
+
+			// Check if Data is an S3 key or base64-encoded data
+			// S3 keys will have forward slashes and not be valid base64 (or will be a path pattern)
+			if strings.Contains(attachment.Data, "/") && !strings.Contains(attachment.Data, " ") {
+				// Likely an S3 key - fetch from S3
+				log.Printf("Fetching attachment from S3: %s", attachment.Data)
+				base64Data, err := getImageFromS3(attachment.Data)
+				if err != nil {
+					log.Printf("Warning: failed to fetch from S3, trying as base64: %v", err)
+					// Fall back to treating as base64
+					fileData, err = base64.StdEncoding.DecodeString(attachment.Data)
+					if err != nil {
+						return fmt.Errorf("failed to decode attachment data: %w", err)
+					}
+				} else {
+					// Successfully fetched from S3, now decode the base64
+					fileData, err = base64.StdEncoding.DecodeString(base64Data)
+					if err != nil {
+						return fmt.Errorf("failed to decode S3 image data: %w", err)
+					}
+				}
+			} else {
+				// Decode base64 data directly
+				fileData, err = base64.StdEncoding.DecodeString(attachment.Data)
+				if err != nil {
+					return fmt.Errorf("failed to decode attachment data: %w", err)
+				}
+			}
+
+			// Create form file
+			part, err := writer.CreateFormFile(fmt.Sprintf("files[%d]", i), attachment.Name)
+			if err != nil {
+				return fmt.Errorf("failed to create form file: %w", err)
+			}
+
+			if _, err := part.Write(fileData); err != nil {
+				return fmt.Errorf("failed to write file data: %w", err)
+			}
+		}
+
+		if err := writer.Close(); err != nil {
+			return fmt.Errorf("failed to close multipart writer: %w", err)
+		}
+
+		req, err = http.NewRequest(method, url, body)
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err)
+		}
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+	} else {
+		// No attachments, use JSON
+		jsonData, err := json.Marshal(message)
+		if err != nil {
+			return fmt.Errorf("failed to marshal message: %w", err)
+		}
+
+		req, err = http.NewRequest(method, url, bytes.NewBuffer(jsonData))
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
 	}
 
-	// Create HTTP request
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	// Set headers
+	// Set authorization header
 	// Webhook endpoint doesn't need Authorization header (token in URL is sufficient)
 	// Channel messages endpoint requires Bot token
 	if interactionToken == "" {
 		req.Header.Set("Authorization", fmt.Sprintf("Bot %s", botToken))
 	}
-	req.Header.Set("Content-Type", "application/json")
 
 	// Create HTTP client with timeout
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 30 * time.Second, // Increased timeout for file uploads
 	}
 
 	// Send request
@@ -137,7 +251,40 @@ func sendDiscordMessage(channelID string, message DiscordMessage, botToken strin
 
 	// Check response status
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("discord API returned status %d: %s", resp.StatusCode, resp.Status)
+		body, _ := io.ReadAll(resp.Body)
+
+		// Handle rate limiting (429) with retry
+		if resp.StatusCode == 429 {
+			// Parse rate limit response
+			var rateLimitResp struct {
+				Message    string  `json:"message"`
+				RetryAfter float64 `json:"retry_after"`
+				Global     bool    `json:"global"`
+			}
+			if err := json.Unmarshal(body, &rateLimitResp); err == nil && rateLimitResp.RetryAfter > 0 {
+				// Wait for the retry_after duration plus a small buffer
+				sleepDuration := time.Duration(rateLimitResp.RetryAfter*1000)*time.Millisecond + 100*time.Millisecond
+				log.Printf("Rate limited, sleeping for %.2f seconds", sleepDuration.Seconds())
+				time.Sleep(sleepDuration)
+
+				// Retry the request once
+				resp2, err := client.Do(req)
+				if err != nil {
+					return fmt.Errorf("failed to send request on retry: %w", err)
+				}
+				defer resp2.Body.Close()
+
+				if resp2.StatusCode < 200 || resp2.StatusCode >= 300 {
+					body2, _ := io.ReadAll(resp2.Body)
+					return fmt.Errorf("discord API returned status %d on retry: %s", resp2.StatusCode, string(body2))
+				}
+
+				log.Printf("Successfully sent message after rate limit retry")
+				return nil
+			}
+		}
+
+		return fmt.Errorf("discord API returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	return nil
@@ -155,8 +302,8 @@ func processSQSMessage(message events.SQSMessage, botToken string, stage string)
 	if messageBody.ChannelID == "" {
 		return fmt.Errorf("missing required field: channelId")
 	}
-	if messageBody.Content == "" && len(messageBody.Embeds) == 0 {
-		return fmt.Errorf("missing required field: content or embeds")
+	if messageBody.Content == "" && len(messageBody.Embeds) == 0 && len(messageBody.Attachments) == 0 {
+		return fmt.Errorf("missing required field: content, embeds, or attachments")
 	}
 
 	// Build Discord message
@@ -184,7 +331,7 @@ func processSQSMessage(message events.SQSMessage, botToken string, stage string)
 	}
 
 	// Send to Discord
-	if err := sendDiscordMessage(messageBody.ChannelID, discordMsg, botToken, messageBody.InteractionToken, applicationID); err != nil {
+	if err := sendDiscordMessage(messageBody.ChannelID, discordMsg, botToken, messageBody.InteractionToken, applicationID, messageBody.Attachments); err != nil {
 		return fmt.Errorf("failed to send message to Discord: %w", err)
 	}
 

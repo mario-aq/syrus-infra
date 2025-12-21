@@ -14,6 +14,8 @@ export interface SqsFifoWithDlqProps {
   retentionPeriod?: Duration;
   /** Maximum receive count before moving to DLQ (default: 5) */
   maxReceiveCount?: number;
+  /** Default batch size for Lambda event source (default: 1) */
+  defaultBatchSize?: number;
 }
 
 export interface SqsFifoWithDlqResult {
@@ -21,6 +23,8 @@ export interface SqsFifoWithDlqResult {
   queue: sqs.Queue;
   /** The dead letter queue */
   dlq: sqs.Queue;
+  /** Default batch size for Lambda event source */
+  defaultBatchSize: number;
 }
 
 /**
@@ -29,6 +33,7 @@ export interface SqsFifoWithDlqResult {
 export class SqsFifoWithDlq extends Construct {
   public readonly queue: sqs.Queue;
   public readonly dlq: sqs.Queue;
+  public readonly defaultBatchSize: number;
 
   constructor(scope: Construct, id: string, props: SqsFifoWithDlqProps) {
     super(scope, id);
@@ -36,6 +41,7 @@ export class SqsFifoWithDlq extends Construct {
     const visibilityTimeout = props.visibilityTimeout || Duration.seconds(60);
     const retentionPeriod = props.retentionPeriod || Duration.days(4);
     const maxReceiveCount = props.maxReceiveCount || 5;
+    this.defaultBatchSize = props.defaultBatchSize || 1;
 
     // Create the dead letter queue first
     const dlqName = `syrus-${props.queueName}-dlq-${props.stage}.fifo`;
@@ -52,10 +58,12 @@ export class SqsFifoWithDlq extends Construct {
     this.queue = new sqs.Queue(this, 'Queue', {
       queueName: queueName,
       fifo: true,
-      contentBasedDeduplication: true,
+      contentBasedDeduplication: false, // Use explicit MessageDeduplicationId
       encryption: sqs.QueueEncryption.SQS_MANAGED,
       visibilityTimeout: visibilityTimeout,
       retentionPeriod: retentionPeriod,
+      deduplicationScope: sqs.DeduplicationScope.MESSAGE_GROUP, // Dedupe per message group
+      fifoThroughputLimit: sqs.FifoThroughputLimit.PER_MESSAGE_GROUP_ID,
       deadLetterQueue: {
         queue: this.dlq,
         maxReceiveCount: maxReceiveCount,

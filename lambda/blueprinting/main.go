@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -44,6 +45,7 @@ var (
 	campaignsTable   string
 	dedupTable       string
 	messagingQueue   string
+	imageGenQueue    string
 	modelCacheBucket string
 	stage            string
 )
@@ -58,6 +60,7 @@ func init() {
 	campaignsTable = os.Getenv("SYRUS_CAMPAIGNS_TABLE")
 	dedupTable = os.Getenv("SYRUS_DEDUP_TABLE")
 	messagingQueue = os.Getenv("SYRUS_MESSAGING_QUEUE_URL")
+	imageGenQueue = os.Getenv("SYRUS_IMAGEGEN_QUEUE_URL")
 	modelCacheBucket = os.Getenv("SYRUS_MODEL_CACHE_BUCKET")
 	stage = os.Getenv("SYRUS_STAGE")
 }
@@ -155,10 +158,47 @@ func processBlueprintMessage(ctx context.Context, record events.SQSMessage) erro
 		return fmt.Errorf("failed to update campaign: %w", err)
 	}
 
+	// Check if campaign is already active (from a previous successful attempt)
+	campaign, err = getCampaign(blueprintMsg.CampaignID)
+	if err != nil {
+		return fmt.Errorf("failed to get campaign: %w", err)
+	}
+
+	if campaign.Status == models.CampaignStatusActive {
+		log.Printf("Campaign %s is already active, skipping message sends (likely a retry)", blueprintMsg.CampaignID)
+		return nil
+	}
+
+	// Generate intro image if present in imagePlan
+	var introImageS3Key string
+	if introImage, exists := blueprint.ImagePlan["intro"]; exists && introImage.Prompt != "" {
+		log.Printf("Generating intro image for campaign %s", blueprintMsg.CampaignID)
+		s3Key, err := generateIntroImage(ctx, blueprintMsg.CampaignID, introImage.Prompt)
+		if err != nil {
+			log.Printf("Warning: failed to generate intro image: %v", err)
+			// Don't fail the entire blueprint if intro image fails
+		} else {
+			introImageS3Key = s3Key
+			// Update blueprint with S3 key
+			if err := updateImagePlanS3Key(blueprintMsg.CampaignID, "intro", s3Key); err != nil {
+				log.Printf("Warning: failed to update intro image S3 key: %v", err)
+			}
+		}
+	}
+
+	// Queue remaining images to imageGen queue
+	if err := queueMilestoneImages(blueprintMsg.CampaignID, blueprintMsg.InteractionID, blueprint); err != nil {
+		log.Printf("Warning: failed to queue milestone images: %v", err)
+		// Don't fail the entire blueprint if image queueing fails
+	}
+
 	// Send introduction to messaging queue
-	if err := sendIntroductionToMessaging(blueprintMsg.CampaignID, blueprintMsg.InteractionID, blueprint, introduction); err != nil {
+	if err := sendIntroductionToMessaging(blueprintMsg.CampaignID, blueprintMsg.InteractionID, blueprint, introduction, introImageS3Key); err != nil {
+		log.Printf("ERROR: Failed to send introduction messages: %v", err)
 		return fmt.Errorf("failed to send introduction: %w", err)
 	}
+
+	log.Printf("Successfully sent all introduction messages for campaign %s", blueprintMsg.CampaignID)
 
 	// Update campaign status to active
 	if err := updateCampaignStatus(blueprintMsg.CampaignID, "active"); err != nil {
@@ -539,20 +579,43 @@ func updateCampaignStatus(campaignID string, status string) error {
 	return nil
 }
 
-func sendIntroductionToMessaging(campaignID, interactionID string, blueprint *models.Blueprint, introduction string) error {
+func sendIntroductionToMessaging(campaignID, interactionID string, blueprint *models.Blueprint, introduction, introImageS3Key string) error {
+	log.Printf("DEBUG: sendIntroductionToMessaging called - campaignID: %s, interactionID: %s, hasIntroImage: %v",
+		campaignID, interactionID, introImageS3Key != "")
+
 	// Get the campaign to find the channel ID
 	campaign, err := getCampaign(campaignID)
 	if err != nil {
+		log.Printf("ERROR: Failed to get campaign: %v", err)
 		return fmt.Errorf("failed to get campaign for messaging: %w", err)
 	}
 
-	// Message 1: Campaign Title (bigger font using markdown heading)
+	log.Printf("DEBUG: Campaign retrieved - channelID: %s", campaign.Meta.ChannelID)
+
+	// Message 1: Campaign Title with optional intro image attachment
 	titleMsg := models.MessagingQueueMessage{
 		ChannelID: campaign.Meta.ChannelID,
 		Content:   fmt.Sprintf("This is the thread now drawn from the weave:\n## %s", blueprint.Title),
 	}
+
+	// If intro image was generated, add it as attachment
+	if introImageS3Key != "" {
+		log.Printf("DEBUG: Adding intro image S3 key to message: %s", introImageS3Key)
+		titleMsg.Attachments = []models.Attachment{
+			{
+				Name:        "intro.png",
+				Data:        introImageS3Key, // Send S3 key, not base64 data
+				ContentType: "image/png",
+			},
+		}
+	} else {
+		log.Printf("DEBUG: No intro image to attach")
+	}
+
+	log.Printf("DEBUG: Sending title message to queue")
 	titleMsgJSON, err := json.Marshal(titleMsg)
 	if err != nil {
+		log.Printf("ERROR: Failed to marshal title message: %v", err)
 		return fmt.Errorf("failed to marshal title message: %w", err)
 	}
 	_, err = sqsClient.SendMessage(&sqs.SendMessageInput{
@@ -562,10 +625,13 @@ func sendIntroductionToMessaging(campaignID, interactionID string, blueprint *mo
 		MessageDeduplicationId: aws.String(interactionID + "-title"),
 	})
 	if err != nil {
+		log.Printf("ERROR: Failed to send title message to SQS: %v", err)
 		return fmt.Errorf("failed to send title message: %w", err)
 	}
+	log.Printf("DEBUG: Title message sent successfully")
 
 	// Message 2: Campaign Premise
+	log.Printf("DEBUG: Sending premise message")
 	premiseMsg := models.MessagingQueueMessage{
 		ChannelID: campaign.Meta.ChannelID,
 		Content:   blueprint.Premise,
@@ -581,10 +647,13 @@ func sendIntroductionToMessaging(campaignID, interactionID string, blueprint *mo
 		MessageDeduplicationId: aws.String(interactionID + "-premise"),
 	})
 	if err != nil {
+		log.Printf("ERROR: Failed to send premise message to SQS: %v", err)
 		return fmt.Errorf("failed to send premise message: %w", err)
 	}
+	log.Printf("DEBUG: Premise message sent successfully")
 
 	// Message 3: Introduction
+	log.Printf("DEBUG: Sending introduction message")
 	introMsg := models.MessagingQueueMessage{
 		ChannelID: campaign.Meta.ChannelID,
 		Content:   introduction,
@@ -600,10 +669,13 @@ func sendIntroductionToMessaging(campaignID, interactionID string, blueprint *mo
 		MessageDeduplicationId: aws.String(interactionID + "-intro"),
 	})
 	if err != nil {
+		log.Printf("ERROR: Failed to send intro message to SQS: %v", err)
 		return fmt.Errorf("failed to send intro message: %w", err)
 	}
+	log.Printf("DEBUG: Introduction message sent successfully")
 
 	// Message 4: "The weave listens now."
+	log.Printf("DEBUG: Sending weave message")
 	weaveMsg := models.MessagingQueueMessage{
 		ChannelID: campaign.Meta.ChannelID,
 		Content:   "The weave listens now.",
@@ -619,10 +691,13 @@ func sendIntroductionToMessaging(campaignID, interactionID string, blueprint *mo
 		MessageDeduplicationId: aws.String(interactionID + "-weave"),
 	})
 	if err != nil {
+		log.Printf("ERROR: Failed to send weave message to SQS: %v", err)
 		return fmt.Errorf("failed to send weave message: %w", err)
 	}
+	log.Printf("DEBUG: Weave message sent successfully")
 
 	// Message 5: How to Act (ephemeral)
+	log.Printf("DEBUG: Sending how-to-act message")
 	howToActMsg := models.MessagingQueueMessage{
 		ChannelID: campaign.Meta.ChannelID,
 		Content:   "How to act:\nUse /syrus declare to state what your character does, intends, or investigates.\n\nExample:\n/syrus declare I step forward and address the council.",
@@ -638,7 +713,235 @@ func sendIntroductionToMessaging(campaignID, interactionID string, blueprint *mo
 		MessageGroupId:         aws.String(campaignID),
 		MessageDeduplicationId: aws.String(interactionID + "-howto"),
 	})
+	if err != nil {
+		log.Printf("ERROR: Failed to send how-to-act message to SQS: %v", err)
+	}
+
+	log.Printf("DEBUG: All 5 intro messages sent successfully")
 	return err
+}
+
+func generateIntroImage(ctx context.Context, campaignID, prompt string) (string, error) {
+	s3Key := fmt.Sprintf("%s/images/intro.png", campaignID)
+
+	// Check S3 cache first
+	_, err := s3Client.HeadObject(&s3.HeadObjectInput{
+		Bucket: aws.String(modelCacheBucket),
+		Key:    aws.String(s3Key),
+	})
+	if err == nil {
+		log.Printf("Intro image already cached: %s", s3Key)
+		return s3Key, nil
+	}
+
+	// Get API key
+	apiKey, err := getOpenAIAPIKey()
+	if err != nil {
+		return "", fmt.Errorf("failed to get API key: %w", err)
+	}
+
+	// Call OpenAI API
+	imageURL, err := callOpenAIImageAPI(ctx, apiKey, prompt)
+	if err != nil {
+		return "", fmt.Errorf("failed to call OpenAI: %w", err)
+	}
+
+	// Download image
+	imageData, err := downloadImageFromURL(ctx, imageURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to download image: %w", err)
+	}
+
+	// Upload to S3
+	_, err = s3Client.PutObject(&s3.PutObjectInput{
+		Bucket:      aws.String(modelCacheBucket),
+		Key:         aws.String(s3Key),
+		Body:        bytes.NewReader(imageData),
+		ContentType: aws.String("image/png"),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to upload to S3: %w", err)
+	}
+
+	log.Printf("Successfully generated and cached intro image")
+	return s3Key, nil
+}
+
+func getOpenAIAPIKey() (string, error) {
+	paramName := fmt.Sprintf("/syrus/%s/openai/api-key", stage)
+	result, err := ssmClient.GetParameter(&ssm.GetParameterInput{
+		Name:           aws.String(paramName),
+		WithDecryption: aws.Bool(true),
+	})
+	if err != nil {
+		return "", err
+	}
+	return *result.Parameter.Value, nil
+}
+
+func callOpenAIImageAPI(ctx context.Context, apiKey, prompt string) (string, error) {
+	log.Printf("Calling OpenAI DALL-E 3 API")
+
+	payload := map[string]interface{}{
+		"model":   "dall-e-3",
+		"prompt":  prompt,
+		"n":       1,
+		"size":    "1024x1024",
+		"quality": "standard",
+	}
+
+	payloadJSON, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/images/generations", bytes.NewReader(payloadJSON))
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+
+	client := &http.Client{Timeout: 90 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("API request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var apiResponse struct {
+		Data []struct {
+			URL string `json:"url"`
+		} `json:"data"`
+	}
+
+	if err := json.Unmarshal(body, &apiResponse); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if len(apiResponse.Data) == 0 {
+		return "", fmt.Errorf("API returned empty data")
+	}
+
+	return apiResponse.Data[0].URL, nil
+}
+
+func downloadImageFromURL(ctx context.Context, imageURL string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", imageURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create download request: %w", err)
+	}
+
+	client := &http.Client{Timeout: 60 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("download request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("download returned status %d", resp.StatusCode)
+	}
+
+	return io.ReadAll(resp.Body)
+}
+
+func updateImagePlanS3Key(campaignID, imageID, s3Key string) error {
+	updateExpr := "SET blueprint.imagePlan.#imageId.s3Key = :s3Key, lastUpdatedAt = :lastUpdatedAt"
+
+	_, err := dynamodbClient.UpdateItem(&dynamodb.UpdateItemInput{
+		TableName: aws.String(campaignsTable),
+		Key: map[string]*dynamodb.AttributeValue{
+			"campaignId": {S: aws.String(campaignID)},
+		},
+		UpdateExpression: aws.String(updateExpr),
+		ExpressionAttributeNames: map[string]*string{
+			"#imageId": aws.String(imageID),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":s3Key":         {S: aws.String(s3Key)},
+			":lastUpdatedAt": {S: aws.String(time.Now().UTC().Format(time.RFC3339))},
+		},
+	})
+	return err
+}
+
+func queueMilestoneImages(campaignID, interactionID string, blueprint *models.Blueprint) error {
+	if imageGenQueue == "" {
+		log.Printf("ImageGen queue URL not configured, skipping milestone images")
+		return nil
+	}
+
+	for imageID, imagePlan := range blueprint.ImagePlan {
+		// Skip intro image (already generated)
+		if imageID == "intro" {
+			continue
+		}
+
+		// Skip if no prompt
+		if imagePlan.Prompt == "" {
+			continue
+		}
+
+		// Create imageGen message
+		imageGenMsg := models.ImageGenMessage{
+			CampaignID:    campaignID,
+			InteractionID: interactionID,
+			ImageID:       imageID,
+			Prompt:        imagePlan.Prompt,
+			Model:         "dall-e-3",
+		}
+
+		msgJSON, err := json.Marshal(imageGenMsg)
+		if err != nil {
+			log.Printf("Warning: failed to marshal imageGen message for %s: %v", imageID, err)
+			continue
+		}
+
+		_, err = sqsClient.SendMessage(&sqs.SendMessageInput{
+			QueueUrl:               aws.String(imageGenQueue),
+			MessageBody:            aws.String(string(msgJSON)),
+			MessageGroupId:         aws.String(campaignID),
+			MessageDeduplicationId: aws.String(fmt.Sprintf("%s-%s", interactionID, imageID)),
+		})
+		if err != nil {
+			log.Printf("Warning: failed to queue imageGen for %s: %v", imageID, err)
+			continue
+		}
+
+		log.Printf("Queued imageGen for image %s", imageID)
+	}
+
+	return nil
+}
+
+func getImageFromS3(s3Key string) (string, error) {
+	result, err := s3Client.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(modelCacheBucket),
+		Key:    aws.String(s3Key),
+	})
+	if err != nil {
+		return "", err
+	}
+	defer result.Body.Close()
+
+	imageData, err := io.ReadAll(result.Body)
+	if err != nil {
+		return "", err
+	}
+
+	// Return base64 encoded
+	return base64.StdEncoding.EncodeToString(imageData), nil
 }
 
 func main() {

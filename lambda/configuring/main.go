@@ -369,7 +369,7 @@ func createPlaceholderCampaign(channelID, hostID string, campaignType models.Cam
 			Narration:     models.ModelHaiku,
 			Cinematics:    models.ModelHaiku,
 			Blueprint:     models.ModelHaiku,
-			ImageGen:      models.ModelNanoBanana,
+			ImageGen:      models.ModelOpenAI,
 		},
 	}
 

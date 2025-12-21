@@ -34,6 +34,7 @@ export class SyrusMvpStack extends Stack {
     const messagingQueue = new SqsFifoWithDlq(this, 'MessagingQueue', {
       queueName: 'messaging',
       stage: props.stage,
+      visibilityTimeout: Duration.seconds(120), // 2 minutes - enough for Discord API calls
     });
 
     // Configuring Infrastructure
@@ -132,6 +133,7 @@ export class SyrusMvpStack extends Stack {
       environment: {
         SYRUS_DISCORD_BOT_TOKEN_PARAM: `/syrus/${stageConfig.stage}/discord/bot-token`,
         SYRUS_STAGE: stageConfig.stage,
+        SYRUS_MODEL_CACHE_BUCKET: modelCacheBucket.bucketName,
       },
       timeout: Duration.seconds(30),
       memorySize: 256,
@@ -148,6 +150,9 @@ export class SyrusMvpStack extends Stack {
       ],
     }));
 
+    // Add S3 permissions for model cache bucket (to fetch images)
+    modelCacheBucket.grantRead(messagingFunction);
+
     // Add SQS permissions for messaging queue
     messagingFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: [
@@ -160,7 +165,7 @@ export class SyrusMvpStack extends Stack {
 
     // Add SQS event source mapping
     messagingFunction.addEventSource(new lambdaEventSources.SqsEventSource(messagingQueue.queue, {
-      batchSize: 10, // SQS FIFO limit
+      batchSize: messagingQueue.defaultBatchSize,
       reportBatchItemFailures: true,
     }));
 
@@ -252,7 +257,7 @@ export class SyrusMvpStack extends Stack {
 
     // Add SQS event source mapping for configuring queue
     configuringFunction.addEventSource(new lambdaEventSources.SqsEventSource(configuringQueue.queue, {
-      batchSize: 10, // SQS FIFO limit
+      batchSize: configuringQueue.defaultBatchSize,
       reportBatchItemFailures: true,
     }));
 
@@ -290,7 +295,7 @@ export class SyrusMvpStack extends Stack {
 
     // Add SQS event source mapping for birthing queue
     birthingFunction.addEventSource(new lambdaEventSources.SqsEventSource(birthingQueue.queue, {
-      batchSize: 10, // SQS FIFO limit
+      batchSize: birthingQueue.defaultBatchSize,
       reportBatchItemFailures: true,
     }));
 
@@ -336,8 +341,79 @@ export class SyrusMvpStack extends Stack {
 
     // Add SQS event source mapping for blueprinting queue
     blueprintingFunction.addEventSource(new lambdaEventSources.SqsEventSource(blueprintingQueue.queue, {
-      batchSize: 1, // Process one blueprint at a time due to Claude API rate limits
+      batchSize: blueprintingQueue.defaultBatchSize,
       reportBatchItemFailures: true,
+    }));
+
+    // ImageGen Infrastructure
+    // Create SQS FIFO queue for image generation
+    const imageGenQueue = new SqsFifoWithDlq(this, 'ImageGenQueue', {
+      queueName: 'imageGen',
+      stage: props.stage,
+      visibilityTimeout: Duration.minutes(3), // OpenAI API can take time
+    });
+
+    // Create imageGen Lambda function
+    const imageGenFunction = new lambda.Function(this, 'ImageGenFunction', {
+      runtime: lambda.Runtime.PROVIDED_AL2023,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/imageGen')),
+      handler: 'bootstrap',
+      environment: {
+        SYRUS_CAMPAIGNS_TABLE: campaignsTable.tableName,
+        SYRUS_DEDUP_TABLE: dedupTable.table.tableName,
+        SYRUS_MESSAGING_QUEUE_URL: messagingQueue.queue.queueUrl,
+        SYRUS_MODEL_CACHE_BUCKET: modelCacheBucket.bucketName,
+        SYRUS_STAGE: stageConfig.stage,
+      },
+      timeout: Duration.minutes(2), // OpenAI API calls can take time
+      memorySize: 512,
+    });
+
+    // Grant imageGen Lambda permissions
+    campaignsTable.grantReadWriteData(imageGenFunction);
+    dedupTable.table.grantReadWriteData(imageGenFunction);
+    messagingQueue.queue.grantSendMessages(imageGenFunction);
+    modelCacheBucket.grantReadWrite(imageGenFunction);
+
+    // Grant imageGen Lambda SSM access for OpenAI API key
+    imageGenFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/syrus/${stageConfig.stage}/openai/api-key`,
+      ],
+    }));
+
+    // Grant imageGen Lambda read/delete permissions for its queue
+    imageGenFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'sqs:ReceiveMessage',
+        'sqs:DeleteMessage',
+        'sqs:GetQueueAttributes',
+      ],
+      resources: [imageGenQueue.queue.queueArn],
+    }));
+
+    // Add SQS event source mapping for imageGen queue
+    imageGenFunction.addEventSource(new lambdaEventSources.SqsEventSource(imageGenQueue.queue, {
+      batchSize: 5, // Can batch image generation calls
+      reportBatchItemFailures: true,
+    }));
+
+    // Grant blueprinting Lambda permission to send to imageGen queue
+    blueprintingFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['sqs:SendMessage'],
+      resources: [imageGenQueue.queue.queueArn],
+    }));
+
+    // Add imageGen queue URL to blueprinting Lambda environment
+    blueprintingFunction.addEnvironment('SYRUS_IMAGEGEN_QUEUE_URL', imageGenQueue.queue.queueUrl);
+
+    // Grant blueprinting Lambda SSM access for OpenAI API key
+    blueprintingFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/syrus/${stageConfig.stage}/openai/api-key`,
+      ],
     }));
 
     // CloudFormation outputs for Messaging Infrastructure
@@ -492,6 +568,37 @@ export class SyrusMvpStack extends Stack {
       value: modelCacheBucket.bucketName,
       description: 'Name of the S3 model cache bucket',
       exportName: `SyrusModelCacheBucketName-${props.stage}`,
+    });
+
+    // CloudFormation outputs for ImageGen Infrastructure
+    new CfnOutput(this, 'ImageGenQueueUrl', {
+      value: imageGenQueue.queue.queueUrl,
+      description: 'URL of the imageGen FIFO queue',
+      exportName: `SyrusImageGenQueueUrl-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'ImageGenQueueArn', {
+      value: imageGenQueue.queue.queueArn,
+      description: 'ARN of the imageGen FIFO queue',
+      exportName: `SyrusImageGenQueueArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'ImageGenDlqUrl', {
+      value: imageGenQueue.dlq.queueUrl,
+      description: 'URL of the imageGen dead letter queue',
+      exportName: `SyrusImageGenDlqUrl-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'ImageGenDlqArn', {
+      value: imageGenQueue.dlq.queueArn,
+      description: 'ARN of the imageGen dead letter queue',
+      exportName: `SyrusImageGenDlqArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'ImageGenLambdaArn', {
+      value: imageGenFunction.functionArn,
+      description: 'ARN of the imageGen Lambda function',
+      exportName: `SyrusImageGenLambdaArn-${props.stage}`,
     });
   }
 }

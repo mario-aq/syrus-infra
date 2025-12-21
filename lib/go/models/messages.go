@@ -18,6 +18,14 @@ type MessagingQueueMessage struct {
 	Components       []map[string]interface{} `json:"components,omitempty"`
 	InteractionToken string                   `json:"interactionToken,omitempty"`
 	Flags            int                      `json:"flags,omitempty"` // Discord message flags (e.g., 64 for ephemeral)
+	Attachments      []Attachment             `json:"attachments,omitempty"`
+}
+
+// Attachment represents a file attachment to send to Discord
+type Attachment struct {
+	Name        string `json:"name"`
+	Data        string `json:"data"`        // base64-encoded file data
+	ContentType string `json:"contentType"` // e.g., "image/png"
 }
 
 // BirthingMessage represents a message sent to the birthing queue
@@ -31,6 +39,15 @@ type BlueprintMessage struct {
 	CampaignID    string        `json:"campaignId"`
 	InteractionID string        `json:"interactionId"`
 	Seeds         CampaignSeeds `json:"seeds"`
+}
+
+// ImageGenMessage represents a message sent to the image generation queue
+type ImageGenMessage struct {
+	CampaignID    string `json:"campaignId"`
+	InteractionID string `json:"interactionId"`
+	ImageID       string `json:"imageId"`
+	Prompt        string `json:"prompt"`
+	Model         string `json:"model"`
 }
 
 // CampaignSeeds contains the randomly selected blueprint elements

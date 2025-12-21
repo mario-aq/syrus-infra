@@ -388,8 +388,6 @@ func processSQSMessage(message events.SQSMessage, stage string) error {
 		return fmt.Errorf("failed to send blueprint message: %w", err)
 	}
 
-	log.Printf("Successfully sent blueprint message to blueprinting queue for campaign %s", messageBody.CampaignID)
-
 	// Write to dedup table
 	if err := writeDedup(messageBody.InteractionID); err != nil {
 		log.Printf("Warning: failed to write to dedup table: %v", err)

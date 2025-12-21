@@ -301,20 +301,29 @@
     },
 
     "imagePlan": {
-      "Campaign.Intro": {
-        "description": "Stormbreak Coast at dusk",
+      "intro": {
+        "imageId": "intro",
+        "description": "Stormbreak Coast at dusk, waves crashing against dark cliffs, corrupted fog rolling in",
+        "prompt": "Epic fantasy art, dramatic cinematic composition of a rugged coastal cliff at dusk, dark storm clouds gathering, ethereal corrupted green fog creeping across turbulent waves, ancient weathered lighthouse on cliff edge, ominous atmospheric lighting, highly detailed digital painting, dark moody color palette with hints of unnatural green blight",
         "sendWhen": "campaign_start",
-        "s3_key": "sample_key/img.png"
+        "narrativePurpose": "Establish the corrupted coastal setting and ominous tone",
+        "s3Key": ""
       },
-      "Force.TheLastWarden.Manifest": {
-        "description": "The Last Warden revealed",
-        "sendWhen": "first_manifestation",
-        "s3_key": "sample_key/img.png"
+      "act2-warden-revealed": {
+        "imageId": "act2-warden-revealed",
+        "description": "The Last Warden manifesting from ancient stone",
+        "prompt": "Epic fantasy art, ethereal spectral figure emerging from crumbling ancient stone archway, ghostly blue-white energy, weathered stone ruins covered in moss, mysterious hooded form with glowing eyes, dramatic lighting with volumetric fog, cinematic wide angle composition, highly detailed digital art, dark atmospheric color palette",
+        "sendWhen": "act_2_warden_appears",
+        "narrativePurpose": "Mark the revelation of the Warden's nature",
+        "s3Key": ""
       },
-      "Campaign.Final": {
-        "description": "Stormcaller Bluff during the final storm",
+      "act3-final": {
+        "imageId": "act3-final",
+        "description": "Stormcaller Bluff during the final storm confrontation",
+        "prompt": "Epic fantasy art, dramatic clifftop scene during massive storm, lightning striking ancient stone platform, roiling dark clouds with supernatural green glow, silhouettes of figures against tempest, waves crashing hundreds of feet below, cinematic wide angle, highly detailed environment art, dark dramatic color palette with electric blues and corrupted greens",
         "sendWhen": "final_confrontation",
-        "s3_key": "sample_key/img.png"
+        "narrativePurpose": "Capture the climactic moment of the campaign",
+        "s3Key": ""
       }
     }
   },

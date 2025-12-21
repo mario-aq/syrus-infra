@@ -253,9 +253,11 @@ type RelationshipAxis struct {
 
 // ImagePlanItem represents an image plan entry
 type ImagePlanItem struct {
-	Description string `json:"description" dynamodbav:"description"`
-	SendWhen    string `json:"sendWhen" dynamodbav:"sendWhen"`
-	S3Key       string `json:"s3Key" dynamodbav:"s3Key"`
+	Description      string `json:"description" dynamodbav:"description"`
+	SendWhen         string `json:"sendWhen" dynamodbav:"sendWhen"`
+	NarrativePurpose string `json:"narrativePurpose" dynamodbav:"narrativePurpose"`
+	Prompt           string `json:"prompt" dynamodbav:"prompt"`
+	S3Key            string `json:"s3Key" dynamodbav:"s3Key"`
 }
 
 // RuntimeState represents the runtime state of the campaign
@@ -337,8 +339,10 @@ const (
 	ModelHaiku Model = "haiku"
 	// ModelSonnet represents the Claude Sonnet model (balanced performance)
 	ModelSonnet Model = "sonnet"
-	// ModelGemini represents the Google Gemini model (image generation)
+	// ModelNanoBanana represents the Nano Banana model
 	ModelNanoBanana Model = "nano_banana"
+	// ModelOpenAI represents the OpenAI DALL-E model (image generation)
+	ModelOpenAI Model = "openai-dalle"
 )
 
 // ModelPolicy represents model selection policy

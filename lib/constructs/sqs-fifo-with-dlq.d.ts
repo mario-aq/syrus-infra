@@ -12,12 +12,16 @@ export interface SqsFifoWithDlqProps {
     retentionPeriod?: Duration;
     /** Maximum receive count before moving to DLQ (default: 5) */
     maxReceiveCount?: number;
+    /** Default batch size for Lambda event source (default: 1) */
+    defaultBatchSize?: number;
 }
 export interface SqsFifoWithDlqResult {
     /** The main FIFO queue */
     queue: sqs.Queue;
     /** The dead letter queue */
     dlq: sqs.Queue;
+    /** Default batch size for Lambda event source */
+    defaultBatchSize: number;
 }
 /**
  * Creates a FIFO SQS queue with a FIFO dead letter queue
@@ -25,5 +29,6 @@ export interface SqsFifoWithDlqResult {
 export declare class SqsFifoWithDlq extends Construct {
     readonly queue: sqs.Queue;
     readonly dlq: sqs.Queue;
+    readonly defaultBatchSize: number;
     constructor(scope: Construct, id: string, props: SqsFifoWithDlqProps);
 }

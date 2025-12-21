@@ -117,9 +117,12 @@ You MUST return a JSON object with this exact structure:
       }
     },
     "imagePlan": {
-      "keyName": {
+      "imageId": {
+        "imageId": string,
         "description": string,
+        "prompt": string,
         "sendWhen": string,
+        "narrativePurpose": string,
         "s3Key": string
       }
     }
@@ -256,6 +259,44 @@ Asynchronous
 	•	natural pause points
 	•	fewer but heavier beats
 	•	time-based escalation
+
+⸻
+
+Image Plan (Required)
+
+For imagePlan, you MUST create 2-4 visual anchors that mark major narrative thresholds.
+
+Each image entry must include:
+	•	imageId: unique identifier (e.g., "intro", "act2-reveal", "final-confrontation")
+	•	description: brief narrative description of the scene
+	•	prompt: COMPLETE, DETAILED prompt ready for DALL-E 3 image generation
+	•	sendWhen: narrative trigger (e.g., "campaign_start", "act_2_climax")
+	•	narrativePurpose: why this image matters to the story
+	•	s3Key: leave as empty string ""
+
+The "intro" image is REQUIRED and must have sendWhen: "campaign_start"
+
+Prompt Writing Rules:
+	1.	Use rich, specific visual language
+	2.	Specify art style: "Epic fantasy art, cinematic composition"
+	3.	Include lighting, mood, and atmosphere details
+	4.	Describe key visual elements clearly
+	5.	Keep prompts 1-3 sentences, highly descriptive
+	6.	NO dialogue, text, or written words in the image
+
+Example prompt structure:
+"Epic fantasy art, dramatic wide-angle view of [scene], [lighting description], [atmospheric details], [key visual elements], highly detailed digital painting, [color palette notes]"
+
+Images must mark:
+	•	Campaign opening (required "intro")
+	•	Major act transitions or reveals
+	•	Climactic moments
+	•	Final confrontation
+
+DO NOT create images for:
+	•	Minor scenes
+	•	Pure dialogue moments
+	•	Incremental progress
 
 ⸻
 
