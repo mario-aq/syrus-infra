@@ -1,253 +1,243 @@
 {
-  "title": "The Unraveling Crown",
-  "premise": "The kingdom's heir has vanished, and three factions vie for the throne. The party must navigate civil war, uncover ancient secrets, and decide who deserves to rule—if anyone.",
+  "title": "The Fallen Tower of Azamar",
+  "premise": "A legendary wizard's tower has reappeared after centuries. Adventurers are hired to explore its riches. But the tower is a prison, and what sleeps at its heart is stirring. As the party ascends through trapped levels, they discover the terrible truth: they are not explorers—they are the jailers' test.",
   "thematicPillars": [
-    "legitimacy_vs_capability",
-    "cost_of_unity",
-    "burden_of_choice"
+    "greed_awakens_horror",
+    "knowledge_costs_everything",
+    "imprisoned_for_a_reason"
   ],
   "beatQualification": {
-    "mustHave": ["heir_vanishes", "faction_meetings", "ancient_truth", "succession_crisis", "final_decision"],
-    "mayHave": ["investigation", "betrayal", "combat", "diplomacy", "revelation"]
+    "mustHave": ["enter_tower", "discover_prison_truth", "evil_stirs", "descent_to_heart", "final_choice"],
+    "mayHave": ["traps_encountered", "monster_fights", "wizard_lore", "breach_begins"]
   },
   "ingredientBinding": {
-    "objective": ["resolve_succession"],
-    "twists": ["heir_alive_but_changed", "crown_is_cursed", "party_member_has_claim"],
-    "antagonists": ["ambitious_general", "corrupt_chancellor", "zealot_priestess"],
-    "setPieces": ["throne_room_confrontation", "battlefield_diplomacy", "coronation_ceremony"]
+    "objective": ["delve_ancient_ruins", "stop_ancient_evil"],
+    "twists": ["treasure_is_bait", "guardian_was_protecting_us"],
+    "antagonists": ["possessed_guardian", "void_behemoth"],
+    "setPieces": ["tower_ascent", "collapsing_ruins", "guardian_trial"]
   },
   "acts": [
     {
       "actNumber": 1,
-      "name": "The Vanishing",
-      "primaryArea": "royal_palace",
-      "narrativePurpose": "Establish power vacuum and introduce factions",
-      "primaryDanger": "political_maneuvering",
+      "name": "The Invitation",
+      "primaryArea": "tower_lower_levels",
+      "narrativePurpose": "Establish exploration and reward, mask danger",
+      "primaryDanger": "traps_and_puzzles",
       "beatExpectations": {"min": 9, "max": 13},
-      "pressureType": "temporal"
+      "pressureType": "discovery"
     },
     {
       "actNumber": 2,
-      "name": "Fractured Loyalties",
-      "primaryArea": "war_camps",
-      "narrativePurpose": "Force party to engage with factions and their claims",
-      "primaryDanger": "civil_war_escalation",
+      "name": "The Ascent",
+      "primaryArea": "tower_middle_levels",
+      "narrativePurpose": "Escalate danger, reveal tower's true nature",
+      "primaryDanger": "guardian_constructs",
       "beatExpectations": {"min": 9, "max": 13},
-      "pressureType": "reputational"
+      "pressureType": "environmental"
     },
     {
       "actNumber": 3,
-      "name": "The Heir's Truth",
-      "primaryArea": "forgotten_monastery",
-      "narrativePurpose": "Reveal heir's fate and deeper conspiracy",
-      "primaryDanger": "truth_is_dangerous",
+      "name": "The Prison Revealed",
+      "primaryArea": "tower_archives",
+      "narrativePurpose": "Discovery of horror: tower is a seal, party broke it",
+      "primaryDanger": "ancient_truth",
       "beatExpectations": {"min": 9, "max": 13},
-      "pressureType": "revelatory"
+      "pressureType": "revelation"
     },
     {
       "actNumber": 4,
-      "name": "The Breaking Point",
-      "primaryArea": "contested_city",
-      "narrativePurpose": "Expectation violation - premature resolution forces new framing",
-      "primaryDanger": "irreversible_choice",
+      "name": "The Breach",
+      "primaryArea": "tower_upper_levels",
+      "narrativePurpose": "Evil awakens, party must descend through chaos",
+      "primaryDanger": "corrupted_constructs",
       "beatExpectations": {"min": 9, "max": 13},
-      "pressureType": "existential"
+      "pressureType": "pursuit"
     },
     {
       "actNumber": 5,
-      "name": "Coronation or Ruin",
-      "primaryArea": "throne_room",
-      "narrativePurpose": "Final choice with lasting consequences for the realm",
-      "primaryDanger": "no_good_options",
+      "name": "The Heart",
+      "primaryArea": "prison_core",
+      "narrativePurpose": "Face the imprisoned horror, reseal or flee",
+      "primaryDanger": "unleashed_entity",
       "beatExpectations": {"min": 9, "max": 13},
-      "pressureType": "escalating"
+      "pressureType": "terminal"
     }
   ],
   "majorForces": {
-    "military_faction": {
-      "name": "The Iron Legion",
-      "nature": "military_power",
-      "primaryGoal": "restore_order_through_strength",
-      "methods": ["intimidation", "martial_law", "strategic_alliances"],
-      "threatLevel": "direct"
+    "tower_guardians": {
+      "name": "The Sentinel Constructs",
+      "nature": "magical_automatons",
+      "primaryGoal": "test_intruders_prevent_prison_breach",
+      "methods": ["traps", "combat", "sealing_passages"],
+      "threatLevel": "standard"
     },
-    "noble_council": {
-      "name": "The Silver Council",
-      "nature": "aristocratic_bloc",
-      "primaryGoal": "preserve_traditional_power",
-      "methods": ["negotiation", "bribery", "legal_maneuvering"],
-      "threatLevel": "systemic"
+    "azamar_echo": {
+      "name": "Echo of Azamar",
+      "role": "imprisoned_wizard_consciousness",
+      "nature": "magical_remnant",
+      "primaryGoal": "warn_party_guide_to_reseal",
+      "methods": ["visions", "riddles", "desperate_messages"],
+      "threatLevel": "ally_warning"
     },
-    "church": {
-      "name": "The Divine Order",
-      "nature": "religious_authority",
-      "primaryGoal": "install_divine_chosen_ruler",
-      "methods": ["prophecy", "zealotry", "popular_support"],
-      "threatLevel": "ideological"
-    },
-    "shadow_power": {
-      "name": "The Broken Crown",
-      "nature": "ancient_curse",
-      "primaryGoal": "consume_rulers",
-      "methods": ["corruption", "manipulation"],
-      "threatLevel": "metaphysical"
+    "the_sleeper": {
+      "name": "The Thing Beyond Names",
+      "nature": "eldritch_horror",
+      "primaryGoal": "break_free_consume_reality",
+      "methods": ["corruption", "madness", "reality_unraveling"],
+      "threatLevel": "apocalyptic"
     }
   },
   "npcs": {
-    "general": {
-      "name": "General Korven Steelhand",
-      "role": "antagonist_primary",
+    "patron_merchant": {
+      "name": "Lord Vendar",
+      "role": "ignorant_patron",
       "firstAppearanceAct": 1,
-      "personality": ["pragmatic", "ruthless", "charismatic"],
-      "agenda": "seize_throne_restore_order"
+      "personality": ["greedy", "foolish"],
+      "agenda": "profit_from_tower_treasures"
     },
-    "chancellor": {
-      "name": "Chancellor Marius Goldweave",
-      "role": "antagonist_secondary",
+    "rival_treasure_hunter": {
+      "name": "Captain Rhys",
+      "role": "competing_delver",
       "firstAppearanceAct": 1,
-      "personality": ["cunning", "eloquent", "self-serving"],
-      "agenda": "become_power_behind_throne"
+      "personality": ["ambitious", "reckless"],
+      "agenda": "reach_top_first"
     },
-    "priestess": {
-      "name": "High Priestess Lyra the Devoted",
-      "role": "antagonist_ideological",
+    "tower_guardian": {
+      "name": "The Iron Warden",
+      "role": "first_major_obstacle",
       "firstAppearanceAct": 2,
-      "personality": ["zealous", "sincere", "dangerous"],
-      "agenda": "install_divine_ruler"
+      "personality": ["ancient", "implacable"],
+      "agenda": "test_worthiness"
     },
-    "heir": {
-      "name": "Prince Aldric the Lost",
-      "role": "catalyst",
-      "firstAppearanceAct": 3,
-      "personality": ["transformed", "reluctant", "knowing"],
-      "agenda": "prevent_anyone_from_taking_cursed_throne"
-    },
-    "royal_guard": {
-      "name": "Captain Sera Brightblade",
-      "role": "ally_conflicted",
-      "firstAppearanceAct": 1,
-      "personality": ["loyal", "honorable", "desperate"],
-      "agenda": "protect_legitimate_succession"
+    "corrupted_guardian": {
+      "name": "The Broken Warden",
+      "role": "tragic_enemy",
+      "firstAppearanceAct": 4,
+      "personality": ["corrupted", "raging"],
+      "agenda": "kill_everything_prevent_reseal"
     }
   },
   "boonPlan": [
     {
-      "boonName": "faction_alliance",
+      "boonName": "ward_against_madness",
       "act": 2,
-      "trigger": "secure_faction_support",
-      "narrativeCost": "enemy_of_other_factions"
+      "trigger": "discover_wizard_journal",
+      "narrativeCost": "trigger_guardian_defense"
     },
     {
-      "boonName": "royal_authority",
+      "boonName": "sealing_ritual_knowledge",
       "act": 3,
-      "trigger": "heir_endorses_party",
-      "narrativeCost": "responsibility_for_realm"
+      "trigger": "access_archive_vault",
+      "narrativeCost": "entity_becomes_aware"
     },
     {
-      "boonName": "crown_breaker",
+      "boonName": "azamar_staff_fragment",
       "act": 4,
-      "trigger": "understand_curse",
-      "narrativeCost": "forbidden_knowledge"
+      "trigger": "defeat_corrupted_guardian",
+      "narrativeCost": "time_as_breach_accelerates"
     }
   ],
   "failurePaths": [
     {
-      "trigger": "civil_war_erupts",
-      "consequence": "kingdom_fractures_mass_casualties",
-      "recoveryPath": "emergency_ceasefire_or_pick_side"
+      "trigger": "party_flees_tower",
+      "consequence": "entity_breaks_free_unchecked",
+      "recoveryPath": "marshal_forces_or_seal_from_outside"
     },
     {
-      "trigger": "heir_dies_or_corrupted",
-      "consequence": "legitimacy_lost_chaos_deepens",
-      "recoveryPath": "find_alternative_or_new_government"
+      "trigger": "party_member_corrupted",
+      "consequence": "sabotage_from_within",
+      "recoveryPath": "restrain_or_mercy_kill"
     },
     {
-      "trigger": "party_claims_throne",
-      "consequence": "expectation_violation_all_factions_unite_against_you",
-      "recoveryPath": "survive_and_prove_worth"
+      "trigger": "seal_fails",
+      "consequence": "entity_manifests_partially",
+      "recoveryPath": "temporary_binding_buy_time"
+    },
+    {
+      "trigger": "tower_collapses",
+      "consequence": "trapped_with_entity",
+      "recoveryPath": "fight_or_bargain"
     }
   ],
   "endStates": {
-    "triumph": "Rightful ruler crowned, curse broken, realm unified",
-    "costly_victory": "Succession resolved but kingdom weakened or war-torn",
-    "pyrrhic_success": "Peace achieved but wrong ruler or curse persists",
-    "failure": "Civil war continues, realm collapses, curse spreads"
+    "triumph": "Entity resealed, tower destroyed, horror contained",
+    "costly_victory": "Entity sealed but party member(s) lost or corrupted",
+    "pyrrhic_success": "Entity weakened but tower stands, will eventually escape",
+    "failure": "Entity breaks free, reality begins unraveling, run"
   },
   "memoryDirectives": {
     "canonicalFacts": [
-      "heir_disappearance_date",
-      "faction_stances",
-      "curse_nature",
-      "party_allegiances",
-      "succession_decision"
+      "tower_entered",
+      "prison_truth_discovered",
+      "breach_triggered",
+      "entity_name_learned_or_not",
+      "seal_status"
     ],
     "relationshipAxes": [
-      {"entity": "iron_legion", "states": ["neutral", "allied", "opposed", "at_war"]},
-      {"entity": "silver_council", "states": ["ignored", "negotiating", "allied", "enemy"]},
-      {"entity": "divine_order", "states": ["distant", "cooperating", "zealous_against"]},
-      {"entity": "heir", "states": ["missing", "found", "trusted", "enemy"]}
+      {"entity": "tower", "states": ["mysterious", "hostile", "collapsing"]},
+      {"entity": "guardians", "states": ["testing", "corrupted", "destroyed"]},
+      {"entity": "entity", "states": ["sleeping", "stirring", "manifesting", "sealed", "free"]},
+      {"entity": "azamar_echo", "states": ["silent", "warning", "helping", "gone"]}
     ],
     "decisionFlags": [
-      "faction_chosen",
-      "curse_revealed",
-      "heir_fate_decided",
-      "throne_claimed_or_refused",
-      "violence_escalated"
+      "took_treasure_from_lower_levels",
+      "defeated_iron_warden",
+      "read_full_archive",
+      "attempted_reseal",
+      "tower_destroyed"
     ]
   },
   "imagePlan": {
     "intro": {
-      "description": "The empty throne room after the heir's disappearance",
-      "prompt": "A grand medieval throne room with an empty ornate throne, crown sitting abandoned, worried courtiers and guards whispering, heavy atmosphere of crisis and uncertainty, dramatic lighting through stained glass windows, fantasy setting",
+      "description": "Ancient wizard tower emerging from mists",
+      "prompt": "Massive ancient stone tower piercing through morning mist, covered in arcane runes glowing faintly, ominous but beautiful, adventurers approaching with torches, epic dark fantasy landscape, detailed architectural art",
       "sendWhen": "campaign_start",
-      "narrativePurpose": "Establish the power vacuum",
+      "narrativePurpose": "Establish wonder and hidden danger",
       "s3Key": ""
     },
-    "war_camp": {
-      "description": "Military encampment preparing for civil war",
-      "prompt": "A massive military war camp with rows of tents, soldiers sharpening weapons, war banners flying, generals planning around a map table, tension and anticipation, dusk lighting, fantasy medieval warfare",
-      "sendWhen": "beat_faction_rising",
-      "narrativePurpose": "Show the escalating conflict",
+    "guardian_encounter": {
+      "description": "Massive guardian construct blocking passage",
+      "prompt": "Towering stone and metal guardian construct blocking spiral staircase in wizard tower, glowing runes on armor, massive sword raised, adventurers dwarfed by its size, dramatic lighting, fantasy dungeon art",
+      "sendWhen": "beat_first_guardian",
+      "narrativePurpose": "Show escalating danger",
       "s3Key": ""
     },
-    "monastery": {
-      "description": "Discovering the heir in a remote monastery",
-      "prompt": "A weathered stone monastery on a misty mountaintop, a transformed prince in simple robes standing in candlelit chapel, mystical atmosphere, realization and revelation, dramatic shadows, detailed fantasy environment",
-      "sendWhen": "beat_heir_found",
-      "narrativePurpose": "Reveal the central mystery",
+    "archive_revelation": {
+      "description": "Ancient library revealing the truth",
+      "prompt": "Vast magical library in tower, books floating in air, ancient murals showing imprisoned horror, glowing warning glyphs, sense of terrible knowledge revealed, detailed fantasy interior",
+      "sendWhen": "beat_prison_revealed",
+      "narrativePurpose": "The moment everything changes",
       "s3Key": ""
     },
-    "coronation": {
-      "description": "The final coronation ceremony",
-      "prompt": "A grand coronation ceremony in an ornate throne room, new ruler being crowned, crowd of nobles and common folk watching, mixture of hope and uncertainty, golden light streaming through windows, epic fantasy moment",
-      "sendWhen": "beat_succession_resolved",
-      "narrativePurpose": "Visualize the resolution",
+    "entity_awakening": {
+      "description": "Horror beginning to break free",
+      "prompt": "Eldritch horror emerging from massive broken seal, reality warping around it, tower shaking, dark tendrils of energy, cosmic horror art style, overwhelming sense of wrongness",
+      "sendWhen": "beat_breach_begins",
+      "narrativePurpose": "Show apocalyptic stakes",
       "s3Key": ""
     }
   },
   "combatConstraints": {
     "maxCombatScenes": 3,
     "combatIntent": {
-      "act1": "none - crisis unfolds through political pressure",
-      "act2": "signal that factions will use force and neutrality is ending",
-      "act3": "none - revelations drive tension, not violence",
-      "act4": "force irreversible stance through premature confrontation",
-      "act5": "final battle must expose fundamental incompatibilities"
+      "act1": "none - discovery and puzzle-solving drive tension",
+      "act2": "guardian trial proves party worthy or unworthy",
+      "act3": "none - horror through revelation",
+      "act4": "corrupted constructs force running battle during descent",
+      "act5": "final choice: seal requires sacrifice or combat buys time"
     },
     "combatTriggers": [
-      "faction_assassination_attempt",
-      "battlefield_negotiation_collapses",
-      "throne_room_coup",
-      "party_forced_to_choose_side",
-      "curse_manifests_physically"
+      "iron_warden_challenges_party",
+      "constructs_corrupted_by_entity",
+      "rival_party_turns_violent",
+      "entity_manifests_requires_binding",
+      "corrupted_guardian_ambush"
     ],
     "combatOutcomesMust": [
-      "eliminate_one_faction_from_contention",
-      "force_public_declaration_of_loyalty",
-      "reveal_hidden_allegiances",
-      "create_martyr_that_shifts_public_opinion",
-      "prove_capability_or_unworthiness_of_claimant"
+      "prove_worthiness_or_find_another_path",
+      "buy_time_for_ritual_completion",
+      "determine_who_survives_to_seal",
+      "force_choice_between_fight_or_flee"
     ]
   }
 }
-

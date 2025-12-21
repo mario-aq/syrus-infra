@@ -546,6 +546,50 @@ func validateBlueprint(blueprint *models.Blueprint, seeds models.CampaignSeeds) 
 		return fmt.Errorf("acts count mismatch: expected %d, got %d", expectedActs, len(blueprint.Acts))
 	}
 
+	// D&D Sanity Check: Ensure at least one act has physical danger
+	// Check for: named monsters, physical lairs, or direct combat opportunities
+	hasFightableContent := false
+	for _, act := range blueprint.Acts {
+		primaryArea := strings.ToLower(act.PrimaryArea)
+		primaryDanger := strings.ToLower(act.PrimaryDanger)
+		narrativePurpose := strings.ToLower(act.NarrativePurpose)
+
+		// Check for physical locations/dangers
+		physicalKeywords := []string{
+			"lair", "ruins", "tomb", "dungeon", "stronghold", "tower", "cave",
+			"monster", "beast", "dragon", "undead", "creature", "guardian",
+			"fight", "combat", "assault", "siege", "defend", "battle",
+		}
+
+		actText := primaryArea + " " + primaryDanger + " " + narrativePurpose
+		for _, keyword := range physicalKeywords {
+			if strings.Contains(actText, keyword) {
+				hasFightableContent = true
+				break
+			}
+		}
+
+		if hasFightableContent {
+			break
+		}
+	}
+
+	// Check major forces for physical antagonists
+	if !hasFightableContent && len(blueprint.MajorForces) > 0 {
+		for range blueprint.MajorForces {
+			// Look for creature/monster types in the force data
+			// This is a simple check - we're looking for any indication of a physical threat
+			hasFightableContent = true // If there are major forces defined, assume they're physical
+			break
+		}
+	}
+
+	if !hasFightableContent {
+		log.Printf("WARNING: Blueprint may lack physical threats - no monsters, lairs, or direct combat opportunities found")
+		// Note: We log a warning but don't fail validation to allow flexibility
+		// This is a sanity check, not a hard requirement
+	}
+
 	// TODO: Add more validation as needed:
 	// - Validate area names match featured areas
 	// - Validate NPC firstAppearanceAct values

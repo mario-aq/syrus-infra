@@ -1,199 +1,209 @@
 {
-  "title": "The Gilded Inquisition",
-  "premise": "An inquisitorial order has begun hunting practitioners of forbidden magic. The party must navigate political intrigue, protect the innocent, and confront the true purpose behind the purge.",
+  "title": "The Serpent Cult's Awakening",
+  "premise": "People vanish from a frontier town. Tracks lead to caves where a forgotten cult prepares to summon their serpent god. The party must infiltrate the temple and stop the ritual before the god breaks free.",
   "thematicPillars": [
-    "justice_vs_order",
-    "hidden_knowledge",
-    "cost_of_silence"
+    "forbidden_worship",
+    "descent_into_madness",
+    "price_of_knowledge"
   ],
   "beatQualification": {
-    "mustHave": ["inquisitor_arrival", "sanctuary_decision", "hidden_archive", "confrontation"],
-    "mayHave": ["investigation", "moral_dilemma", "betrayal", "escape"]
+    "mustHave": ["track_cultists", "infiltrate_temple", "disrupt_ritual", "face_serpent"],
+    "mayHave": ["rescue_captives", "discover_god_weakness", "temple_collapse"]
   },
   "ingredientBinding": {
-    "objective": ["protect_innocents"],
-    "twists": ["ally_is_compromised", "truth_is_inverted"],
-    "antagonists": ["zealot_inquisitor", "corrupt_magistrate"],
-    "setPieces": ["tribunal", "hidden_library"]
+    "objective": ["stop_the_ritual"],
+    "twists": ["time_pressure", "ally_corrupted"],
+    "antagonists": ["serpent_cult"],
+    "setPieces": ["forbidden_shrine", "interrupted_ritual"]
   },
   "acts": [
     {
       "actNumber": 1,
-      "name": "The Arrival",
-      "primaryArea": "temple_district",
-      "narrativePurpose": "Establish threat and moral stakes",
-      "primaryDanger": "surveillance",
-      "beatExpectations": {"min": 6, "max": 9},
-      "pressureType": "social"
-    },
-    {
-      "actNumber": 2,
-      "name": "Sanctuary and Secrets",
-      "primaryArea": "underground_network",
-      "narrativePurpose": "Reveal deeper conspiracy, force stance",
-      "primaryDanger": "exposure",
+      "name": "The Vanishing",
+      "primaryArea": "ironwood_settlement",
+      "narrativePurpose": "Establish mystery and begin hunt",
+      "primaryDanger": "cult_agents_hidden",
       "beatExpectations": {"min": 6, "max": 9},
       "pressureType": "investigative"
     },
     {
-      "actNumber": 3,
-      "name": "The Hidden Archive",
-      "primaryArea": "forgotten_catacombs",
-      "narrativePurpose": "Uncover true purpose of purge",
-      "primaryDanger": "knowledge_corruption",
+      "actNumber": 2,
+      "name": "The Cave Trail",
+      "primaryArea": "serpent_caves",
+      "narrativePurpose": "Track through hostile wilderness to hidden temple",
+      "primaryDanger": "cult_guards_and_traps",
       "beatExpectations": {"min": 6, "max": 9},
-      "pressureType": "revelatory"
+      "pressureType": "environmental"
+    },
+    {
+      "actNumber": 3,
+      "name": "Temple of the Coiled God",
+      "primaryArea": "subterranean_temple",
+      "narrativePurpose": "Infiltrate and discover true scale of threat",
+      "primaryDanger": "cult_discovery",
+      "beatExpectations": {"min": 6, "max": 9},
+      "pressureType": "stealth"
     },
     {
       "actNumber": 4,
-      "name": "Judgment",
-      "primaryArea": "grand_tribunal",
-      "narrativePurpose": "Force final choice with lasting consequences",
-      "primaryDanger": "irreversible_verdict",
+      "name": "The Awakening",
+      "primaryArea": "ritual_chamber",
+      "narrativePurpose": "Stop ritual and face the serpent god",
+      "primaryDanger": "god_partially_manifested",
       "beatExpectations": {"min": 6, "max": 9},
-      "pressureType": "escalating"
+      "pressureType": "terminal"
     }
   ],
   "majorForces": {
-    "inquisition": {
-      "name": "The Silver Inquisition",
-      "nature": "religious_enforcement",
-      "primaryGoal": "eradicate_forbidden_magic",
-      "methods": ["investigation", "public_trials", "execution"],
-      "threatLevel": "systemic"
+    "serpent_cult": {
+      "name": "The Coiled Faithful",
+      "nature": "demon_worshippers",
+      "primaryGoal": "summon_serpent_god",
+      "methods": ["kidnapping", "sacrifice", "dark_magic"],
+      "threatLevel": "high"
     },
-    "underground": {
-      "name": "The Veiled Circle",
-      "nature": "refugee_network",
-      "primaryGoal": "survival_and_resistance",
-      "methods": ["hiding", "smuggling", "information_gathering"],
-      "threatLevel": "vulnerable"
-    },
-    "shadow_power": {
-      "name": "The Archive Keepers",
-      "nature": "ancient_order",
-      "primaryGoal": "preserve_forbidden_knowledge",
-      "methods": ["manipulation", "secrecy"],
-      "threatLevel": "ambiguous"
+    "serpent_god": {
+      "name": "Sseth the Uncoiling",
+      "nature": "ancient_demon",
+      "primaryGoal": "break_free_of_prison",
+      "methods": ["corruption", "possession", "physical_manifestation"],
+      "threatLevel": "extreme"
     }
   },
   "npcs": {
-    "inquisitor": {
-      "name": "High Inquisitor Cassia Mordain",
-      "role": "antagonist_primary",
+    "magistrate_vex": {
+      "name": "Magistrate Vex",
+      "role": "desperate_official",
       "firstAppearanceAct": 1,
-      "personality": ["zealous", "intelligent", "uncompromising"],
-      "agenda": "complete_the_purge"
+      "personality": ["panicked", "hiding_something"],
+      "agenda": "keep_disappearances_quiet"
     },
-    "refugee": {
-      "name": "Elara the Scribe",
-      "role": "ally_vulnerable",
+    "tracker_kess": {
+      "name": "Kess the Tracker",
+      "role": "local_guide",
       "firstAppearanceAct": 1,
-      "personality": ["frightened", "determined", "knowledgeable"],
-      "agenda": "protect_daughter_and_truth"
+      "personality": ["capable", "suspicious"],
+      "agenda": "find_missing_sister"
     },
-    "keeper": {
-      "name": "Archivist Severin",
-      "role": "ambiguous_guide",
+    "cult_high_priest": {
+      "name": "Father Malachar",
+      "role": "cult_leader",
       "firstAppearanceAct": 3,
-      "personality": ["cryptic", "ancient", "calculating"],
-      "agenda": "test_worthiness"
+      "personality": ["zealous", "transformed"],
+      "agenda": "complete_the_summoning"
+    },
+    "corrupted_captive": {
+      "name": "Sister Elara",
+      "role": "tragic_ally",
+      "firstAppearanceAct": 3,
+      "personality": ["corrupted", "fighting_possession"],
+      "agenda": "warn_party_then_attack"
     }
   },
   "boonPlan": [
     {
-      "boonName": "sanctuary_network",
-      "act": 2,
-      "trigger": "earn_underground_trust",
-      "narrativeCost": "inquisition_attention"
+      "boonName": "serpent_venom_antidote",
+      "act": 1,
+      "trigger": "examine_victim_corpse",
+      "narrativeCost": "disturb_the_dead"
     },
     {
-      "boonName": "forbidden_ritual",
+      "boonName": "binding_ritual",
+      "act": 2,
+      "trigger": "find_old_shrine_to_opposing_god",
+      "narrativeCost": "alert_cult_scouts"
+    },
+    {
+      "boonName": "temple_weakness",
       "act": 3,
-      "trigger": "unlock_archive",
-      "narrativeCost": "moral_compromise"
+      "trigger": "decipher_ancient_carvings",
+      "narrativeCost": "ritual_progresses_while_reading"
     }
   ],
   "failurePaths": [
     {
-      "trigger": "sanctuary_discovered",
-      "consequence": "mass_arrests_innocents_executed",
-      "recoveryPath": "emergency_rescue_or_public_stand"
+      "trigger": "ritual_completes",
+      "consequence": "serpent_god_fully_manifests",
+      "recoveryPath": "bind_it_temporarily_and_flee"
     },
     {
-      "trigger": "archive_corrupts_party_member",
-      "consequence": "internal_conflict_trust_broken",
-      "recoveryPath": "confrontation_or_containment"
+      "trigger": "party_member_possessed",
+      "consequence": "corrupted_ally_attacks_from_within",
+      "recoveryPath": "exorcism_or_restraint"
+    },
+    {
+      "trigger": "temple_sealed",
+      "consequence": "trapped_with_cultists_and_god",
+      "recoveryPath": "find_secret_passage_or_collapse_temple"
     }
   ],
   "endStates": {
-    "triumph": "Inquisition exposed and reformed, innocents saved, knowledge preserved",
-    "costly_victory": "Purge stopped but key allies lost or knowledge destroyed",
-    "pyrrhic_success": "Innocents saved but inquisition empowered or corruption spreads",
-    "failure": "Purge completes, underground destroyed, truth lost"
+    "triumph": "Ritual stopped, serpent god banished, cult broken",
+    "costly_victory": "God banished but captives lost or party corrupted",
+    "pyrrhic_success": "God sealed but cult escapes, will try again",
+    "failure": "Serpent god awakens, temple becomes feeding ground"
   },
   "memoryDirectives": {
     "canonicalFacts": [
-      "inquisition_arrival_date",
-      "sanctuary_locations",
-      "archive_contents",
-      "public_stance_taken"
+      "disappearances_count",
+      "temple_location",
+      "ritual_interrupted_or_completed",
+      "serpent_god_status"
     ],
     "relationshipAxes": [
-      {"entity": "inquisition", "states": ["unknown", "opposed", "negotiating", "enemy"]},
-      {"entity": "underground", "states": ["distant", "allied", "compromised"]},
-      {"entity": "archive", "states": ["undiscovered", "accessed", "corrupted"]}
+      {"entity": "town", "states": ["desperate", "abandoned", "saved"]},
+      {"entity": "cult", "states": ["hidden", "discovered", "broken"]},
+      {"entity": "serpent_god", "states": ["sealed", "manifesting", "freed", "banished"]}
     ],
     "decisionFlags": [
-      "sanctuary_provided",
-      "archive_opened",
-      "public_accusation_made",
-      "violence_escalated"
+      "rescued_captives",
+      "destroyed_temple",
+      "learned_gods_name",
+      "ally_corrupted"
     ]
   },
   "imagePlan": {
     "intro": {
-      "description": "Inquisitors arriving at city gates with prisoners in chains",
-      "prompt": "Fantasy medieval city gates at dawn, stern religious inquisitors in silver and white robes arriving, chained prisoners behind them, fearful citizens watching, ominous atmosphere, dramatic lighting, detailed fantasy art",
+      "description": "Frontier town at dusk with people whispering about disappearances",
+      "prompt": "A dark fantasy frontier settlement at dusk, worried townsfolk in shadows, missing person notices on walls, ominous caves visible in distant hills, tense atmosphere, detailed fantasy art",
       "sendWhen": "campaign_start",
-      "narrativePurpose": "Establish authoritarian threat",
+      "narrativePurpose": "Establish mystery and dread",
       "s3Key": ""
     },
-    "tribunal": {
-      "description": "A grand public trial in progress",
-      "prompt": "A grand medieval tribunal hall, elevated judges' bench with religious symbols, accused standing in the center, crowd of onlookers, tension and judgment in the air, dramatic shadows, fantasy setting",
-      "sendWhen": "beat_public_trial",
-      "narrativePurpose": "Visualize the justice system as threat",
+    "temple_discovery": {
+      "description": "Hidden temple carved with serpent imagery",
+      "prompt": "Ancient underground temple with massive serpent carvings on walls, cultists in hooded robes, ritual braziers casting eerie green light, altar with chains, dark fantasy temple interior",
+      "sendWhen": "beat_temple_entrance",
+      "narrativePurpose": "Reveal cult and its power",
       "s3Key": ""
     },
-    "archive": {
-      "description": "Ancient forbidden library deep underground",
-      "prompt": "An ancient underground library with towering shelves of forbidden books, glowing mystical runes, dust and cobwebs, mysterious artifacts, eerie blue magical light, fantasy dungeon aesthetic, detailed environment",
-      "sendWhen": "beat_archive_discovery",
-      "narrativePurpose": "Show the hidden knowledge at stake",
+    "serpent_manifestation": {
+      "description": "Massive serpent god partially emerging during ritual",
+      "prompt": "Enormous serpent demon emerging from ritual circle, scales gleaming in firelight, hypnotic eyes, cultists prostrating, underground cavern shaking, epic dark fantasy monster art",
+      "sendWhen": "beat_ritual_interrupted",
+      "narrativePurpose": "Show the terrible stakes",
       "s3Key": ""
     }
   },
   "combatConstraints": {
     "maxCombatScenes": 2,
     "combatIntent": {
-      "act1": "none - tension builds through surveillance and bureaucratic pressure",
-      "act2": "signal that negotiation has real cost and violence is a last resort",
-      "act3": "none - revelations drive escalation, not violence",
-      "act4": "force decisive choice between restraint and escalation"
+      "act1": "none - tension through investigation",
+      "act2": "ambush by cult guards signals escalation",
+      "act3": "none - stealth and discovery drive tension",
+      "act4": "final confrontation with cult leader or manifestation"
     },
     "combatTriggers": [
-      "sanctuary_raid",
-      "escape_attempt",
-      "tribunal_disrupted",
-      "final_confrontation"
+      "cult_patrol_discovers_party",
+      "rescue_captives_triggers_alarm",
+      "interrupt_ritual_forces_confrontation",
+      "high_priest_calls_for_sacrifice"
     ],
     "combatOutcomesMust": [
-      "force_public_stance_eliminates_neutrality",
-      "irreversibly_damage_trust_with_faction",
-      "reveal_hidden_allegiances",
-      "create_martyr_or_witness_that_changes_narrative"
+      "reveal_cult_true_power",
+      "force_choice_between_stealth_and_speed",
+      "determine_ritual_completion_timing",
+      "break_cult_leadership_or_force_god_manifestation"
     ]
   }
 }
-

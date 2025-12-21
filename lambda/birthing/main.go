@@ -311,6 +311,7 @@ func selectFeaturedAreas(mapData MapData, count int) []AreaData {
 // selectObjectiveWithBias selects an objective while avoiding recent patterns
 func selectObjectiveWithBias(objectives []models.ObjectiveSeed, profile LengthProfile) models.ObjectiveSeed {
 	eligible := make([]models.ObjectiveSeed, 0)
+	preferred := make([]models.ObjectiveSeed, 0)
 
 	for _, obj := range objectives {
 		// Apply variance rules
@@ -318,21 +319,35 @@ func selectObjectiveWithBias(objectives []models.ObjectiveSeed, profile LengthPr
 			continue
 		}
 
+		// D&D Rule: Prefer actionable resolution styles (violent, tactical, survival)
+		isActionable := obj.ResolutionStyle == "violent" || obj.ResolutionStyle == "tactical" || obj.ResolutionStyle == "survival"
+
 		// Check if preferred category
 		if len(profile.VarianceRules.PreferCategories) > 0 {
-			preferred := false
+			categoryMatch := false
 			for _, cat := range profile.VarianceRules.PreferCategories {
 				if obj.PrimaryThreatCategory == cat || obj.TerrainCategory == cat {
-					preferred = true
+					categoryMatch = true
 					break
 				}
 			}
-			if preferred {
+			if categoryMatch {
 				eligible = append(eligible, obj)
+				if isActionable {
+					preferred = append(preferred, obj)
+				}
 			}
 		} else {
 			eligible = append(eligible, obj)
+			if isActionable {
+				preferred = append(preferred, obj)
+			}
 		}
+	}
+
+	// If we have preferred actionable objectives, strongly bias towards them (80%)
+	if len(preferred) > 0 && rand.Float32() < 0.8 {
+		return preferred[rand.Intn(len(preferred))]
 	}
 
 	// If no eligible, fall back to all non-excluded
@@ -365,20 +380,62 @@ func selectAntagonistsWithBias(antagonists []models.AntagonistSeed, profile Leng
 	eligible := make([]models.AntagonistSeed, len(antagonists))
 	copy(eligible, antagonists)
 
-	// Apply variance rules
+	// Cap metaphysical antagonists to max 1 per campaign (D&D rule)
+	maxMetaphysical := 1
+	metaphysicalCount := 0
+
+	// Ensure at least one direct presenceStyle for Act 1 (D&D rule)
+	var directAntagonists []models.AntagonistSeed
+	var nonDirectAntagonists []models.AntagonistSeed
+	for _, ant := range eligible {
+		if ant.PresenceStyle == "direct" {
+			directAntagonists = append(directAntagonists, ant)
+		} else {
+			nonDirectAntagonists = append(nonDirectAntagonists, ant)
+		}
+	}
+
+	selected := make([]models.AntagonistSeed, 0)
+
+	// FIRST: Ensure at least one direct antagonist
+	if len(directAntagonists) > 0 {
+		idx := rand.Intn(len(directAntagonists))
+		selected = append(selected, directAntagonists[idx])
+		if directAntagonists[idx].PrimaryThreatCategory == "metaphysical" {
+			metaphysicalCount++
+		}
+		// Remove from both lists
+		directAntagonists = append(directAntagonists[:idx], directAntagonists[idx+1:]...)
+	}
+
+	// Rebuild eligible pool
+	eligible = append(directAntagonists, nonDirectAntagonists...)
+
+	// Apply variance rules for remaining slots
 	if profile.VarianceRules.RequireMultipleThreatCategories {
 		// Ensure diversity in threat categories
-		selected := make([]models.AntagonistSeed, 0)
 		usedCategories := make(map[string]bool)
+		if len(selected) > 0 {
+			usedCategories[selected[0].PrimaryThreatCategory] = true
+		}
 
 		for len(selected) < count && len(eligible) > 0 {
 			idx := rand.Intn(len(eligible))
 			ant := eligible[idx]
 
+			// Skip if metaphysical and already at cap
+			if ant.PrimaryThreatCategory == "metaphysical" && metaphysicalCount >= maxMetaphysical {
+				eligible = append(eligible[:idx], eligible[idx+1:]...)
+				continue
+			}
+
 			// Prefer antagonists with different categories
 			if !usedCategories[ant.PrimaryThreatCategory] || len(selected) >= count/2 {
 				selected = append(selected, ant)
 				usedCategories[ant.PrimaryThreatCategory] = true
+				if ant.PrimaryThreatCategory == "metaphysical" {
+					metaphysicalCount++
+				}
 			}
 
 			// Remove from eligible
@@ -387,9 +444,24 @@ func selectAntagonistsWithBias(antagonists []models.AntagonistSeed, profile Leng
 		return selected
 	}
 
-	// Standard random selection
+	// Standard random selection with metaphysical cap
 	rand.Shuffle(len(eligible), func(i, j int) { eligible[i], eligible[j] = eligible[j], eligible[i] })
-	return eligible[:count]
+	for len(selected) < count && len(eligible) > 0 {
+		ant := eligible[0]
+		eligible = eligible[1:]
+
+		// Skip if metaphysical and already at cap
+		if ant.PrimaryThreatCategory == "metaphysical" && metaphysicalCount >= maxMetaphysical {
+			continue
+		}
+
+		selected = append(selected, ant)
+		if ant.PrimaryThreatCategory == "metaphysical" {
+			metaphysicalCount++
+		}
+	}
+
+	return selected
 }
 
 // generateVarianceInjectors creates sameness killers based on campaign type
@@ -472,6 +544,67 @@ func selectRandomElements[T any](items []T, min, max int) []T {
 	return shuffled[:count]
 }
 
+// selectWeightedConstraints selects constraints based on weight (D&D bias: attrition > politics)
+func selectWeightedConstraints(constraints []models.ConstraintSeed, min, max int) []models.ConstraintSeed {
+	count := rand.Intn(max-min+1) + min
+	if count > len(constraints) {
+		count = len(constraints)
+	}
+	if count == 0 {
+		return []models.ConstraintSeed{}
+	}
+
+	// Calculate total weight
+	totalWeight := 0
+	for _, c := range constraints {
+		weight := c.Weight
+		if weight == 0 {
+			weight = 1 // Default weight
+		}
+		totalWeight += weight
+	}
+
+	selected := make([]models.ConstraintSeed, 0, count)
+	remaining := make([]models.ConstraintSeed, len(constraints))
+	copy(remaining, constraints)
+
+	// Select 'count' constraints using weighted random selection
+	for i := 0; i < count && len(remaining) > 0; i++ {
+		// Recalculate total weight for remaining items
+		totalWeight = 0
+		for _, c := range remaining {
+			weight := c.Weight
+			if weight == 0 {
+				weight = 1
+			}
+			totalWeight += weight
+		}
+
+		// Pick a random number and find which constraint it falls into
+		r := rand.Intn(totalWeight)
+		sum := 0
+		selectedIdx := 0
+
+		for idx, c := range remaining {
+			weight := c.Weight
+			if weight == 0 {
+				weight = 1
+			}
+			sum += weight
+			if r < sum {
+				selectedIdx = idx
+				break
+			}
+		}
+
+		selected = append(selected, remaining[selectedIdx])
+		// Remove selected constraint from remaining
+		remaining = append(remaining[:selectedIdx], remaining[selectedIdx+1:]...)
+	}
+
+	return selected
+}
+
 // generateBlueprintSeeds generates random campaign seeds based on campaign type
 func generateBlueprintSeeds(campaign *models.Campaign) (*models.CampaignSeeds, error) {
 	// Parse configuration
@@ -552,7 +685,7 @@ func generateBlueprintSeeds(campaign *models.Campaign) (*models.CampaignSeeds, e
 		Twists:               selectRandomElements(seeds.TwistCandidates, profile.Selection.Twists.Min, profile.Selection.Twists.Max),
 		Antagonists:          antagonists,
 		SetPieces:            selectRandomElements(seeds.SetPieceCandidates, profile.Selection.SetPieces.Min, profile.Selection.SetPieces.Max),
-		Constraints:          selectRandomElements(seeds.OptionalConstraints, profile.Selection.Constraints.Min, profile.Selection.Constraints.Max),
+		Constraints:          selectWeightedConstraints(seeds.OptionalConstraints, profile.Selection.Constraints.Min, profile.Selection.Constraints.Max),
 		Map:                  mapSeed,
 		FeaturedAreas:        areaSeed,
 		MaxCombatScenes:      profile.MaxCombatScenes,

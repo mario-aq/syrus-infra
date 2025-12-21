@@ -30,7 +30,7 @@
     "name": "The Gilded City",
     "description": "A metropolis of wealth, secrets, and quiet rot beneath polished stone.",
     "areas": [
-      { "areaId": 1, "name": "High Court Plaza", "mood": "opulent", "description": "Marble steps and cold smiles at the center of power." },
+      { "areaId": 1, "name": "Marble Tombs Plaza", "mood": "opulent", "description": "Marble crypts and cold silence where the wealthy rest." },
       { "areaId": 2, "name": "Gilded Market", "mood": "vibrant", "description": "Spices, silk, and stolen goods traded in plain sight." },
       { "areaId": 3, "name": "Shadow Alley", "mood": "dangerous", "description": "Lanterns go out early here; debts don’t." },
       { "areaId": 4, "name": "Marble District", "mood": "pristine", "description": "Guarded estates sealed from the city’s hunger." },

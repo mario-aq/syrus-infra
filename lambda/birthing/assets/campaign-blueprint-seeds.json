@@ -1,251 +1,334 @@
 {
   "objectiveSeeds": [
     {
-      "objectiveId": "recover_lost_relic",
-      "name": "Recover the Lost Relic",
-      "description": "A powerful or significant artifact has been lost, stolen, or hidden. The party must locate and secure it.",
+      "objectiveId": "delve_ancient_ruins",
+      "name": "Delve the Ancient Ruins",
+      "description": "Lost ruins hold treasure, knowledge, or power. The party must explore depths no one has survived.",
       "stakes": {
-        "on_success": "The relic is secured and its influence contained.",
-        "on_failure": "The relic empowers an enemy or destabilizes the region."
+        "on_success": "Ancient secrets are claimed before they can destroy or corrupt.",
+        "on_failure": "The ruins claim more lives, or what sleeps within awakens."
       },
       "complexity": "standard",
       "terrainCategory": "subterranean",
-      "primaryThreatCategory": "logistical"
+      "primaryThreatCategory": "metaphysical",
+      "resolutionStyle": "survival"
     },
     {
-      "objectiveId": "protect_vulnerable_settlement",
-      "name": "Protect the Vulnerable",
-      "description": "A community or individual is under imminent threat.",
+      "objectiveId": "slay_the_beast",
+      "name": "Slay the Beast",
+      "description": "A monstrous creature terrorizes the land. The party must hunt it down and end its reign.",
       "stakes": {
-        "on_success": "Lives are saved and trust is earned.",
-        "on_failure": "Loss, fear, or displacement spreads."
+        "on_success": "The beast is slain and its territory freed.",
+        "on_failure": "The creature multiplies, migrates, or evolves into something worse."
       },
       "complexity": "low",
       "terrainCategory": "interiorWilderness",
-      "primaryThreatCategory": "logistical"
+      "primaryThreatCategory": "ecological",
+      "resolutionStyle": "violent"
     },
     {
-      "objectiveId": "expose_hidden_truth",
-      "name": "Expose the Hidden Truth",
-      "description": "A secret threatens to reshape power or belief if revealed.",
+      "objectiveId": "break_the_curse",
+      "name": "Break the Curse",
+      "description": "A supernatural affliction plagues the land or its people. The party must find and destroy its source.",
       "stakes": {
-        "on_success": "The truth alters the balance of power.",
-        "on_failure": "Falsehood hardens into accepted reality."
-      },
-      "complexity": "high",
-      "terrainCategory": "institutional",
-      "primaryThreatCategory": "social"
-    },
-    {
-      "objectiveId": "escape_encroaching_doom",
-      "name": "Escape the Encroaching Doom",
-      "description": "A growing danger must be fled or outrun before it closes in.",
-      "stakes": {
-        "on_success": "The party survives and retains agency.",
-        "on_failure": "They are trapped, scattered, or consumed."
-      },
-      "complexity": "standard",
-      "terrainCategory": "nomadic",
-      "primaryThreatCategory": "ecological"
-    },
-    {
-      "objectiveId": "break_the_siege",
-      "name": "Break the Siege",
-      "description": "A stronghold, district, or sanctuary is under sustained pressure; the party must end the siege or slip through it.",
-      "stakes": {
-        "on_success": "The besieged endure and the enemy loses momentum.",
-        "on_failure": "The defense collapses and innocents pay the price."
-      },
-      "complexity": "standard",
-      "terrainCategory": "urbanVertical",
-      "primaryThreatCategory": "logistical"
-    },
-    {
-      "objectiveId": "stop_the_ritual",
-      "name": "Stop the Convergence",
-      "description": "A rite, machine, or phenomenon nears completion; the party must interrupt it before it reshapes reality.",
-      "stakes": {
-        "on_success": "The threat is delayed or neutralized.",
-        "on_failure": "The world changes in a lasting way."
+        "on_success": "The curse lifts and the afflicted are freed.",
+        "on_failure": "The curse spreads and becomes permanent."
       },
       "complexity": "high",
       "terrainCategory": "surreal",
-      "primaryThreatCategory": "metaphysical"
+      "primaryThreatCategory": "metaphysical",
+      "resolutionStyle": "puzzle"
+    },
+    {
+      "objectiveId": "storm_the_stronghold",
+      "name": "Storm the Stronghold",
+      "description": "An enemy force has fortified a position. The party must assault it or infiltrate its defenses.",
+      "stakes": {
+        "on_success": "The stronghold falls and the enemy's power breaks.",
+        "on_failure": "The fortress stands and the enemy grows bolder."
+      },
+      "complexity": "standard",
+      "terrainCategory": "urbanVertical",
+      "primaryThreatCategory": "logistical",
+      "resolutionStyle": "tactical"
+    },
+    {
+      "objectiveId": "escape_the_depths",
+      "name": "Escape the Depths",
+      "description": "Trapped beneath the earth, the party must find a way out before they are consumed.",
+      "stakes": {
+        "on_success": "The party escapes with knowledge and scars.",
+        "on_failure": "They are sealed below, lost to darkness and time."
+      },
+      "complexity": "standard",
+      "terrainCategory": "subterranean",
+      "primaryThreatCategory": "ecological",
+      "resolutionStyle": "survival"
+    },
+    {
+      "objectiveId": "recover_lost_relic",
+      "name": "Recover the Lost Relic",
+      "description": "A powerful artifact lies in a dangerous place. The party must claim it before enemies do.",
+      "stakes": {
+        "on_success": "The relic is secured before it can be misused.",
+        "on_failure": "The relic empowers an enemy or unleashes something ancient."
+      },
+      "complexity": "standard",
+      "terrainCategory": "subterranean",
+      "primaryThreatCategory": "metaphysical",
+      "resolutionStyle": "tactical"
+    },
+    {
+      "objectiveId": "survive_the_wilds",
+      "name": "Survive the Wilds",
+      "description": "The party must cross hostile wilderness where nature itself is the enemy.",
+      "stakes": {
+        "on_success": "They reach their destination changed but unbroken.",
+        "on_failure": "The wilderness claims them, scatters them, or breaks them."
+      },
+      "complexity": "low",
+      "terrainCategory": "interiorWilderness",
+      "primaryThreatCategory": "ecological",
+      "resolutionStyle": "survival"
+    },
+    {
+      "objectiveId": "stop_the_ritual",
+      "name": "Stop the Dark Rite",
+      "description": "Cultists prepare a ritual that will reshape reality. The party must reach them and stop it.",
+      "stakes": {
+        "on_success": "The ritual is disrupted and the cult broken.",
+        "on_failure": "The world changes in a lasting, terrible way."
+      },
+      "complexity": "high",
+      "terrainCategory": "surreal",
+      "primaryThreatCategory": "metaphysical",
+      "resolutionStyle": "violent"
     },
     {
       "objectiveId": "escort_the_key",
       "name": "Escort the Key",
-      "description": "A person, object, or message must reach a destination intact despite pursuit and sabotage.",
+      "description": "Something vital must reach a destination despite pursuit through dangerous territory.",
       "stakes": {
-        "on_success": "The key arrives and unlocks a decisive advantage.",
-        "on_failure": "The key is captured or destroyed, shifting the balance."
+        "on_success": "The key arrives and unlocks a way forward.",
+        "on_failure": "The key is lost and hope dies with it."
       },
       "complexity": "standard",
       "terrainCategory": "nomadic",
-      "primaryThreatCategory": "logistical"
+      "primaryThreatCategory": "logistical",
+      "resolutionStyle": "tactical"
     },
     {
-      "objectiveId": "secure_the_treaty",
-      "name": "Secure the Treaty",
-      "description": "A fragile alliance or agreement must be forged under pressure, deceit, and competing interests.",
+      "objectiveId": "cleanse_corrupted_land",
+      "name": "Cleanse the Corrupted Land",
+      "description": "Unnatural blight spreads across the earth. The party must find its heart and cut it out.",
       "stakes": {
-        "on_success": "Peace, access, or unity is achieved.",
-        "on_failure": "War, isolation, or betrayal follows."
-      },
-      "complexity": "high",
-      "terrainCategory": "institutional",
-      "primaryThreatCategory": "social"
-    },
-    {
-      "objectiveId": "cleanse_the_blight",
-      "name": "Cleanse the Blight",
-      "description": "A spreading corruption poisons land, minds, or institutions; the party must find and sever its source.",
-      "stakes": {
-        "on_success": "The blight recedes and survivors recover.",
-        "on_failure": "The corruption becomes permanent and expands."
+        "on_success": "The corruption recedes and life returns.",
+        "on_failure": "The blight becomes permanent and spreads beyond control."
       },
       "complexity": "standard",
       "terrainCategory": "coastal",
-      "primaryThreatCategory": "ecological"
+      "primaryThreatCategory": "ecological",
+      "resolutionStyle": "violent"
     },
     {
-      "objectiveId": "steal_the_blueprint",
-      "name": "Steal the Blueprint",
-      "description": "A plan, ledger, or design will enable catastrophe if completed; the party must steal or destroy it.",
+      "objectiveId": "protect_vulnerable_settlement",
+      "name": "Defend the Settlement",
+      "description": "Monsters or raiders threaten a defenseless community. The party must hold the line.",
       "stakes": {
-        "on_success": "The enemy's advantage is denied.",
-        "on_failure": "A devastating tool enters play."
+        "on_success": "The settlement survives and gratitude is earned.",
+        "on_failure": "The community is destroyed, scattered, or enslaved."
       },
-      "complexity": "high",
+      "complexity": "low",
       "terrainCategory": "urbanVertical",
-      "primaryThreatCategory": "cognitive"
+      "primaryThreatCategory": "logistical",
+      "resolutionStyle": "tactical"
+    },
+    {
+      "objectiveId": "break_the_siege",
+      "name": "Break the Siege",
+      "description": "A stronghold or sanctuary is surrounded by enemies. The party must break through or end the assault.",
+      "stakes": {
+        "on_success": "The besieged endure and the enemy loses momentum.",
+        "on_failure": "The defense collapses and all within are lost."
+      },
+      "complexity": "standard",
+      "terrainCategory": "urbanVertical",
+      "primaryThreatCategory": "logistical",
+      "resolutionStyle": "tactical"
     }
   ],
 
   "twistCandidates": [
     {
       "twistId": "false_villain",
-      "name": "The Villain Is a Decoy",
-      "description": "The apparent antagonist is not the true source of the threat.",
+      "name": "The Villain Is a Puppet",
+      "description": "The enemy is controlled or summoned by something deeper and darker.",
       "severity": "medium",
       "recommendedAct": 2
     },
     {
       "twistId": "time_pressure",
       "name": "Time Is Running Out",
-      "description": "Events progress toward disaster if the party delays.",
+      "description": "The curse spreads, the ritual nears completion, or the beast awakens soon.",
       "severity": "high",
       "recommendedAct": 1
     },
     {
-      "twistId": "ally_betrayal",
-      "name": "An Ally Turns",
-      "description": "A trusted figure reveals conflicting loyalties at a critical moment.",
+      "twistId": "ally_corrupted",
+      "name": "An Ally Is Possessed",
+      "description": "A trusted companion is corrupted, cursed, or controlled at a critical moment.",
       "severity": "high",
       "recommendedAct": 3
     },
     {
-      "twistId": "unintended_consequence",
-      "name": "Success Has a Cost",
-      "description": "Achieving the goal triggers an unforeseen consequence that must be faced.",
-      "severity": "medium",
+      "twistId": "ancient_evil_awakens",
+      "name": "You Awoke Something Ancient",
+      "description": "Success triggers an older, deeper evil that was better left sleeping.",
+      "severity": "high",
       "recommendedAct": 3
     },
     {
-      "twistId": "misunderstood_enemy",
-      "name": "The Enemy Is Not What They Seem",
-      "description": "The antagonist’s motives complicate the moral landscape and solutions.",
+      "twistId": "monster_is_victim",
+      "name": "The Monster Was Once Human",
+      "description": "The creature was transformed by curse or experiment and remembers.",
       "severity": "medium",
       "recommendedAct": 2
     },
     {
-      "twistId": "the_key_is_a_person",
-      "name": "The Key Is Someone",
-      "description": "The critical ‘object’ is a living person or sentient being with agency and demands.",
+      "twistId": "relic_is_cursed",
+      "name": "The Relic Is Cursed",
+      "description": "The sought object corrupts its bearer or attracts terrible attention.",
       "severity": "high",
       "recommendedAct": 2
     },
     {
       "twistId": "competing_hunters",
-      "name": "Another Party Wants the Same Prize",
-      "description": "Rivals pursue the same objective, forcing tradeoffs, bargains, or conflict.",
+      "name": "Rival Treasure Hunters",
+      "description": "Another band seeks the same prize and won't share.",
       "severity": "medium",
       "recommendedAct": 2
     },
     {
       "twistId": "location_shifts",
-      "name": "The Ground Refuses to Stay Still",
-      "description": "Routes, rooms, or landmarks rearrange; navigation and assumptions fail.",
+      "name": "The Dungeon Is Alive",
+      "description": "Passages rearrange, rooms shift—the place itself is hostile and aware.",
       "severity": "medium",
       "recommendedAct": 1
     },
     {
-      "twistId": "the_patron_is_complicit",
-      "name": "Your Patron Is Complicit",
-      "description": "The one who sent the party benefits from the threat—or helped cause it.",
+      "twistId": "the_patron_lied",
+      "name": "Your Patron Sent You to Die",
+      "description": "The one who hired you knew what was down there and wanted you gone.",
       "severity": "high",
       "recommendedAct": 3
     },
     {
-      "twistId": "mercy_backfires",
-      "name": "Mercy Returns With Teeth",
-      "description": "A spared foe, freed captive, or forgiven rival returns with consequences.",
+      "twistId": "spared_enemy_returns",
+      "name": "The Spared Foe Returns",
+      "description": "A creature or enemy you showed mercy to comes back transformed or vengeful.",
       "severity": "medium",
       "recommendedAct": 4
+    },
+    {
+      "twistId": "guardian_was_protecting_us",
+      "name": "The Guardian Was Protecting Us",
+      "description": "The monster guarding the way was keeping something worse sealed in.",
+      "severity": "high",
+      "recommendedAct": 3
+    },
+    {
+      "twistId": "treasure_is_bait",
+      "name": "The Treasure Is Bait",
+      "description": "The hoard or relic was left as a lure to draw prey to a predator.",
+      "severity": "medium",
+      "recommendedAct": 2
     }
   ],
 
   "antagonistCandidates": [
     {
-      "antagonistId": "ashen_cabal",
-      "name": "The Ashen Cabal",
-      "nature": "secretive faction",
-      "goal": "Control forbidden power.",
-      "methods": ["infiltration", "rituals", "assassination"],
+      "antagonistId": "ancient_wyrm",
+      "name": "The Ancient Wyrm",
+      "nature": "dragon",
+      "goal": "Reclaim territory and hoard from those who built upon its bones.",
+      "methods": ["devastation", "terror", "fire"],
+      "threatLevel": "extreme",
+      "presenceStyle": "catastrophic",
+      "terrainCategory": "subterranean",
+      "primaryThreatCategory": "ecological"
+    },
+    {
+      "antagonistId": "barrow_king",
+      "name": "The Barrow King",
+      "nature": "undead lord",
+      "goal": "Rise from the tomb and reclaim the kingdom that forgot his name.",
+      "methods": ["undead legions", "ancient curse", "fear"],
+      "threatLevel": "high",
+      "presenceStyle": "territorial",
+      "terrainCategory": "subterranean",
+      "primaryThreatCategory": "metaphysical"
+    },
+    {
+      "antagonistId": "corrupted_archdruid",
+      "name": "The Blighted Archdruid",
+      "nature": "corrupted nature spirit",
+      "goal": "Transform the land into a twisted reflection of what was lost.",
+      "methods": ["blight spread", "twisted beasts", "madness"],
+      "threatLevel": "high",
+      "presenceStyle": "environmental",
+      "terrainCategory": "interiorWilderness",
+      "primaryThreatCategory": "ecological"
+    },
+    {
+      "antagonistId": "serpent_cult",
+      "name": "The Serpent Cult",
+      "nature": "demon worshippers",
+      "goal": "Summon their god through blood and ritual.",
+      "methods": ["sacrifice", "infiltration", "dark magic"],
       "threatLevel": "high",
       "presenceStyle": "indirect",
-      "terrainCategory": "institutional",
-      "primaryThreatCategory": "social"
+      "terrainCategory": "surreal",
+      "primaryThreatCategory": "metaphysical"
+    },
+    {
+      "antagonistId": "ogre_warlord",
+      "name": "The Ogre Warlord",
+      "nature": "giant chieftain",
+      "goal": "Unite the tribes and crush the settlements that stole his lands.",
+      "methods": ["overwhelming force", "siege", "raiding"],
+      "threatLevel": "standard",
+      "presenceStyle": "direct",
+      "terrainCategory": "interiorWilderness",
+      "primaryThreatCategory": "logistical"
     },
     {
       "antagonistId": "void_behemoth",
       "name": "The Void Behemoth",
-      "nature": "ancient creature",
-      "goal": "Feed on instability within the Weave.",
-      "methods": ["corruption", "devastation"],
+      "nature": "aberration from beyond",
+      "goal": "Feed on reality and unravel the fabric of the world.",
+      "methods": ["corruption", "madness", "devastation"],
       "threatLevel": "extreme",
       "presenceStyle": "catastrophic",
       "terrainCategory": "surreal",
       "primaryThreatCategory": "metaphysical"
     },
     {
-      "antagonistId": "crownless_regent",
-      "name": "The Crownless Regent",
-      "nature": "rival leader",
-      "goal": "Seize authority through fear or manipulation.",
-      "methods": ["political pressure", "enforcers", "blackmail"],
-      "threatLevel": "standard",
-      "presenceStyle": "direct",
-      "terrainCategory": "urbanVertical",
-      "primaryThreatCategory": "social"
+      "antagonistId": "lich_scholar",
+      "name": "The Lich-Scholar",
+      "nature": "undead wizard",
+      "goal": "Complete the research that death interrupted centuries ago.",
+      "methods": ["necromancy", "animated servants", "forbidden knowledge"],
+      "threatLevel": "high",
+      "presenceStyle": "territorial",
+      "terrainCategory": "subterranean",
+      "primaryThreatCategory": "metaphysical"
     },
     {
-      "antagonistId": "fractured_order",
-      "name": "The Fractured Order",
-      "nature": "broken institution",
-      "goal": "Preserve control despite internal decay.",
-      "methods": ["bureaucratic force", "detention", "propaganda"],
-      "threatLevel": "standard",
-      "presenceStyle": "systemic",
-      "terrainCategory": "institutional",
-      "primaryThreatCategory": "social"
-    },
-    {
-      "antagonistId": "iron_bailiffs",
-      "name": "The Iron Bailiffs",
-      "nature": "militant syndicate",
-      "goal": "Collect debts and expand control under 'lawful' pretense.",
-      "methods": ["extortion", "seizure", "public examples"],
+      "antagonistId": "iron_warlord",
+      "name": "The Iron Warlord",
+      "nature": "ruthless conqueror",
+      "goal": "Expand territory through conquest and enslave the defeated.",
+      "methods": ["military force", "fear", "scorched earth"],
       "threatLevel": "standard",
       "presenceStyle": "direct",
       "terrainCategory": "urbanVertical",
@@ -253,42 +336,53 @@
     },
     {
       "antagonistId": "the_blistering_fog",
-      "name": "The Blistering Fog",
+      "name": "The Devouring Mist",
       "nature": "hostile phenomenon",
-      "goal": "Spread, suffocate, and erase paths and memory.",
-      "methods": ["disorientation", "attrition", "separation"],
+      "goal": "Spread and consume all life within its reach.",
+      "methods": ["suffocation", "disorientation", "attrition"],
       "threatLevel": "high",
       "presenceStyle": "environmental",
       "terrainCategory": "coastal",
       "primaryThreatCategory": "ecological"
     },
     {
-      "antagonistId": "the_glass_oracle",
-      "name": "The Glass Oracle",
-      "nature": "scheming seer",
-      "goal": "Manipulate outcomes to force a foretold future.",
-      "methods": ["misdirection", "prophecy traps", "paid agents"],
+      "antagonistId": "possessed_guardian",
+      "name": "The Possessed Guardian",
+      "nature": "corrupted sentinel",
+      "goal": "Protect the ruins and destroy all who enter.",
+      "methods": ["ambush", "traps", "relentless pursuit"],
       "threatLevel": "high",
-      "presenceStyle": "indirect",
-      "terrainCategory": "surreal",
-      "primaryThreatCategory": "cognitive"
+      "presenceStyle": "territorial",
+      "terrainCategory": "subterranean",
+      "primaryThreatCategory": "metaphysical"
     },
     {
       "antagonistId": "the_hollow_host",
       "name": "The Hollow Host",
       "nature": "mind-linked swarm",
-      "goal": "Assimilate communities into a single will.",
-      "methods": ["conversion", "infection", "overwhelm"],
+      "goal": "Assimilate all minds into a single consciousness.",
+      "methods": ["infection", "conversion", "overwhelm"],
       "threatLevel": "extreme",
       "presenceStyle": "relentless",
       "terrainCategory": "interiorWilderness",
       "primaryThreatCategory": "cognitive"
     },
     {
+      "antagonistId": "necromancer_prince",
+      "name": "The Necromancer Prince",
+      "nature": "dark sorcerer",
+      "goal": "Build an empire of the dead where he rules as immortal king.",
+      "methods": ["undead armies", "death magic", "fear"],
+      "threatLevel": "high",
+      "presenceStyle": "direct",
+      "terrainCategory": "urbanVertical",
+      "primaryThreatCategory": "metaphysical"
+    },
+    {
       "antagonistId": "rift_poachers",
       "name": "Rift Poachers",
-      "nature": "opportunist band",
-      "goal": "Harvest unstable sites and sell what should remain buried.",
+      "nature": "opportunist bandits",
+      "goal": "Plunder unstable sites and sell what should stay buried.",
       "methods": ["ambush", "sabotage", "scavenging"],
       "threatLevel": "standard",
       "presenceStyle": "direct",
@@ -298,86 +392,132 @@
     {
       "antagonistId": "the_last_warden",
       "name": "The Last Warden",
-      "nature": "fanatical guardian",
-      "goal": "Prevent anyone from touching a sealed truth—at any cost.",
+      "nature": "ancient guardian construct",
+      "goal": "Prevent anyone from reaching the sealed chamber—at any cost.",
       "methods": ["trials", "traps", "unyielding force"],
       "threatLevel": "high",
       "presenceStyle": "territorial",
       "terrainCategory": "subterranean",
+      "primaryThreatCategory": "metaphysical"
+    },
+    {
+      "antagonistId": "ashen_cabal",
+      "name": "The Ashen Cabal",
+      "nature": "death cult",
+      "goal": "Control forbidden power through ritual sacrifice.",
+      "methods": ["infiltration", "dark rituals", "assassination"],
+      "threatLevel": "high",
+      "presenceStyle": "indirect",
+      "terrainCategory": "urbanVertical",
       "primaryThreatCategory": "metaphysical"
     }
   ],
 
   "setPieceCandidates": [
     {
-      "setPieceId": "collapsing_crossing",
-      "name": "The Collapsing Crossing",
-      "primaryChallenge": "movement and coordination",
-      "failureConsequence": "separation, injury, or loss of resources",
-      "recommendedAct": 1
+      "setPieceId": "collapsing_ruins",
+      "name": "The Collapsing Ruins",
+      "primaryChallenge": "escape before the structure falls",
+      "failureConsequence": "trapped beneath rubble, separated, or seriously injured",
+      "recommendedAct": 2
     },
     {
-      "setPieceId": "interrupted_ritual",
-      "name": "The Interrupted Ritual",
-      "primaryChallenge": "time pressure and disruption",
-      "failureConsequence": "ritual completes with lasting effects",
+      "setPieceId": "monster_lair_showdown",
+      "name": "The Monster's Lair",
+      "primaryChallenge": "confront the creature in its domain",
+      "failureConsequence": "wounded, scattered, or the beast escapes",
       "recommendedAct": 3
     },
     {
-      "setPieceId": "public_reckoning",
-      "name": "The Public Reckoning",
-      "primaryChallenge": "social pressure and reputation",
-      "failureConsequence": "loss of allies or standing",
+      "setPieceId": "cursed_battlefield",
+      "name": "The Cursed Battlefield",
+      "primaryChallenge": "cross haunted ground while spirits attack",
+      "failureConsequence": "possessed, lost, or forced to retreat",
       "recommendedAct": 2
+    },
+    {
+      "setPieceId": "forbidden_shrine",
+      "name": "The Forbidden Shrine",
+      "primaryChallenge": "desecrate or claim a dark temple's power",
+      "failureConsequence": "cursed, marked by dark gods, or the shrine activates",
+      "recommendedAct": 3
+    },
+    {
+      "setPieceId": "dragon_hoard",
+      "name": "The Dragon's Hoard",
+      "primaryChallenge": "claim treasure while the wyrm stirs",
+      "failureConsequence": "dragon awakens fully, treasure lost, or curse activated",
+      "recommendedAct": 4
+    },
+    {
+      "setPieceId": "dungeon_depths",
+      "name": "The Deepest Chamber",
+      "primaryChallenge": "reach the heart of the dungeon",
+      "failureConsequence": "lost in darkness, trapped by ancient seals",
+      "recommendedAct": 3
+    },
+    {
+      "setPieceId": "siege_assault",
+      "name": "The Siege Assault",
+      "primaryChallenge": "breach the walls under fire",
+      "failureConsequence": "repelled with losses, siege drags on",
+      "recommendedAct": 4
+    },
+    {
+      "setPieceId": "interrupted_ritual",
+      "name": "The Dark Ritual",
+      "primaryChallenge": "disrupt cultists before completion",
+      "failureConsequence": "ritual completes, summoning unleashed",
+      "recommendedAct": 3
     },
     {
       "setPieceId": "sealed_passage",
       "name": "The Sealed Passage",
-      "primaryChallenge": "problem solving under stress",
-      "failureConsequence": "route collapse or ambush",
+      "primaryChallenge": "solve ancient locks under pressure",
+      "failureConsequence": "route collapses, guardians activate",
       "recommendedAct": 2
     },
     {
-      "setPieceId": "midnight_exchange",
-      "name": "The Midnight Exchange",
-      "primaryChallenge": "negotiation under threat",
-      "failureConsequence": "deal turns into a trap or chase",
-      "recommendedAct": 2
+      "setPieceId": "ambush_in_the_wilds",
+      "name": "The Wilderness Ambush",
+      "primaryChallenge": "survive sudden attack in hostile terrain",
+      "failureConsequence": "supplies lost, party member captured",
+      "recommendedAct": 1
     },
     {
-      "setPieceId": "heist_in_plain_sight",
-      "name": "The Heist in Plain Sight",
-      "primaryChallenge": "deception and timing",
-      "failureConsequence": "alarm raised, pursuit begins",
+      "setPieceId": "tower_ascent",
+      "name": "The Tower Ascent",
+      "primaryChallenge": "climb through trapped, monster-filled levels",
+      "failureConsequence": "fall, trapped on level, or enemy escapes upward",
       "recommendedAct": 2
     },
     {
       "setPieceId": "stormlock_countdown",
-      "name": "The Stormlock Countdown",
-      "primaryChallenge": "race against an advancing hazard",
-      "failureConsequence": "area becomes inaccessible or deadly",
+      "name": "The Storm's Fury",
+      "primaryChallenge": "race against advancing weather hazard",
+      "failureConsequence": "caught in storm, area becomes inaccessible",
       "recommendedAct": 1
     },
     {
-      "setPieceId": "split_the_party_by_force",
+      "setPieceId": "forced_split",
       "name": "The Forced Split",
-      "primaryChallenge": "coordination while separated",
-      "failureConsequence": "one group is cornered or misled",
+      "primaryChallenge": "coordinate while separated by cave-in or trap",
+      "failureConsequence": "one group cornered, resources divided",
       "recommendedAct": 3
     },
     {
-      "setPieceId": "trial_of_names",
-      "name": "The Trial of Names",
-      "primaryChallenge": "truth, memory, and resolve",
-      "failureConsequence": "a secret is exposed or access is denied",
+      "setPieceId": "guardian_trial",
+      "name": "The Guardian's Trial",
+      "primaryChallenge": "prove worth to ancient sentinel",
+      "failureConsequence": "attacked by guardian, access denied permanently",
       "recommendedAct": 3
     },
     {
-      "setPieceId": "phase_shift_showdown",
-      "name": "The Phase-Shift Showdown",
-      "primaryChallenge": "adapting to changing battlefield conditions",
-      "failureConsequence": "enemy gains a decisive advantage",
-      "recommendedAct": 4
+      "setPieceId": "descending_into_darkness",
+      "name": "The Descent into Darkness",
+      "primaryChallenge": "enter the depths with no guarantee of return",
+      "failureConsequence": "lost below, no way back, something follows",
+      "recommendedAct": 2
     }
   ],
 
@@ -385,52 +525,62 @@
     {
       "constraintId": "low_combat",
       "description": "Combat should be rare and dangerous.",
-      "effects": ["fewer battles", "greater narrative consequences"]
+      "effects": ["fewer battles", "greater narrative consequences"],
+      "weight": 5
     },
     {
       "constraintId": "high_political_fallout",
       "description": "Actions have visible social and political repercussions.",
-      "effects": ["reputation pressure", "faction reactions"]
+      "effects": ["reputation pressure", "faction reactions"],
+      "weight": 2
     },
     {
       "constraintId": "limited_resources",
       "description": "Healing, rest, and supplies are scarce.",
-      "effects": ["attrition pressure", "hard choices"]
+      "effects": ["attrition pressure", "hard choices"],
+      "weight": 10
     },
     {
       "constraintId": "mythic_intervention_allowed",
       "description": "Final death reversal may be possible at great cost.",
-      "effects": ["enable_mythic_cost_table"]
+      "effects": ["enable_mythic_cost_table"],
+      "weight": 5
     },
     {
       "constraintId": "no_kill_focus",
       "description": "Preferred solutions emphasize restraint and non-lethal outcomes when possible.",
-      "effects": ["more social resolutions", "mercy consequences"]
+      "effects": ["more social resolutions", "mercy consequences"],
+      "weight": 1
     },
     {
       "constraintId": "high_mystery",
       "description": "Information is fragmented; investigation and inference are central.",
-      "effects": ["more clues", "false leads", "revelations gated by choices"]
+      "effects": ["more clues", "false leads", "revelations gated by choices"],
+      "weight": 7
     },
     {
       "constraintId": "tight_timer",
       "description": "Delays materially worsen the situation.",
-      "effects": ["time-based escalations", "closing opportunities"]
+      "effects": ["time-based escalations", "closing opportunities"],
+      "weight": 10
     },
     {
       "constraintId": "single_location",
       "description": "The campaign is anchored in one primary location with deep exploration.",
-      "effects": ["fewer travel beats", "denser scenes"]
+      "effects": ["fewer travel beats", "denser scenes"],
+      "weight": 6
     },
     {
       "constraintId": "hostile_environment",
       "description": "The environment itself is a persistent threat.",
-      "effects": ["navigation pressure", "weather/terrain hazards", "attrition"]
+      "effects": ["navigation pressure", "weather/terrain hazards", "attrition"],
+      "weight": 10
     },
     {
       "constraintId": "social_secrets",
       "description": "NPCs and factions conceal motives; trust is a resource.",
-      "effects": ["betrayal risk", "leverage economy", "relationship shifts"]
+      "effects": ["betrayal risk", "leverage economy", "relationship shifts"],
+      "weight": 2
     }
   ]
 }

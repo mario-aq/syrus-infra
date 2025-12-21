@@ -1,156 +1,163 @@
 {
-  "title": "The Midnight Accord",
-  "premise": "A fragile treaty threatens to collapse as foreign spies undermine trust between rival merchant houses. The party must expose the conspiracy before blood is shed in the streets.",
+  "title": "The Barrow King's Curse",
+  "premise": "The dead walk from ancient burial mounds, dragging villagers into the earth. The Barrow King has awakened, and his tomb must be entered before the village is emptied.",
   "thematicPillars": [
-    "trust_vs_pragmatism",
-    "public_reputation",
-    "cost_of_neutrality"
+    "death_remembers",
+    "price_of_greed",
+    "courage_against_darkness"
   ],
   "beatQualification": {
-    "mustHave": ["treaty_signing", "betrayal_revealed", "final_confrontation"],
-    "mayHave": ["investigation", "social_maneuvering", "chase"]
+    "mustHave": ["village_attacked", "enter_barrow", "confront_king"],
+    "mayHave": ["discover_curse_source", "fight_undead", "escape_collapse"]
   },
   "ingredientBinding": {
-    "objective": ["prevent_catastrophe"],
-    "twists": ["unexpected_ally"],
-    "antagonists": ["foreign_operative"],
-    "setPieces": ["public_ceremony"]
+    "objective": ["break_the_curse"],
+    "twists": ["ancient_evil_awakens"],
+    "antagonists": ["barrow_king"],
+    "setPieces": ["collapsing_ruins"]
   },
   "acts": [
     {
       "actNumber": 1,
-      "name": "False Peace",
-      "primaryArea": "merchant_quarter",
-      "narrativePurpose": "Establish treaty stakes and introduce key players",
-      "primaryDanger": "social_misstep",
+      "name": "The Village Dies",
+      "primaryArea": "graveholm_village",
+      "narrativePurpose": "Establish threat and desperate stakes",
+      "primaryDanger": "undead_attacks",
       "beatExpectations": {"min": 4, "max": 6},
-      "pressureType": "reputational"
+      "pressureType": "escalating"
     },
     {
       "actNumber": 2,
-      "name": "Cracks in the Facade",
-      "primaryArea": "foreign_embassy",
-      "narrativePurpose": "Uncover conspiracy and force a choice",
-      "primaryDanger": "exposure_or_complicity",
+      "name": "Into the Barrow",
+      "primaryArea": "ancient_burial_mound",
+      "narrativePurpose": "Descent into hostile territory",
+      "primaryDanger": "traps_and_guardians",
       "beatExpectations": {"min": 5, "max": 7},
-      "pressureType": "temporal"
+      "pressureType": "environmental"
     },
     {
       "actNumber": 3,
-      "name": "The Reckoning",
-      "primaryArea": "public_square",
-      "narrativePurpose": "Resolve conflict with irreversible consequences",
-      "primaryDanger": "public_violence",
+      "name": "The King's Chamber",
+      "primaryArea": "throne_of_bones",
+      "narrativePurpose": "Final confrontation with ancient evil",
+      "primaryDanger": "barrow_king_awakened",
       "beatExpectations": {"min": 5, "max": 7},
-      "pressureType": "escalating"
+      "pressureType": "terminal"
     }
   ],
   "majorForces": {
-    "house_velmark": {
-      "name": "House Velmark",
-      "nature": "merchant_dynasty",
-      "primaryGoal": "maintain_monopoly",
-      "methods": ["negotiation", "bribery"],
-      "threatLevel": "indirect"
+    "undead_legion": {
+      "name": "The Risen Dead",
+      "nature": "undead_army",
+      "primaryGoal": "drag_living_into_barrow",
+      "methods": ["night_raids", "overwhelming_numbers"],
+      "threatLevel": "environmental"
     },
-    "foreign_crown": {
-      "name": "The Crimson Throne",
-      "nature": "expansionist_power",
-      "primaryGoal": "destabilize_region",
-      "methods": ["espionage", "assassination"],
-      "threatLevel": "direct"
+    "barrow_king": {
+      "name": "Kael the Forgotten",
+      "nature": "undead_lord",
+      "primaryGoal": "reclaim_kingdom_that_forgot_his_name",
+      "methods": ["ancient_curse", "command_undead", "draining_touch"],
+      "threatLevel": "terminal"
     }
   },
   "npcs": {
-    "merchant_lord": {
-      "name": "Lord Theron Velmark",
-      "role": "treaty_architect",
+    "elder_mara": {
+      "name": "Elder Mara",
+      "role": "desperate_guide",
       "firstAppearanceAct": 1,
-      "personality": ["pragmatic", "suspicious"],
-      "agenda": "preserve_house_legacy"
+      "personality": ["frightened", "determined"],
+      "agenda": "save_her_people"
     },
-    "spy_handler": {
-      "name": "The Orchid",
-      "role": "antagonist_primary",
-      "firstAppearanceAct": 1,
-      "personality": ["charming", "ruthless"],
-      "agenda": "sabotage_treaty"
+    "barrow_wight": {
+      "name": "The Wight Guardian",
+      "role": "first_obstacle",
+      "firstAppearanceAct": 2,
+      "personality": ["ancient", "wrathful"],
+      "agenda": "protect_the_king"
     }
   },
   "boonPlan": [
     {
-      "boonName": "safe_passage",
+      "boonName": "silver_blade",
       "act": 1,
-      "trigger": "gain_velmark_trust",
-      "narrativeCost": "public_debt"
+      "trigger": "recover_from_village_tomb",
+      "narrativeCost": "disturb_honored_dead"
     },
     {
-      "boonName": "hidden_truth",
+      "boonName": "kings_weakness",
       "act": 2,
-      "trigger": "interrogate_spy",
-      "narrativeCost": "enemy_awareness"
+      "trigger": "decipher_ancient_inscription",
+      "narrativeCost": "time_while_village_dies"
     }
   ],
   "failurePaths": [
     {
-      "trigger": "treaty_collapses_prematurely",
-      "consequence": "open_conflict_begins",
-      "recoveryPath": "emergency_mediation"
+      "trigger": "village_overrun",
+      "consequence": "no_survivors_to_save",
+      "recoveryPath": "revenge_or_prevent_spread"
+    },
+    {
+      "trigger": "trapped_in_barrow",
+      "consequence": "undead_seal_exit",
+      "recoveryPath": "find_another_way_or_fight_through"
     }
   ],
   "endStates": {
-    "triumph": "Treaty holds, conspiracy exposed, regional stability",
-    "costly_victory": "Treaty saved but house weakened or key figure lost",
-    "pyrrhic_success": "Treaty holds but trust destroyed, cold war begins",
-    "failure": "Treaty collapses, violence erupts, region destabilized"
+    "triumph": "King destroyed, curse broken, village saved",
+    "costly_victory": "King defeated but village lost or party member falls",
+    "pyrrhic_success": "King banished but curse lingers, will return",
+    "failure": "Party perishes in barrow, undead spread beyond village"
   },
   "memoryDirectives": {
     "canonicalFacts": [
-      "treaty_signing_date",
-      "spy_network_exposed",
-      "velmark_stance"
+      "barrow_entered",
+      "kings_name_learned",
+      "curse_origin",
+      "village_fate"
     ],
     "relationshipAxes": [
-      {"entity": "house_velmark", "states": ["trusted", "neutral", "hostile"]},
-      {"entity": "foreign_crown", "states": ["unknown", "suspected", "confirmed"]}
+      {"entity": "villagers", "states": ["desperate", "grateful", "dead"]},
+      {"entity": "barrow_king", "states": ["sleeping", "aware", "destroyed"]}
     ],
     "decisionFlags": [
-      "public_accusation_made",
-      "violence_used"
+      "entered_barrow_at_night",
+      "took_silver_blade",
+      "spoke_kings_name"
     ]
   },
   "imagePlan": {
     "intro": {
-      "description": "A crowded merchant square at dusk, tension thick in the air",
-      "prompt": "A fantasy medieval merchant square at dusk, crowded with people, ornate buildings with diplomatic banners, tension and unease in the atmosphere, torchlight casting long shadows, cinematic lighting, detailed fantasy art style",
+      "description": "Village at night with undead emerging from burial mounds",
+      "prompt": "A dark fantasy village at night, ancient burial mounds in background, skeletal undead emerging from earth, terrified villagers fleeing, torches and fear, ominous atmosphere, dark fantasy art style",
       "sendWhen": "campaign_start",
-      "narrativePurpose": "Establish urban political tension",
+      "narrativePurpose": "Establish undead threat",
       "s3Key": ""
     },
-    "treaty-moment": {
-      "description": "The treaty signing ceremony disrupted",
-      "prompt": "A grand diplomatic ceremony inside an ornate hall, two rival merchant lords at a table with treaty documents, sudden disruption as masked figures burst in, chaos and panic, dramatic lighting, fantasy medieval setting",
-      "sendWhen": "beat_treaty_signing",
-      "narrativePurpose": "Visualize the central conflict moment",
+    "barrow_descent": {
+      "description": "Descending into the ancient barrow",
+      "prompt": "Dark tunnel descending into ancient tomb, torch light on carved walls, bones scattered on floor, sense of ancient evil, claustrophobic stone passage, fantasy dungeon art",
+      "sendWhen": "beat_enter_barrow",
+      "narrativePurpose": "Show the descent into danger",
       "s3Key": ""
     }
   },
   "combatConstraints": {
     "maxCombatScenes": 1,
     "combatIntent": {
-      "act2": "signal that investigation has real cost and violence is a last resort",
-      "act3": "force choice between restraint and decisive action"
+      "act1": "none - threat builds through horror and pursuit",
+      "act2": "none - danger from environment and traps",
+      "act3": "final confrontation with Barrow King must be decisive"
     },
     "combatTriggers": [
-      "spy_confrontation_escalates",
-      "public_assassination_attempt",
-      "party_exposed_as_threat"
+      "barrow_king_rises_from_throne",
+      "wight_guardian_attacks",
+      "surrounded_by_undead_in_chamber"
     ],
     "combatOutcomesMust": [
-      "force_public_stance",
-      "reveal_hidden_allegiance",
-      "eliminate_one_threat_path"
+      "break_curse_or_seal_it",
+      "destroy_king_or_bargain_at_terrible_cost",
+      "escape_before_barrow_collapses"
     ]
   }
 }
-

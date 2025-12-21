@@ -94,13 +94,14 @@ type ExpectationBreak struct {
 
 // ObjectiveSeed represents a campaign objective
 type ObjectiveSeed struct {
-	ObjectiveID          string            `json:"objectiveId"`
-	Name                 string            `json:"name"`
-	Description          string            `json:"description"`
-	Stakes               map[string]string `json:"stakes"`
-	Complexity           string            `json:"complexity"`
-	TerrainCategory      string            `json:"terrainCategory,omitempty"`
+	ObjectiveID           string            `json:"objectiveId"`
+	Name                  string            `json:"name"`
+	Description           string            `json:"description"`
+	Stakes                map[string]string `json:"stakes"`
+	Complexity            string            `json:"complexity"`
+	TerrainCategory       string            `json:"terrainCategory,omitempty"`
 	PrimaryThreatCategory string            `json:"primaryThreatCategory,omitempty"`
+	ResolutionStyle       string            `json:"resolutionStyle,omitempty"` // violent, tactical, survival, moral, puzzle
 }
 
 // TwistSeed represents a campaign twist
@@ -139,6 +140,7 @@ type ConstraintSeed struct {
 	ConstraintID string   `json:"constraintId"`
 	Description  string   `json:"description"`
 	Effects      []string `json:"effects"`
+	Weight       int      `json:"weight,omitempty"` // Higher weight = more likely to be selected
 }
 
 // MinMaxRange represents a min/max range

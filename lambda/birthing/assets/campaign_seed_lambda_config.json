@@ -21,6 +21,18 @@
         "preferCategories": ["institutional", "social", "logistical", "volatile"],
         "excludeByDefault": ["fog", "blight"],
         "requireSamenessKillers": 1
+      },
+      "contentBias": {
+        "preferObjectives": ["slay_the_beast", "break_the_curse", "escape_the_depths", "defend_settlement", "delve_ancient_ruins"],
+        "avoidObjectives": [],
+        "preferAntagonists": ["monster", "undead", "corrupted", "beast", "guardian"],
+        "avoidAntagonists": [],
+        "preferAreas": ["ruins", "caves", "wilderness", "stronghold", "tomb"],
+        "avoidAreas": [],
+        "resolutionRules": {
+          "requireActionable": true,
+          "preferResolutionStyles": ["violent", "tactical", "survival"]
+        }
       }
     },
 
@@ -46,6 +58,18 @@
         "requireNonEnvironmentalAntagonist": true,
         "requirePerspectiveBias": true,
         "requireSamenessKillers": 2
+      },
+      "contentBias": {
+        "preferObjectives": ["stop_the_ritual", "storm_the_stronghold", "delve_ancient_ruins", "recover_lost_relic", "cleanse_corrupted_land"],
+        "avoidObjectives": [],
+        "preferAntagonists": ["cult", "dragon", "necromancer", "demon", "corrupted_nature"],
+        "avoidAntagonists": [],
+        "preferAreas": ["temple", "stronghold", "ruins", "caves", "wilderness"],
+        "avoidAreas": [],
+        "resolutionRules": {
+          "requireActionable": true,
+          "preferResolutionStyles": ["violent", "tactical"]
+        }
       }
     },
 
@@ -71,6 +95,18 @@
         "enforceTerrainDiversity": true,
         "requireExpectationViolation": true,
         "requireSamenessKillers": 2
+      },
+      "contentBias": {
+        "preferObjectives": ["delve_ancient_ruins", "stop_the_ritual", "break_the_curse", "storm_the_stronghold", "escape_the_depths"],
+        "avoidObjectives": [],
+        "preferAntagonists": ["ancient_evil", "dragon", "lich", "demon", "eldritch_horror", "corrupted_guardian"],
+        "avoidAntagonists": [],
+        "preferAreas": ["tower", "dungeon", "ruins", "temple", "prison", "vault"],
+        "avoidAreas": [],
+        "resolutionRules": {
+          "requireActionable": true,
+          "preferResolutionStyles": ["violent", "tactical", "survival"]
+        }
       }
     }
   },
