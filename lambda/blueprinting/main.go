@@ -3,12 +3,10 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -179,18 +177,24 @@ func processBlueprintMessage(ctx context.Context, record events.SQSMessage) erro
 	// Generate intro image if present in imagePlan
 	var introImageS3Key string
 	if blueprint.ImagePlan.IntroImage.Prompt != "" {
-		log.Printf("Generating intro image for campaign %s", blueprintMsg.CampaignID)
+		log.Printf("INFO: IntroImage prompt detected: %s", blueprint.ImagePlan.IntroImage.Prompt[:100]) // Log first 100 chars
+		log.Printf("INFO: Generating intro image for campaign %s", blueprintMsg.CampaignID)
 		s3Key, err := generateIntroImage(ctx, blueprintMsg.CampaignID, blueprint.ImagePlan.IntroImage.Prompt)
 		if err != nil {
-			log.Printf("Warning: failed to generate intro image: %v", err)
+			log.Printf("ERROR: Failed to generate intro image: %v", err)
 			// Don't fail the entire blueprint if intro image fails
 		} else {
 			introImageS3Key = s3Key
+			log.Printf("SUCCESS: Intro image generated and stored at S3 key: %s", s3Key)
 			// Update blueprint with S3 key
 			if err := updateImagePlanIntroS3Key(blueprintMsg.CampaignID, s3Key); err != nil {
-				log.Printf("Warning: failed to update intro image S3 key: %v", err)
+				log.Printf("ERROR: Failed to update intro image S3 key in DynamoDB: %v", err)
+			} else {
+				log.Printf("SUCCESS: Updated blueprint with intro image S3 key")
 			}
 		}
+	} else {
+		log.Printf("WARNING: IntroImage prompt is empty - no image will be generated")
 	}
 
 	// Queue remaining images to imageGen queue
@@ -541,6 +545,14 @@ func validateBlueprint(blueprint *models.Blueprint, seeds models.CampaignSeeds) 
 	if len(blueprint.ThematicPillars) != 3 {
 		return fmt.Errorf("thematicPillars must have exactly 3 elements, got %d", len(blueprint.ThematicPillars))
 	}
+	
+	// IntroImage validation (REQUIRED)
+	if blueprint.ImagePlan.IntroImage.Prompt == "" {
+		return fmt.Errorf("missing required field: imagePlan.introImage.prompt")
+	}
+	if blueprint.ImagePlan.IntroImage.SendWhen != "campaign_start" {
+		return fmt.Errorf("imagePlan.introImage.sendWhen must be 'campaign_start', got '%s'", blueprint.ImagePlan.IntroImage.SendWhen)
+	}
 
 	// Acts validation
 	expectedActs := seeds.BeatProfile.Acts
@@ -734,24 +746,10 @@ func sendIntroductionToMessaging(campaignID, interactionID string, blueprint *mo
 
 	log.Printf("DEBUG: Campaign retrieved - channelID: %s", campaign.Meta.ChannelID)
 
-	// Message 1: Campaign Title with optional intro image attachment
+	// Message 1: Campaign Title (no image attachment)
 	titleMsg := models.MessagingQueueMessage{
 		ChannelID: campaign.Meta.ChannelID,
 		Content:   fmt.Sprintf("This is the thread now drawn from the weave:\n## %s", blueprint.Title),
-	}
-
-	// If intro image was generated, add it as attachment
-	if introImageS3Key != "" {
-		log.Printf("DEBUG: Adding intro image S3 key to message: %s", introImageS3Key)
-		titleMsg.Attachments = []models.Attachment{
-			{
-				Name:        "intro.png",
-				Data:        introImageS3Key, // Send S3 key, not base64 data
-				ContentType: "image/png",
-			},
-		}
-	} else {
-		log.Printf("DEBUG: No intro image to attach")
 	}
 
 	log.Printf("DEBUG: Sending title message to queue")
@@ -779,34 +777,20 @@ func sendIntroductionToMessaging(campaignID, interactionID string, blueprint *mo
 		Content:   blueprint.Premise,
 	}
 	
-	// Attach intro image if it was generated
+	// Attach intro image reference if it was generated
 	if introImageS3Key != "" {
-		log.Printf("DEBUG: Attaching intro image to premise message: %s", introImageS3Key)
-		
-		// Read image from S3
-		imageData, err := s3Client.GetObject(&s3.GetObjectInput{
-			Bucket: aws.String(modelCacheBucket),
-			Key:    aws.String(introImageS3Key),
-		})
-		if err != nil {
-			log.Printf("Warning: failed to read intro image from S3: %v", err)
-		} else {
-			defer imageData.Body.Close()
-			imageBytes, err := ioutil.ReadAll(imageData.Body)
-			if err != nil {
-				log.Printf("Warning: failed to read intro image bytes: %v", err)
-			} else {
-				// Base64 encode
-				imageBase64 := base64.StdEncoding.EncodeToString(imageBytes)
-				premiseMsg.Attachments = []models.Attachment{
-					{
-						Name:        "intro.png",
-						Data:        imageBase64,
-						ContentType: "image/png",
-					},
-				}
-			}
+		log.Printf("INFO: Attaching intro image S3 reference to premise message: %s", introImageS3Key)
+		// Send S3 key - messaging lambda will fetch and send to Discord
+		premiseMsg.Attachments = []models.Attachment{
+			{
+				Name:        "intro.png",
+				Data:        introImageS3Key, // S3 key, not base64 data
+				ContentType: "image/png",
+			},
 		}
+		log.Printf("INFO: Premise message will include intro image attachment")
+	} else {
+		log.Printf("WARNING: No intro image S3 key available - premise message will not have image attachment")
 	}
 	
 	premiseMsgJSON, err := json.Marshal(premiseMsg)

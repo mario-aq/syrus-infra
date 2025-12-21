@@ -33,6 +33,12 @@ func TestValidateBlueprint(t *testing.T) {
 				{ActNumber: 3, Name: "Act Three"},
 				{ActNumber: 4, Name: "Act Four"},
 			},
+			ImagePlan: models.ImagePlan{
+				IntroImage: models.ImagePlanItem{
+					Prompt:   "Test intro image prompt",
+					SendWhen: "campaign_start",
+				},
+			},
 		}
 
 		err := validateBlueprint(blueprint, seeds)
