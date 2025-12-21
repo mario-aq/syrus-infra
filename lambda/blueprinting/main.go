@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -942,25 +941,6 @@ func queueMilestoneImages(campaignID, interactionID string, blueprint *models.Bl
 	}
 
 	return nil
-}
-
-func getImageFromS3(s3Key string) (string, error) {
-	result, err := s3Client.GetObject(&s3.GetObjectInput{
-		Bucket: aws.String(modelCacheBucket),
-		Key:    aws.String(s3Key),
-	})
-	if err != nil {
-		return "", err
-	}
-	defer result.Body.Close()
-
-	imageData, err := io.ReadAll(result.Body)
-	if err != nil {
-		return "", err
-	}
-
-	// Return base64 encoded
-	return base64.StdEncoding.EncodeToString(imageData), nil
 }
 
 func main() {
