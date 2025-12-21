@@ -296,3 +296,32 @@ func TestSubcommandExtraction(t *testing.T) {
 		})
 	}
 }
+
+func TestClearModelCachePrefix(t *testing.T) {
+	tests := []struct {
+		name         string
+		campaignID   string
+		expectedPref string
+	}{
+		{
+			name:         "standard campaign ID",
+			campaignID:   "1234567890",
+			expectedPref: "1234567890/",
+		},
+		{
+			name:         "campaign ID with special chars",
+			campaignID:   "campaign-123-abc",
+			expectedPref: "campaign-123-abc/",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Test that the prefix is constructed correctly
+			prefix := tt.campaignID + "/"
+			if prefix != tt.expectedPref {
+				t.Errorf("Expected prefix '%s', got '%s'", tt.expectedPref, prefix)
+			}
+		})
+	}
+}

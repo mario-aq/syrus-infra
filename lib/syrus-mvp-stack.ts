@@ -1,9 +1,11 @@
 import { Construct } from 'constructs';
-import { Stack, StackProps, CfnOutput, Duration } from 'aws-cdk-lib';
+import { Stack, StackProps, CfnOutput, Duration, RemovalPolicy } from 'aws-cdk-lib';
 import * as path from 'path';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { createCampaignsTable, createHostsTable } from './campaigns-table';
 import { getStageConfig } from './config';
 import { SyrusApi } from './syrus-api';
@@ -47,6 +49,34 @@ export class SyrusMvpStack extends Stack {
       queueName: 'birthing',
       stage: props.stage,
     });
+
+    // Blueprinting Infrastructure
+    // Create SQS FIFO queue for blueprinting
+    const blueprintingQueue = new SqsFifoWithDlq(this, 'BlueprintingQueue', {
+      queueName: 'blueprinting',
+      stage: props.stage,
+      visibilityTimeout: Duration.minutes(6), // Must be > Lambda timeout (5 min)
+    });
+
+    // Create S3 bucket for model cache
+    const modelCacheBucket = new s3.Bucket(this, 'ModelCacheBucket', {
+      bucketName: `syrus-model-cache-${props.stage}`,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      versioned: false,
+      lifecycleRules: [
+        {
+          id: 'ExpireAfter24Hours',
+          enabled: true,
+          expiration: Duration.days(1),
+        },
+      ],
+      removalPolicy: stageConfig.removalPolicy,
+      autoDeleteObjects: stageConfig.removalPolicy === RemovalPolicy.DESTROY,
+    });
+
+    // Note: Anthropic API key must be created manually in SSM as SecureString
+    // Parameter name: /syrus/{stage}/anthropic/api-key
+    // CDK cannot create SecureString parameters due to CloudFormation limitations
 
     // Create the Syrus API with custom domain
     const syrusApi = new SyrusApi(this, 'SyrusApi', {
@@ -146,6 +176,7 @@ export class SyrusMvpStack extends Stack {
         SYRUS_DEDUP_TABLE: dedupTable.table.tableName,
         SYRUS_CONFIRMATIONS_TABLE: confirmationsTable.table.tableName,
         SYRUS_BIRTHING_QUEUE_URL: birthingQueue.queue.queueUrl,
+        SYRUS_MODEL_CACHE_BUCKET: modelCacheBucket.bucketName,
         SYRUS_STAGE: stageConfig.stage,
       },
       timeout: Duration.seconds(30),
@@ -212,6 +243,13 @@ export class SyrusMvpStack extends Stack {
       resources: [birthingQueue.queue.queueArn],
     }));
 
+    // Grant configuring Lambda permission to clear model cache
+    modelCacheBucket.grantDelete(configuringFunction);
+    configuringFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['s3:ListBucket'],
+      resources: [modelCacheBucket.bucketArn],
+    }));
+
     // Add SQS event source mapping for configuring queue
     configuringFunction.addEventSource(new lambdaEventSources.SqsEventSource(configuringQueue.queue, {
       batchSize: 10, // SQS FIFO limit
@@ -227,6 +265,7 @@ export class SyrusMvpStack extends Stack {
         SYRUS_CAMPAIGNS_TABLE: campaignsTable.tableName,
         SYRUS_MESSAGING_QUEUE_URL: messagingQueue.queue.queueUrl,
         SYRUS_DEDUP_TABLE: dedupTable.table.tableName,
+        SYRUS_BLUEPRINTING_QUEUE_URL: blueprintingQueue.queue.queueUrl,
         SYRUS_STAGE: stageConfig.stage,
       },
       timeout: Duration.seconds(30),
@@ -237,6 +276,7 @@ export class SyrusMvpStack extends Stack {
     campaignsTable.grantReadData(birthingFunction);
     dedupTable.table.grantReadWriteData(birthingFunction);
     messagingQueue.queue.grantSendMessages(birthingFunction);
+    blueprintingQueue.queue.grantSendMessages(birthingFunction);
 
     // Grant birthing Lambda read/delete permissions for its queue (event source)
     birthingFunction.addToRolePolicy(new iam.PolicyStatement({
@@ -251,6 +291,52 @@ export class SyrusMvpStack extends Stack {
     // Add SQS event source mapping for birthing queue
     birthingFunction.addEventSource(new lambdaEventSources.SqsEventSource(birthingQueue.queue, {
       batchSize: 10, // SQS FIFO limit
+      reportBatchItemFailures: true,
+    }));
+
+    // Create blueprinting Lambda function
+    const blueprintingFunction = new lambda.Function(this, 'BlueprintingFunction', {
+      runtime: lambda.Runtime.PROVIDED_AL2023,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/blueprinting')),
+      handler: 'bootstrap',
+      environment: {
+        SYRUS_CAMPAIGNS_TABLE: campaignsTable.tableName,
+        SYRUS_DEDUP_TABLE: dedupTable.table.tableName,
+        SYRUS_MESSAGING_QUEUE_URL: messagingQueue.queue.queueUrl,
+        SYRUS_MODEL_CACHE_BUCKET: modelCacheBucket.bucketName,
+        SYRUS_STAGE: stageConfig.stage,
+      },
+      timeout: Duration.minutes(5), // Claude calls can be slow
+      memorySize: 512,
+    });
+
+    // Grant blueprinting Lambda permissions
+    campaignsTable.grantReadWriteData(blueprintingFunction);
+    dedupTable.table.grantReadWriteData(blueprintingFunction);
+    messagingQueue.queue.grantSendMessages(blueprintingFunction);
+    modelCacheBucket.grantReadWrite(blueprintingFunction);
+
+    // Grant blueprinting Lambda SSM access for Anthropic API key
+    blueprintingFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/syrus/${stageConfig.stage}/anthropic/api-key`,
+      ],
+    }));
+
+    // Grant blueprinting Lambda read/delete permissions for its queue
+    blueprintingFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'sqs:ReceiveMessage',
+        'sqs:DeleteMessage',
+        'sqs:GetQueueAttributes',
+      ],
+      resources: [blueprintingQueue.queue.queueArn],
+    }));
+
+    // Add SQS event source mapping for blueprinting queue
+    blueprintingFunction.addEventSource(new lambdaEventSources.SqsEventSource(blueprintingQueue.queue, {
+      batchSize: 1, // Process one blueprint at a time due to Claude API rate limits
       reportBatchItemFailures: true,
     }));
 
@@ -369,6 +455,43 @@ export class SyrusMvpStack extends Stack {
       value: confirmationsTable.table.tableArn,
       description: 'ARN of the DynamoDB confirmations table',
       exportName: `SyrusConfirmationsTableArn-${props.stage}`,
+    });
+
+    // CloudFormation outputs for Blueprinting Infrastructure
+    new CfnOutput(this, 'BlueprintingQueueUrl', {
+      value: blueprintingQueue.queue.queueUrl,
+      description: 'URL of the blueprinting FIFO queue',
+      exportName: `SyrusBlueprintingQueueUrl-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'BlueprintingQueueArn', {
+      value: blueprintingQueue.queue.queueArn,
+      description: 'ARN of the blueprinting FIFO queue',
+      exportName: `SyrusBlueprintingQueueArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'BlueprintingDlqUrl', {
+      value: blueprintingQueue.dlq.queueUrl,
+      description: 'URL of the blueprinting dead letter queue',
+      exportName: `SyrusBlueprintingDlqUrl-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'BlueprintingDlqArn', {
+      value: blueprintingQueue.dlq.queueArn,
+      description: 'ARN of the blueprinting dead letter queue',
+      exportName: `SyrusBlueprintingDlqArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'BlueprintingLambdaArn', {
+      value: blueprintingFunction.functionArn,
+      description: 'ARN of the blueprinting Lambda function',
+      exportName: `SyrusBlueprintingLambdaArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'ModelCacheBucketName', {
+      value: modelCacheBucket.bucketName,
+      description: 'Name of the S3 model cache bucket',
+      exportName: `SyrusModelCacheBucketName-${props.stage}`,
     });
   }
 }

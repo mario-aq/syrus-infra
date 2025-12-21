@@ -148,7 +148,7 @@ func getDiscordPublicKey(stage string) (ed25519.PublicKey, error) {
 }
 
 // sendMessageToQueue sends a message to the messaging SQS queue
-func sendMessageToQueue(channelID string, content string, interactionToken string) error {
+func sendMessageToQueue(channelID string, content string, interactionToken string, interactionID string) error {
 	queueURL := os.Getenv("SYRUS_MESSAGING_QUEUE_URL")
 	if queueURL == "" {
 		return fmt.Errorf("SYRUS_MESSAGING_QUEUE_URL environment variable not set")
@@ -177,12 +177,11 @@ func sendMessageToQueue(channelID string, content string, interactionToken strin
 	}
 
 	// Send message to queue
-	// Use interaction ID as MessageGroupId for FIFO ordering (or use a fixed group for all messages)
 	_, err = svc.SendMessage(&sqs.SendMessageInput{
 		QueueUrl:               aws.String(queueURL),
 		MessageBody:            aws.String(string(messageBodyJSON)),
-		MessageGroupId:         aws.String("discord-responses"),                           // Fixed group for all Discord responses
-		MessageDeduplicationId: aws.String(fmt.Sprintf("%s-%d", channelID, len(content))), // Simple deduplication
+		MessageGroupId:         aws.String(channelID),                  // Group by campaignID (channelID = campaignID)
+		MessageDeduplicationId: aws.String(interactionID + "-webhook"), // Dedupe by interactionID
 	})
 
 	if err != nil {
@@ -464,7 +463,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 					}
 				}
 
-				if err := sendMessageToQueue(interaction.ChannelID, responseMessage, interaction.Token); err != nil {
+				if err := sendMessageToQueue(interaction.ChannelID, responseMessage, interaction.Token, interaction.ID); err != nil {
 					log.Printf("Failed to send 'Received' message to queue: %v", err)
 				}
 
@@ -480,7 +479,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 				return response, nil
 			case "ping":
 				// Send "Pong! 🏓" message via queue with interaction token
-				if err := sendMessageToQueue(interaction.ChannelID, "Pong! 🏓", interaction.Token); err != nil {
+				if err := sendMessageToQueue(interaction.ChannelID, "Pong! 🏓", interaction.Token, interaction.ID); err != nil {
 					log.Printf("Failed to send ping response to queue: %v", err)
 				}
 				// Return type 5 (DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE) - will follow up via webhook

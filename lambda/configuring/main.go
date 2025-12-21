@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sqs"
 )
 
@@ -114,7 +115,7 @@ func isCampaignEnded(campaign *models.Campaign) bool {
 }
 
 // sendToMessagingQueue sends a message to the messaging queue
-func sendToMessagingQueue(channelID, content, interactionToken string) error {
+func sendToMessagingQueue(channelID, content, interactionToken, interactionID string) error {
 	queueURL := os.Getenv("SYRUS_MESSAGING_QUEUE_URL")
 	if queueURL == "" {
 		return fmt.Errorf("SYRUS_MESSAGING_QUEUE_URL environment variable not set")
@@ -141,8 +142,8 @@ func sendToMessagingQueue(channelID, content, interactionToken string) error {
 	_, err = svc.SendMessage(&sqs.SendMessageInput{
 		QueueUrl:               aws.String(queueURL),
 		MessageBody:            aws.String(string(messageBodyJSON)),
-		MessageGroupId:         aws.String("discord-responses"),
-		MessageDeduplicationId: aws.String(fmt.Sprintf("%s-%d", channelID, time.Now().UnixNano())),
+		MessageGroupId:         aws.String(channelID),                 // Group by campaignID
+		MessageDeduplicationId: aws.String(interactionID + "-config"), // Dedupe by interactionID
 	})
 
 	if err != nil {
@@ -180,8 +181,8 @@ func sendToBirthingQueue(campaignID, interactionID string) error {
 	_, err = svc.SendMessage(&sqs.SendMessageInput{
 		QueueUrl:               aws.String(queueURL),
 		MessageBody:            aws.String(string(messageBodyJSON)),
-		MessageGroupId:         aws.String(campaignID),    // Group by campaignId
-		MessageDeduplicationId: aws.String(interactionID), // Dedupe by interactionId
+		MessageGroupId:         aws.String(campaignID),               // Group by campaignID
+		MessageDeduplicationId: aws.String(interactionID + "-birth"), // Dedupe by interactionID
 	})
 
 	if err != nil {
@@ -366,8 +367,8 @@ func createPlaceholderCampaign(channelID, hostID string, campaignType models.Cam
 		ModelPolicy: models.ModelPolicy{
 			IntentParsing: models.ModelHaiku,
 			Narration:     models.ModelHaiku,
-			Cinematics:    models.ModelSonnet,
-			Blueprint:     models.ModelSonnet,
+			Cinematics:    models.ModelHaiku,
+			Blueprint:     models.ModelHaiku,
 			ImageGen:      models.ModelNanoBanana,
 		},
 	}
@@ -455,14 +456,14 @@ func processSQSMessage(message events.SQSMessage, stage string) error {
 	host, err := checkHostExists(messageBody.HostID)
 	if err != nil {
 		log.Printf("Failed to check host: %v", err)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads flicker with uncertainty. Try again when the loom is stable.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads flicker with uncertainty. Try again when the loom is stable.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil // Don't retry on infrastructure errors after sending message
 	}
 	if host == nil {
 		log.Printf("Host %s not whitelisted", messageBody.HostID)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "I sense your presence, but you are not yet bound to the loom. The weaver must grant you passage first.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "I sense your presence, but you are not yet bound to the loom. The weaver must grant you passage first.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send unauthorized message: %v", err)
 		}
 		return nil // Successfully handled - sent error message
@@ -477,7 +478,7 @@ func processSQSMessage(message events.SQSMessage, stage string) error {
 		return handleEndCampaign(messageBody, stage)
 	default:
 		log.Printf("Unhandled campaign subcommand: %s", subcommand)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads know not this command. Speak more clearly, and I shall listen.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads know not this command. Speak more clearly, and I shall listen.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil
@@ -490,7 +491,7 @@ func handleStartCampaign(messageBody models.ConfiguringMessage, stage string) er
 	campaign, err := getCampaignByChannelID(messageBody.ChannelID)
 	if err != nil {
 		log.Printf("Failed to check for existing campaign: %v", err)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads blur and tangle. I cannot see clearly. Try again when the pattern settles.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads blur and tangle. I cannot see clearly. Try again when the pattern settles.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil // Don't retry on infrastructure errors after sending message
@@ -499,7 +500,7 @@ func handleStartCampaign(messageBody models.ConfiguringMessage, stage string) er
 	// If campaign exists and is not ended, send error message
 	if campaign != nil && !isCampaignEnded(campaign) {
 		log.Printf("Active campaign already exists for channel %s", messageBody.ChannelID)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The loom only weaves one story per channel. Your tale still unfolds here—finish what you have begun, or let it end before starting anew.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The loom only weaves one story per channel. Your tale still unfolds here—finish what you have begun, or let it end before starting anew.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil // Successfully handled - sent error message
@@ -534,7 +535,7 @@ func handleStartCampaign(messageBody models.ConfiguringMessage, stage string) er
 	// Validate campaign type
 	if campaignType == "" {
 		log.Printf("Missing campaign type for /campaign start")
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern lacks shape. You must choose a campaign type.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern lacks shape. You must choose a campaign type.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil
@@ -543,7 +544,7 @@ func handleStartCampaign(messageBody models.ConfiguringMessage, stage string) er
 	// Validate decisions
 	if decisions == "" {
 		log.Printf("Missing decisions option for /campaign start")
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads await direction. Who shall guide the choices?", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads await direction. Who shall guide the choices?", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil
@@ -553,7 +554,7 @@ func handleStartCampaign(messageBody models.ConfiguringMessage, stage string) er
 	validDecisions := map[string]bool{"host": true, "flexible": true, "group": true}
 	if !validDecisions[decisions] {
 		log.Printf("Invalid decisions value: %s", decisions)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The path you choose is unclear. Speak: host, flexible, or group.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The path you choose is unclear. Speak: host, flexible, or group.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil
@@ -564,7 +565,7 @@ func handleStartCampaign(messageBody models.ConfiguringMessage, stage string) er
 	newCampaign, err := createPlaceholderCampaign(messageBody.ChannelID, messageBody.HostID, campaignType, models.DecisionModel(decisions), stage)
 	if err != nil {
 		log.Printf("Failed to create placeholder campaign: %v", err)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern resists. Something in the weave is wrong. I cannot begin.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern resists. Something in the weave is wrong. I cannot begin.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil // Don't retry after sending error message
@@ -573,7 +574,7 @@ func handleStartCampaign(messageBody models.ConfiguringMessage, stage string) er
 	// Save campaign to DynamoDB
 	if err := saveCampaign(newCampaign); err != nil {
 		log.Printf("Failed to save campaign: %v", err)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads slip through my grasp. I cannot hold the pattern. Try again.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads slip through my grasp. I cannot hold the pattern. Try again.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil // Don't retry after sending error message
@@ -595,7 +596,7 @@ func handleStartCampaign(messageBody models.ConfiguringMessage, stage string) er
 	successMessage := `I feel the tension in the threads.
 A campaign takes form — pulled from chance, bound by choice.
 Hold steady. The weaving begins.`
-	if err := sendToMessagingQueue(messageBody.ChannelID, successMessage, messageBody.InteractionToken); err != nil {
+	if err := sendToMessagingQueue(messageBody.ChannelID, successMessage, messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 		log.Printf("Warning: failed to send success message: %v", err)
 		// Don't fail if success message fails - campaign was created
 	}
@@ -610,7 +611,7 @@ func handleEndCampaign(messageBody models.ConfiguringMessage, stage string) erro
 	campaign, err := getCampaignByChannelID(messageBody.ChannelID)
 	if err != nil {
 		log.Printf("Failed to check for existing campaign: %v", err)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads blur and tangle. I cannot see clearly. Try again when the pattern settles.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads blur and tangle. I cannot see clearly. Try again when the pattern settles.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil // Don't retry on infrastructure errors after sending message
@@ -618,7 +619,7 @@ func handleEndCampaign(messageBody models.ConfiguringMessage, stage string) erro
 
 	if campaign == nil || isCampaignEnded(campaign) {
 		log.Printf("No active campaign found for channel %s", messageBody.ChannelID)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "There are no threads here to sever. The loom is empty, waiting.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "There are no threads here to sever. The loom is empty, waiting.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil // Successfully handled - sent error message
@@ -656,7 +657,7 @@ func createEndConfirmation(messageBody models.ConfiguringMessage, campaign *mode
 	sess, err := session.NewSession()
 	if err != nil {
 		log.Printf("Failed to create AWS session: %v", err)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern resists. Something in the weave is wrong.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern resists. Something in the weave is wrong.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil
@@ -679,7 +680,7 @@ func createEndConfirmation(messageBody models.ConfiguringMessage, campaign *mode
 
 	if err != nil {
 		log.Printf("Failed to write confirmation record: %v", err)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern resists. Something in the weave is wrong.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern resists. Something in the weave is wrong.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil
@@ -690,7 +691,7 @@ This choice is final—no thread can be respun, no moment relived.
 Fate demands certainty.
 If you are sure, whisper /campaign end confirm within 60 heartbeats.`
 
-	if err := sendToMessagingQueue(messageBody.ChannelID, message, messageBody.InteractionToken); err != nil {
+	if err := sendToMessagingQueue(messageBody.ChannelID, message, messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 		log.Printf("Failed to send confirmation message: %v", err)
 		return nil
 	}
@@ -709,7 +710,7 @@ func handleEndConfirm(messageBody models.ConfiguringMessage, campaign *models.Ca
 	sess, err := session.NewSession()
 	if err != nil {
 		log.Printf("Failed to create AWS session: %v", err)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern resists. Something in the weave is wrong.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern resists. Something in the weave is wrong.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil
@@ -727,7 +728,7 @@ func handleEndConfirm(messageBody models.ConfiguringMessage, campaign *models.Ca
 
 	if err != nil {
 		log.Printf("Failed to read confirmation record: %v", err)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern resists. Something in the weave is wrong.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The pattern resists. Something in the weave is wrong.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil
@@ -738,7 +739,7 @@ func handleEndConfirm(messageBody models.ConfiguringMessage, campaign *models.Ca
 		message := `I sense no pending fate here.
 The threads remain as they were.
 Perhaps you never called for their ending, or time has already swept your words away.`
-		if err := sendToMessagingQueue(messageBody.ChannelID, message, messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, message, messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil
@@ -754,7 +755,7 @@ Perhaps you never called for their ending, or time has already swept your words 
 			message := `Time has passed.
 Your words came too late—the moment has faded.
 If you still wish to end this tale, speak /campaign end once more.`
-			if err := sendToMessagingQueue(messageBody.ChannelID, message, messageBody.InteractionToken); err != nil {
+			if err := sendToMessagingQueue(messageBody.ChannelID, message, messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 				log.Printf("Failed to send error message: %v", err)
 			}
 			return nil
@@ -781,10 +782,16 @@ If you still wish to end this tale, speak /campaign end once more.`
 
 	if err := saveCampaign(campaign); err != nil {
 		log.Printf("Failed to save ended campaign: %v", err)
-		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads slip through my grasp. I cannot hold the pattern. Try again.", messageBody.InteractionToken); err != nil {
+		if err := sendToMessagingQueue(messageBody.ChannelID, "The threads slip through my grasp. I cannot hold the pattern. Try again.", messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil
+	}
+
+	// Clear model cache for this campaign
+	if err := clearModelCache(campaign.CampaignID); err != nil {
+		log.Printf("Warning: failed to clear model cache: %v", err)
+		// Don't fail the entire operation if cache clear fails
 	}
 
 	// Write dedup
@@ -797,12 +804,77 @@ If you still wish to end this tale, speak /campaign end once more.`
 The threads have been cut, the story released back into the void.
 What was woven here exists now only in memory—yours, and the echo of what once lived.`
 
-	if err := sendToMessagingQueue(messageBody.ChannelID, message, messageBody.InteractionToken); err != nil {
+	if err := sendToMessagingQueue(messageBody.ChannelID, message, messageBody.InteractionToken, messageBody.InteractionID); err != nil {
 		log.Printf("Warning: failed to send success message: %v", err)
 		// Don't fail if success message fails - campaign was ended
 	}
 
 	log.Printf("Successfully ended campaign %s", campaign.CampaignID)
+	return nil
+}
+
+// clearModelCache deletes all cached model responses for a campaign from S3
+func clearModelCache(campaignID string) error {
+	bucketName := os.Getenv("SYRUS_MODEL_CACHE_BUCKET")
+	if bucketName == "" {
+		return fmt.Errorf("SYRUS_MODEL_CACHE_BUCKET environment variable not set")
+	}
+
+	sess, err := session.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create AWS session: %w", err)
+	}
+
+	svc := s3.New(sess)
+
+	// List all objects with the campaign ID prefix
+	prefix := fmt.Sprintf("%s/", campaignID)
+	listInput := &s3.ListObjectsV2Input{
+		Bucket: aws.String(bucketName),
+		Prefix: aws.String(prefix),
+	}
+
+	var objectsToDelete []*s3.ObjectIdentifier
+	err = svc.ListObjectsV2Pages(listInput, func(page *s3.ListObjectsV2Output, lastPage bool) bool {
+		for _, obj := range page.Contents {
+			objectsToDelete = append(objectsToDelete, &s3.ObjectIdentifier{
+				Key: obj.Key,
+			})
+		}
+		return !lastPage // Continue paging
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to list objects in S3 cache: %w", err)
+	}
+
+	if len(objectsToDelete) == 0 {
+		log.Printf("No cache objects found for campaign %s", campaignID)
+		return nil
+	}
+
+	// Delete objects in batches (S3 DeleteObjects supports up to 1000 objects per request)
+	for i := 0; i < len(objectsToDelete); i += 1000 {
+		end := i + 1000
+		if end > len(objectsToDelete) {
+			end = len(objectsToDelete)
+		}
+
+		batch := objectsToDelete[i:end]
+		_, err = svc.DeleteObjects(&s3.DeleteObjectsInput{
+			Bucket: aws.String(bucketName),
+			Delete: &s3.Delete{
+				Objects: batch,
+				Quiet:   aws.Bool(false),
+			},
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to delete cache objects: %w", err)
+		}
+	}
+
+	log.Printf("Successfully cleared %d cache object(s) for campaign %s", len(objectsToDelete), campaignID)
 	return nil
 }
 

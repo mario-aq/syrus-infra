@@ -23,6 +23,7 @@ type DiscordMessage struct {
 	Content    string                   `json:"content,omitempty"`
 	Embeds     []map[string]interface{} `json:"embeds,omitempty"`
 	Components []map[string]interface{} `json:"components,omitempty"`
+	Flags      int                      `json:"flags,omitempty"` // Discord message flags (e.g., 64 for ephemeral)
 }
 
 // SQSMessageBody represents the message structure in SQS
@@ -32,6 +33,7 @@ type SQSMessageBody struct {
 	Embeds           []map[string]interface{} `json:"embeds,omitempty"`
 	Components       []map[string]interface{} `json:"components,omitempty"`
 	InteractionToken string                   `json:"interactionToken,omitempty"`
+	Flags            int                      `json:"flags,omitempty"` // Discord message flags
 }
 
 // getDiscordBotToken retrieves the Discord bot token from SSM Parameter Store
@@ -166,6 +168,9 @@ func processSQSMessage(message events.SQSMessage, botToken string, stage string)
 	}
 	if len(messageBody.Components) > 0 {
 		discordMsg.Components = messageBody.Components
+	}
+	if messageBody.Flags > 0 {
+		discordMsg.Flags = messageBody.Flags
 	}
 
 	// Get application ID from SSM if we have an interaction token

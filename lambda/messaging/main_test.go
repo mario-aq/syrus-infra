@@ -258,3 +258,74 @@ func TestSQSMessageBody_MarshalUnmarshal(t *testing.T) {
 		t.Errorf("Expected %d components, got %d", len(original.Components), len(unmarshaled.Components))
 	}
 }
+
+func TestProcessSQSMessage_WithEphemeralFlags(t *testing.T) {
+	messageBody := SQSMessageBody{
+		ChannelID: "123456789012345678",
+		Content:   "This is an ephemeral message",
+		Flags:     64, // Ephemeral flag
+	}
+
+	bodyJSON, _ := json.Marshal(messageBody)
+	message := events.SQSMessage{
+		MessageId: "test-message-id",
+		Body:      string(bodyJSON),
+	}
+
+	var parsedBody SQSMessageBody
+	err := json.Unmarshal([]byte(message.Body), &parsedBody)
+	if err != nil {
+		t.Fatalf("Failed to parse message body: %v", err)
+	}
+
+	if parsedBody.Flags != 64 {
+		t.Errorf("Expected Flags to be 64, got %d", parsedBody.Flags)
+	}
+}
+
+func TestDiscordMessage_WithFlags(t *testing.T) {
+	message := DiscordMessage{
+		Content: "Ephemeral test message",
+		Flags:   64,
+	}
+
+	jsonData, err := json.Marshal(message)
+	if err != nil {
+		t.Fatalf("Failed to marshal DiscordMessage: %v", err)
+	}
+
+	var unmarshaled DiscordMessage
+	err = json.Unmarshal(jsonData, &unmarshaled)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal DiscordMessage: %v", err)
+	}
+
+	if unmarshaled.Flags != message.Flags {
+		t.Errorf("Expected Flags %d, got %d", message.Flags, unmarshaled.Flags)
+	}
+}
+
+func TestSQSMessageBody_WithFlags(t *testing.T) {
+	original := SQSMessageBody{
+		ChannelID:        "123456789012345678",
+		Content:          "Test ephemeral message",
+		InteractionToken: "token123",
+		Flags:            64,
+	}
+
+	jsonData, err := json.Marshal(original)
+	if err != nil {
+		t.Fatalf("Failed to marshal SQSMessageBody: %v", err)
+	}
+
+	var unmarshaled SQSMessageBody
+	err = json.Unmarshal(jsonData, &unmarshaled)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal SQSMessageBody: %v", err)
+	}
+
+	if unmarshaled.Flags != original.Flags {
+		t.Errorf("Expected Flags %d, got %d", original.Flags, unmarshaled.Flags)
+	}
+}
+

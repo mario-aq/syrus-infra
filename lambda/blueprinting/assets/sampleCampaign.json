@@ -1,0 +1,377 @@
+{
+  "campaignId": "01J8ZQ9H2YF7K9R8X3M4WQABCD",
+  "campaignType": "epic",
+  "status": "active",
+  "lifecycle": {
+    "paused": false,
+    "endedAt": null,
+    "endedState": null,
+    "archivedAt": null
+  },
+  "createdAt": "2025-03-01T18:42:00Z",
+  "lastUpdatedAt": "2025-03-02T01:12:44Z",
+  "hostId": "discord-user-123456",
+  "source": "discord",
+
+  "meta": {
+    "mode": "group",
+    "guildId": "discord-guild-987654321",
+    "channelId": "discord-channel-123456789",
+    "engineVersion": "loros-campaign-v1",
+    "narrator": "syrus"
+  },
+
+  "party": {
+    "members": [
+      {
+        "userId": "discord-user-123456",
+        "role": "host",
+        "joinedAt": "2025-03-01T18:42:00Z"
+      }
+    ],
+    "boons": {
+      "available": []
+    },
+    "spectatorsAllowed": true,
+    "maxActivePlayers": 9
+  },
+
+  "blueprint": {
+    "title": "Blight Upon the Break",
+    "premise": "A creeping corruption festers beneath the Stormbreak Coast...",
+    "thematicPillars": [
+      "Decay Beneath Beauty",
+      "Tides of Power",
+      "Sacrifice for Clarity"
+    ],
+
+    "ingredientBinding": {
+      "objectiveSeed": "Cleanse the Blight",
+      "twists": ["Time Is Running Out", "The Key Is Someone"],
+      "antagonists": ["The Last Warden", "Rift Poachers"],
+      "setPieces": ["Heist in Plain Sight", "Interrupted Ritual"]
+    },
+
+    "acts": [
+      {
+        "actNumber": 1,
+        "name": "Salt and Splinters",
+        "primaryArea": "Wreckwood Beach",
+        "narrativePurpose": "Introduce corruption and urgency",
+        "primaryDanger": "Rift Poachers",
+        "expectedBeats": 11,
+        "beatVariance": 2,
+        "completion": {
+          "type": "trigger",
+          "condition": "Discovery of a map or trail linked to a spreading rift"
+        },
+        "escalation": {
+          "onDelay": "increaseDanger",
+          "maxDelays": 2,
+          "effects": [
+            "environment_worsens",
+            "enemy_strengthens",
+            "npc_relationships_strain"
+          ]
+        }
+      },
+      {
+        "actNumber": 2,
+        "name": "Webs in the Harbor",
+        "primaryArea": "Harbor of Knots",
+        "narrativePurpose": "Political entanglement and the Key",
+        "expectedBeats": 12,
+        "beatVariance": 2,
+        "completion": {
+          "type": "decision",
+          "prompt": "How will you handle the Key?",
+          "options": ["Secure", "Allied", "Lost"],
+          "condition": "Fate of the Key is determined (secured, allied, or lost)"
+        },
+        "escalation": {
+          "onDelay": "increaseDanger",
+          "maxDelays": 2,
+          "effects": [
+            "environment_worsens",
+            "enemy_strengthens",
+            "npc_relationships_strain"
+          ]
+        }
+      },
+      {
+        "actNumber": 3,
+        "name": "Seals and Sacrifice",
+        "primaryArea": "Tide-Cave Mouth",
+        "expectedBeats": 11,
+        "beatVariance": 1,
+        "completion": {
+          "type": "trigger",
+          "condition": "Ritual is interrupted or completes"
+        },
+        "escalation": {
+          "onDelay": "increaseDanger",
+          "maxDelays": 2,
+          "effects": [
+            "environment_worsens",
+            "enemy_strengthens",
+            "npc_relationships_strain"
+          ]
+        }
+      },
+      {
+        "actNumber": 4,
+        "name": "Storm at the Summit",
+        "primaryArea": "Stormcaller Bluff",
+        "expectedBeats": 11,
+        "beatVariance": 1,
+        "completion": {
+          "type": "beats",
+          "condition": "Final confrontation resolves and the blight's legacy is chosen"
+        },
+        "escalation": {
+          "onDelay": "increaseDanger",
+          "maxDelays": 2,
+          "effects": [
+            "environment_worsens",
+            "enemy_strengthens",
+            "npc_relationships_strain"
+          ]
+        }
+      }
+    ],
+
+    "majorForces": {
+      "The Last Warden": {
+        "initialPresence": {
+          "act": 1,
+          "mode": "myth",
+          "description": "Whispered warnings, symbols carved into stone"
+        },
+        "escalations": [
+          {
+            "act": 3,
+            "mode": "manifest",
+            "description": "The Warden's Echo tests the party"
+          }
+        ],
+        "finalConfrontation": {
+          "act": 4,
+          "location": "Stormcaller Bluff"
+        }
+      },
+      "Rift Poachers": {
+        "initialPresence": {
+          "act": 1,
+          "mode": "direct",
+          "description": "Ambushes and scavenger camps"
+        },
+        "escalations": [
+          {
+            "act": 2,
+            "mode": "social",
+            "description": "Political sabotage in the harbor"
+          },
+          {
+            "act": 4,
+            "mode": "military",
+            "description": "Open conflict during convergence"
+          }
+        ]
+      }
+    },
+
+    "npcs": {
+      "NPC-01": {
+        "name": "Vellum Marrow",
+        "role": "Gatekeeper",
+        "firstAppearanceAct": 1
+      },
+      "NPC-02": {
+        "name": "Caelin Draive",
+        "role": "Guide / Rival",
+        "firstAppearanceAct": 2
+      },
+      "NPC-03": {
+        "name": "The Key",
+        "role": "Wildcard",
+        "identityHidden": true
+      }
+    },
+
+    "boonPlan": [
+      {
+          "trigger": "DefeatRiftPoacherLieutenant",
+          "boons": [
+          {
+              "name": "Strike True",
+              "weight": 2,
+              "description": "Once, reroll a failed decisive action and take the better outcome."
+          },
+          {
+              "name": "Veil Pierced",
+              "weight": 3,
+              "description": "Reveal a hidden truth, motive, or unseen danger tied to the current situation."
+          },
+          {
+              "name": "Fate's Sidestep",
+              "weight": 1,
+              "description": "Avoid a catastrophic consequence that would otherwise be unavoidable."
+          }
+          ]
+      },
+      {
+          "trigger": "ExtractKeyQuietly",
+          "boons": [
+          {
+              "name": "Veil Pierced",
+              "weight": 3,
+              "description": "Uncover concealed political or personal truths without triggering retaliation."
+          },
+          {
+              "name": "Thread Rewound",
+              "weight": 2,
+              "description": "Undo or soften the immediate fallout of a past decision."
+          },
+          {
+              "name": "Moment Unbroken",
+              "weight": 1,
+              "description": "Freeze a fragile situation, preventing escalation for one critical beat."
+          }
+          ]
+      },
+      {
+          "trigger": "RoleplayedSacrifice",
+          "boons": [
+          {
+              "name": "Hand of Fate",
+              "weight": 1,
+              "description": "Force destiny's hand—one future event must resolve in your favor."
+          },
+          {
+              "name": "Ember of Resolve",
+              "weight": 3,
+              "description": "Gain unwavering clarity and strength when acting in line with the sacrifice made."
+          }
+          ]
+      }
+    ],
+
+    "failurePaths": [
+      {
+        "id": "KeyTurns",
+        "trigger": "MishandledKey",
+        "consequence": "Key becomes antagonist"
+      },
+      {
+        "id": "RitualCompletes",
+        "trigger": "Act3Failure",
+        "consequence": "Blight becomes semi-permanent"
+      }
+    ],
+
+    "endStates": {
+      "success": "Blight cleansed; coast heals",
+      "compromised": "Blight contained; world altered",
+      "failure": "Blight spreads; coast lost"
+    },
+
+    "memoryDirectives": {
+      "canonicalFacts": [
+        "blightOrigin",
+        "identityOfTheKey",
+        "wardenFate",
+        "ritualOutcome"
+      ],
+      "relationshipAxes": [
+        {
+          "entity": "Caelin Draive",
+          "states": ["Hostile", "Wary", "Trusted", "Ally"]
+        }
+      ],
+      "decisionFlags": [
+        "KeyBetrayedParty",
+        "RitualPartiallyCompleted"
+      ],
+      "actSummaryFocus": {
+        "1": ["Response to corruption"],
+        "2": ["Treatment of the Key"],
+        "3": ["Handling forbidden knowledge"],
+        "4": ["Final choice"]
+      }
+    },
+
+    "imagePlan": {
+      "Campaign.Intro": {
+        "description": "Stormbreak Coast at dusk",
+        "sendWhen": "campaign_start",
+        "s3_key": "sample_key/img.png"
+      },
+      "Force.TheLastWarden.Manifest": {
+        "description": "The Last Warden revealed",
+        "sendWhen": "first_manifestation",
+        "s3_key": "sample_key/img.png"
+      },
+      "Campaign.Final": {
+        "description": "Stormcaller Bluff during the final storm",
+        "sendWhen": "final_confrontation",
+        "s3_key": "sample_key/img.png"
+      }
+    }
+  },
+
+  "runtime": {
+    "currentAct": 1,
+    "currentBeat": 3,
+    "turnState": {
+      "mode": "group",
+      "activeDecision": {
+        "prompt": "How will you approach the tide-caves?",
+        "type": "vote",
+        "options": ["Stealth", "Force", "Parley"],
+        "expiresAt": "2025-03-02T01:15:00Z"
+      }
+    },
+    "activeFailurePaths": ["RitualCompletes"],
+    "pressure": {
+      "level": 2,
+      "causes": ["delay", "failure_path:RitualCompletes"]
+    }
+  },
+
+  "memory": {
+    "global": {
+      "canonicalFacts": {},
+      "relationships": {},
+      "decisionFlags": {}
+    },
+    "perAct": {
+      "1": {
+        "summary": null,
+        "keyDecisions": [],
+        "relationshipChanges": {},
+        "notes": []
+      }
+    }
+  },
+
+  "costTracking": {
+    "softLimits": {
+      "sonnetCalls": 10,
+      "haikuCalls": 1000,
+      "imageCalls": 10
+    },
+    "usage": {
+      "sonnetCalls": 2,
+      "haikuCalls": 134,
+      "imageCalls": 3
+    },
+    "estimatedCostUSD": 0.87
+  },
+  "modelPolicy": {
+    "intentParsing": "haiku",
+    "narration": "haiku",
+    "cinematics": "sonnet",
+    "blueprint": "sonnet"
+  }
+}
+

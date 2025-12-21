@@ -17,6 +17,7 @@ type MessagingQueueMessage struct {
 	Embeds           []map[string]interface{} `json:"embeds,omitempty"`
 	Components       []map[string]interface{} `json:"components,omitempty"`
 	InteractionToken string                   `json:"interactionToken,omitempty"`
+	Flags            int                      `json:"flags,omitempty"` // Discord message flags (e.g., 64 for ephemeral)
 }
 
 // BirthingMessage represents a message sent to the birthing queue

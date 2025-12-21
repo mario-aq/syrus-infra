@@ -86,10 +86,12 @@ func checkDedup(interactionID string) (bool, error) {
 
 	svc := dynamodb.New(sess)
 
+	dedupKey := fmt.Sprintf("birthing#%s", interactionID)
+
 	result, err := svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(dedupTable),
 		Key: map[string]*dynamodb.AttributeValue{
-			"dedupKey": {S: aws.String(interactionID)},
+			"dedupKey": {S: aws.String(dedupKey)},
 		},
 	})
 
@@ -114,12 +116,13 @@ func writeDedup(interactionID string) error {
 
 	svc := dynamodb.New(sess)
 
+	dedupKey := fmt.Sprintf("birthing#%s", interactionID)
 	expiresAt := time.Now().Add(24 * time.Hour).Unix()
 
 	_, err = svc.PutItem(&dynamodb.PutItemInput{
 		TableName: aws.String(dedupTable),
 		Item: map[string]*dynamodb.AttributeValue{
-			"dedupKey":  {S: aws.String(interactionID)},
+			"dedupKey":  {S: aws.String(dedupKey)},
 			"expiresAt": {N: aws.String(fmt.Sprintf("%d", expiresAt))},
 		},
 	})
@@ -165,7 +168,7 @@ func getCampaignByID(campaignID string) (*models.Campaign, error) {
 }
 
 // sendToMessagingQueue sends a message to the messaging SQS queue
-func sendToMessagingQueue(channelID, content string) error {
+func sendToMessagingQueue(channelID, content, interactionID string) error {
 	queueURL := os.Getenv("SYRUS_MESSAGING_QUEUE_URL")
 	if queueURL == "" {
 		return fmt.Errorf("SYRUS_MESSAGING_QUEUE_URL environment variable not set")
@@ -191,8 +194,8 @@ func sendToMessagingQueue(channelID, content string) error {
 	_, err = svc.SendMessage(&sqs.SendMessageInput{
 		QueueUrl:               aws.String(queueURL),
 		MessageBody:            aws.String(string(messageBodyJSON)),
-		MessageGroupId:         aws.String("discord-responses"),
-		MessageDeduplicationId: aws.String(fmt.Sprintf("%s-%d", channelID, time.Now().UnixNano())),
+		MessageGroupId:         aws.String(channelID),                 // Group by campaignID
+		MessageDeduplicationId: aws.String(interactionID + "-seeded"), // Dedupe by interactionID
 	})
 
 	if err != nil {
@@ -200,6 +203,40 @@ func sendToMessagingQueue(channelID, content string) error {
 	}
 
 	log.Printf("Successfully sent message to messaging queue for channel %s", channelID)
+	return nil
+}
+
+// sendToBlueprintingQueue sends a BlueprintMessage to the blueprinting SQS queue
+func sendToBlueprintingQueue(blueprintMsg models.BlueprintMessage) error {
+	queueURL := os.Getenv("SYRUS_BLUEPRINTING_QUEUE_URL")
+	if queueURL == "" {
+		return fmt.Errorf("SYRUS_BLUEPRINTING_QUEUE_URL environment variable not set")
+	}
+
+	sess, err := session.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create AWS session: %w", err)
+	}
+
+	svc := sqs.New(sess)
+
+	messageBodyJSON, err := json.Marshal(blueprintMsg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal blueprint message: %w", err)
+	}
+
+	_, err = svc.SendMessage(&sqs.SendMessageInput{
+		QueueUrl:               aws.String(queueURL),
+		MessageBody:            aws.String(string(messageBodyJSON)),
+		MessageGroupId:         aws.String(blueprintMsg.CampaignID),
+		MessageDeduplicationId: aws.String(blueprintMsg.InteractionID + "-blueprint"),
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to send message to blueprinting queue: %w", err)
+	}
+
+	log.Printf("Successfully sent blueprint message to blueprinting queue for campaign %s", blueprintMsg.CampaignID)
 	return nil
 }
 
@@ -314,7 +351,7 @@ func processSQSMessage(message events.SQSMessage, stage string) error {
 	campaign, err := getCampaignByID(messageBody.CampaignID)
 	if err != nil {
 		log.Printf("Failed to get campaign: %v", err)
-		if err := sendToMessagingQueue(messageBody.CampaignID, "The threads blur and tangle. I cannot see the campaign. Try again when the pattern settles."); err != nil {
+		if err := sendToMessagingQueue(messageBody.CampaignID, "The threads blur and tangle. I cannot see the campaign. Try again when the pattern settles.", messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil // Don't retry on infrastructure errors
@@ -322,7 +359,7 @@ func processSQSMessage(message events.SQSMessage, stage string) error {
 
 	if campaign == nil {
 		log.Printf("Campaign %s not found", messageBody.CampaignID)
-		if err := sendToMessagingQueue(messageBody.CampaignID, "I sense no campaign here. The threads have vanished."); err != nil {
+		if err := sendToMessagingQueue(messageBody.CampaignID, "I sense no campaign here. The threads have vanished.", messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil // Successfully handled - sent error message
@@ -332,7 +369,7 @@ func processSQSMessage(message events.SQSMessage, stage string) error {
 	blueprintSeeds, err := generateBlueprintSeeds(campaign)
 	if err != nil {
 		log.Printf("Failed to generate blueprint seeds: %v", err)
-		if err := sendToMessagingQueue(messageBody.CampaignID, "The pattern resists. I cannot cast the seeds. Try again."); err != nil {
+		if err := sendToMessagingQueue(messageBody.CampaignID, "The pattern resists. I cannot cast the seeds. Try again.", messageBody.InteractionID); err != nil {
 			log.Printf("Failed to send error message: %v", err)
 		}
 		return nil // Don't retry after sending error message
@@ -345,13 +382,13 @@ func processSQSMessage(message events.SQSMessage, stage string) error {
 		Seeds:         *blueprintSeeds,
 	}
 
-	// Log the blueprint message (will be sent to blueprinting queue later)
-	blueprintJSON, err := json.MarshalIndent(blueprintMessage, "", "  ")
-	if err != nil {
-		log.Printf("Failed to marshal blueprint message: %v", err)
-	} else {
-		log.Printf("Generated BlueprintMessage:\n%s", string(blueprintJSON))
+	// Send to blueprinting queue
+	if err := sendToBlueprintingQueue(blueprintMessage); err != nil {
+		log.Printf("Failed to send to blueprinting queue: %v", err)
+		return fmt.Errorf("failed to send blueprint message: %w", err)
 	}
+
+	log.Printf("Successfully sent blueprint message to blueprinting queue for campaign %s", messageBody.CampaignID)
 
 	// Write to dedup table
 	if err := writeDedup(messageBody.InteractionID); err != nil {
@@ -362,9 +399,9 @@ func processSQSMessage(message events.SQSMessage, stage string) error {
 	// Send success message to messaging queue
 	successMessage := `The seeds are cast.
 Foundations shimmer beneath the surface—objective, twists, forces in motion.
-The blueprint awaits the weaver's hand.`
+The adventure is being woven. This may take a moment as the threads align...`
 
-	if err := sendToMessagingQueue(messageBody.CampaignID, successMessage); err != nil {
+	if err := sendToMessagingQueue(messageBody.CampaignID, successMessage, messageBody.InteractionID); err != nil {
 		log.Printf("Warning: failed to send success message: %v", err)
 		// Don't fail if success message fails - seeds were generated
 	}
