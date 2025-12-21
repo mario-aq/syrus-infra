@@ -7,14 +7,26 @@
     "courage_against_darkness"
   ],
   "beatQualification": {
-    "mustHave": ["village_attacked", "enter_barrow", "confront_king"],
-    "mayHave": ["discover_curse_source", "fight_undead", "escape_collapse"]
+    "countsWhen": [
+      "village attacked",
+      "enter barrow",
+      "confront king",
+      "discover curse source",
+      "fight undead",
+      "escape collapse"
+    ],
+    "doesNotCountWhen": [
+      "pure dialogue without commitment",
+      "clarification questions",
+      "minor flavor actions"
+    ]
   },
   "ingredientBinding": {
     "objective": ["break_the_curse"],
-    "twists": ["ancient_evil_awakens"],
+    "twists": ["guardian_was_containment"],
     "antagonists": ["barrow_king"],
-    "setPieces": ["collapsing_ruins"]
+    "setPieces": ["collapsing_ruins"],
+    "startingLocation": "roadside_inn"
   },
   "acts": [
     {
@@ -127,19 +139,21 @@
     ]
   },
   "imagePlan": {
-    "intro": {
+    "introImage": {
       "description": "Village at night with undead emerging from burial mounds",
       "prompt": "A dark fantasy village at night, ancient burial mounds in background, skeletal undead emerging from earth, terrified villagers fleeing, torches and fear, ominous atmosphere, dark fantasy art style",
       "sendWhen": "campaign_start",
       "narrativePurpose": "Establish undead threat",
       "s3Key": ""
     },
-    "barrow_descent": {
-      "description": "Descending into the ancient barrow",
-      "prompt": "Dark tunnel descending into ancient tomb, torch light on carved walls, bones scattered on floor, sense of ancient evil, claustrophobic stone passage, fantasy dungeon art",
-      "sendWhen": "beat_enter_barrow",
-      "narrativePurpose": "Show the descent into danger",
-      "s3Key": ""
+    "additionalImages": {
+      "barrow_descent": {
+        "description": "Descending into the ancient barrow",
+        "prompt": "Dark tunnel descending into ancient tomb, torch light on carved walls, bones scattered on floor, sense of ancient evil, claustrophobic stone passage, fantasy dungeon art",
+        "sendWhen": "beat_enter_barrow",
+        "narrativePurpose": "Show the descent into danger",
+        "s3Key": ""
+      }
     }
   },
   "combatConstraints": {

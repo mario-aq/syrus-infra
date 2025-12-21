@@ -7,14 +7,28 @@
     "imprisoned_for_a_reason"
   ],
   "beatQualification": {
-    "mustHave": ["enter_tower", "discover_prison_truth", "evil_stirs", "descent_to_heart", "final_choice"],
-    "mayHave": ["traps_encountered", "monster_fights", "wizard_lore", "breach_begins"]
+    "countsWhen": [
+      "enter tower",
+      "discover prison truth",
+      "evil stirs",
+      "descent to heart",
+      "final choice",
+      "traps encountered",
+      "monster fights",
+      "breach begins"
+    ],
+    "doesNotCountWhen": [
+      "pure dialogue without commitment",
+      "reading wizard lore without consequence",
+      "minor exploration without discovery"
+    ]
   },
   "ingredientBinding": {
-    "objective": ["delve_ancient_ruins", "stop_ancient_evil"],
-    "twists": ["treasure_is_bait", "guardian_was_protecting_us"],
-    "antagonists": ["possessed_guardian", "void_behemoth"],
-    "setPieces": ["tower_ascent", "collapsing_ruins", "guardian_trial"]
+    "objective": ["delve_ancient_ruins"],
+    "twists": ["relic_is_cursed", "guardian_was_containment"],
+    "antagonists": ["ancient_wyrm"],
+    "setPieces": ["collapsing_ruins", "forced_split"],
+    "startingLocation": "market_square"
   },
   "acts": [
     {
@@ -40,7 +54,7 @@
       "name": "The Prison Revealed",
       "primaryArea": "tower_archives",
       "narrativePurpose": "Discovery of horror: tower is a seal, party broke it",
-      "primaryDanger": "ancient_truth",
+      "primaryDanger": "archive_guardians_activated",
       "beatExpectations": {"min": 9, "max": 13},
       "pressureType": "revelation"
     },
@@ -83,7 +97,7 @@
       "name": "The Thing Beyond Names",
       "nature": "eldritch_horror",
       "primaryGoal": "break_free_consume_reality",
-      "methods": ["corruption", "madness", "reality_unraveling"],
+      "methods": ["corruption", "madness", "seal_fractures_spread"],
       "threatLevel": "apocalyptic"
     }
   },
@@ -188,33 +202,35 @@
     ]
   },
   "imagePlan": {
-    "intro": {
+    "introImage": {
       "description": "Ancient wizard tower emerging from mists",
       "prompt": "Massive ancient stone tower piercing through morning mist, covered in arcane runes glowing faintly, ominous but beautiful, adventurers approaching with torches, epic dark fantasy landscape, detailed architectural art",
       "sendWhen": "campaign_start",
       "narrativePurpose": "Establish wonder and hidden danger",
       "s3Key": ""
     },
-    "guardian_encounter": {
-      "description": "Massive guardian construct blocking passage",
-      "prompt": "Towering stone and metal guardian construct blocking spiral staircase in wizard tower, glowing runes on armor, massive sword raised, adventurers dwarfed by its size, dramatic lighting, fantasy dungeon art",
-      "sendWhen": "beat_first_guardian",
-      "narrativePurpose": "Show escalating danger",
-      "s3Key": ""
-    },
-    "archive_revelation": {
-      "description": "Ancient library revealing the truth",
-      "prompt": "Vast magical library in tower, books floating in air, ancient murals showing imprisoned horror, glowing warning glyphs, sense of terrible knowledge revealed, detailed fantasy interior",
-      "sendWhen": "beat_prison_revealed",
-      "narrativePurpose": "The moment everything changes",
-      "s3Key": ""
-    },
-    "entity_awakening": {
-      "description": "Horror beginning to break free",
-      "prompt": "Eldritch horror emerging from massive broken seal, reality warping around it, tower shaking, dark tendrils of energy, cosmic horror art style, overwhelming sense of wrongness",
-      "sendWhen": "beat_breach_begins",
-      "narrativePurpose": "Show apocalyptic stakes",
-      "s3Key": ""
+    "additionalImages": {
+      "guardian_encounter": {
+        "description": "Massive guardian construct blocking passage",
+        "prompt": "Towering stone and metal guardian construct blocking spiral staircase in wizard tower, glowing runes on armor, massive sword raised, adventurers dwarfed by its size, dramatic lighting, fantasy dungeon art",
+        "sendWhen": "beat_first_guardian",
+        "narrativePurpose": "Show escalating danger",
+        "s3Key": ""
+      },
+      "archive_revelation": {
+        "description": "Ancient library revealing the truth",
+        "prompt": "Vast magical library in tower, books floating in air, ancient murals showing imprisoned horror, glowing warning glyphs, sense of terrible knowledge revealed, detailed fantasy interior",
+        "sendWhen": "beat_prison_revealed",
+        "narrativePurpose": "The moment everything changes",
+        "s3Key": ""
+      },
+      "entity_awakening": {
+        "description": "Horror beginning to break free",
+        "prompt": "Eldritch horror emerging from massive broken seal, reality warping around it, tower shaking, dark tendrils of energy, cosmic horror art style, overwhelming sense of wrongness",
+        "sendWhen": "beat_breach_begins",
+        "narrativePurpose": "Show apocalyptic stakes",
+        "s3Key": ""
+      }
     }
   },
   "combatConstraints": {

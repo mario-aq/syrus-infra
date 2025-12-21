@@ -7,14 +7,27 @@
     "price_of_knowledge"
   ],
   "beatQualification": {
-    "mustHave": ["track_cultists", "infiltrate_temple", "disrupt_ritual", "face_serpent"],
-    "mayHave": ["rescue_captives", "discover_god_weakness", "temple_collapse"]
+    "countsWhen": [
+      "track cultists",
+      "infiltrate temple",
+      "disrupt ritual",
+      "face serpent manifestation",
+      "rescue captives",
+      "discover god weakness",
+      "temple collapse"
+    ],
+    "doesNotCountWhen": [
+      "pure dialogue without commitment",
+      "clarification questions",
+      "minor flavor actions"
+    ]
   },
   "ingredientBinding": {
     "objective": ["stop_the_ritual"],
-    "twists": ["time_pressure", "ally_corrupted"],
-    "antagonists": ["serpent_cult"],
-    "setPieces": ["forbidden_shrine", "interrupted_ritual"]
+    "twists": ["time_pressure", "monster_is_victim"],
+    "antagonists": ["necromancer_prince"],
+    "setPieces": ["interrupted_ritual"],
+    "startingLocation": "caravan_camp"
   },
   "acts": [
     {
@@ -163,26 +176,28 @@
     ]
   },
   "imagePlan": {
-    "intro": {
+    "introImage": {
       "description": "Frontier town at dusk with people whispering about disappearances",
       "prompt": "A dark fantasy frontier settlement at dusk, worried townsfolk in shadows, missing person notices on walls, ominous caves visible in distant hills, tense atmosphere, detailed fantasy art",
       "sendWhen": "campaign_start",
       "narrativePurpose": "Establish mystery and dread",
       "s3Key": ""
     },
-    "temple_discovery": {
-      "description": "Hidden temple carved with serpent imagery",
-      "prompt": "Ancient underground temple with massive serpent carvings on walls, cultists in hooded robes, ritual braziers casting eerie green light, altar with chains, dark fantasy temple interior",
-      "sendWhen": "beat_temple_entrance",
-      "narrativePurpose": "Reveal cult and its power",
-      "s3Key": ""
-    },
-    "serpent_manifestation": {
-      "description": "Massive serpent god partially emerging during ritual",
-      "prompt": "Enormous serpent demon emerging from ritual circle, scales gleaming in firelight, hypnotic eyes, cultists prostrating, underground cavern shaking, epic dark fantasy monster art",
-      "sendWhen": "beat_ritual_interrupted",
-      "narrativePurpose": "Show the terrible stakes",
-      "s3Key": ""
+    "additionalImages": {
+      "temple_discovery": {
+        "description": "Hidden temple carved with serpent imagery",
+        "prompt": "Ancient underground temple with massive serpent carvings on walls, cultists in hooded robes, ritual braziers casting eerie green light, altar with chains, dark fantasy temple interior",
+        "sendWhen": "beat_temple_entrance",
+        "narrativePurpose": "Reveal cult and its power",
+        "s3Key": ""
+      },
+      "serpent_manifestation": {
+        "description": "Massive serpent god partially emerging during ritual",
+        "prompt": "Enormous serpent demon emerging from ritual circle, scales gleaming in firelight, hypnotic eyes, cultists prostrating, underground cavern shaking, epic dark fantasy monster art",
+        "sendWhen": "beat_ritual_interrupted",
+        "narrativePurpose": "Show the terrible stakes",
+        "s3Key": ""
+      }
     }
   },
   "combatConstraints": {

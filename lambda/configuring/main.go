@@ -328,7 +328,10 @@ func createPlaceholderCampaign(channelID, hostID string, campaignType models.Cam
 				DecisionFlags:    []string{},
 				ActSummaryFocus:  map[string][]string{},
 			},
-			ImagePlan: map[string]models.ImagePlanItem{},
+			ImagePlan: models.ImagePlan{
+				IntroImage:       models.ImagePlanItem{},
+				AdditionalImages: map[string]models.ImagePlanItem{},
+			},
 		},
 		Runtime: models.RuntimeState{
 			CurrentAct:  1,
@@ -368,7 +371,7 @@ func createPlaceholderCampaign(channelID, hostID string, campaignType models.Cam
 			IntentParsing: models.ModelHaiku,
 			Narration:     models.ModelHaiku,
 			Cinematics:    models.ModelHaiku,
-			Blueprint:     models.ModelHaiku,
+			Blueprint:     models.ModelSonnet,
 			ImageGen:      models.ModelOpenAI,
 		},
 	}

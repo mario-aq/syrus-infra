@@ -109,7 +109,7 @@ type Blueprint struct {
 	FailurePaths      []FailurePath            `json:"failurePaths" dynamodbav:"failurePaths"`
 	EndStates         EndStates                `json:"endStates" dynamodbav:"endStates"`
 	MemoryDirectives  MemoryDirectives         `json:"memoryDirectives" dynamodbav:"memoryDirectives"`
-	ImagePlan         map[string]ImagePlanItem `json:"imagePlan" dynamodbav:"imagePlan"`
+	ImagePlan         ImagePlan                `json:"imagePlan" dynamodbav:"imagePlan"`
 	CombatConstraints CombatConstraints        `json:"combatConstraints" dynamodbav:"combatConstraints"`
 }
 
@@ -267,6 +267,12 @@ type ImagePlanItem struct {
 	NarrativePurpose string `json:"narrativePurpose" dynamodbav:"narrativePurpose"`
 	Prompt           string `json:"prompt" dynamodbav:"prompt"`
 	S3Key            string `json:"s3Key" dynamodbav:"s3Key"`
+}
+
+// ImagePlan represents the complete image plan structure
+type ImagePlan struct {
+	IntroImage       ImagePlanItem            `json:"introImage" dynamodbav:"introImage"`
+	AdditionalImages map[string]ImagePlanItem `json:"additionalImages,omitempty" dynamodbav:"additionalImages,omitempty"`
 }
 
 // RuntimeState represents the runtime state of the campaign

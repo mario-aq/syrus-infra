@@ -332,7 +332,7 @@ func TestBlueprintMessageSerialization(t *testing.T) {
 	if len(unmarshaled.Seeds.Twists) != len(blueprintMsg.Seeds.Twists) {
 		t.Error("Twists count mismatch after serialization")
 	}
-		if len(unmarshaled.Seeds.Antagonists) != len(blueprintMsg.Seeds.Antagonists) {
+	if len(unmarshaled.Seeds.Antagonists) != len(blueprintMsg.Seeds.Antagonists) {
 		t.Error("Antagonists count mismatch after serialization")
 	}
 }

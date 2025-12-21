@@ -59,6 +59,9 @@ type CampaignSeeds struct {
 	Constraints []ConstraintSeed `json:"constraints"`
 	BeatProfile BeatProfile      `json:"beatProfile"`
 
+	// Starting location for playable scene openings
+	StartingLocation StartingLocationSeed `json:"startingLocation"`
+
 	// Variance injectors
 	Map                  MapSeed           `json:"map"`
 	FeaturedAreas        []AreaSeed        `json:"featuredAreas"`
@@ -141,6 +144,16 @@ type ConstraintSeed struct {
 	Description  string   `json:"description"`
 	Effects      []string `json:"effects"`
 	Weight       int      `json:"weight,omitempty"` // Higher weight = more likely to be selected
+}
+
+// StartingLocationSeed represents a campaign starting location
+type StartingLocationSeed struct {
+	LocationID       string   `json:"locationId"`
+	LocationType     string   `json:"locationType"`
+	Atmosphere       string   `json:"atmosphere"`
+	NPCs             []string `json:"npcs"`
+	TimeOfDayOptions []string `json:"timeOfDayOptions"`
+	ActionTriggers   []string `json:"actionTriggers"`
 }
 
 // MinMaxRange represents a min/max range

@@ -93,9 +93,10 @@ type BeatProfile struct {
 type CampaignSeeds struct {
 	ObjectiveSeeds       []models.ObjectiveSeed  `json:"objectiveSeeds"`
 	TwistCandidates      []models.TwistSeed      `json:"twistCandidates"`
-	AntagonistCandidates []models.AntagonistSeed `json:"antagonistCandidates"`
-	SetPieceCandidates   []models.SetPieceSeed   `json:"setPieceCandidates"`
-	OptionalConstraints  []models.ConstraintSeed `json:"optionalConstraints"`
+	AntagonistCandidates  []models.AntagonistSeed      `json:"antagonistCandidates"`
+	SetPieceCandidates    []models.SetPieceSeed        `json:"setPieceCandidates"`
+	OptionalConstraints   []models.ConstraintSeed      `json:"optionalConstraints"`
+	StartingLocationSeeds []models.StartingLocationSeed `json:"startingLocationSeeds"`
 }
 
 // Maps structures
@@ -679,6 +680,12 @@ func generateBlueprintSeeds(campaign *models.Campaign) (*models.CampaignSeeds, e
 		expectationViolation = generateExpectationViolation(beatProfile)
 	}
 
+	// Select random starting location
+	if len(seeds.StartingLocationSeeds) == 0 {
+		return nil, fmt.Errorf("no starting location seeds available")
+	}
+	selectedLocation := seeds.StartingLocationSeeds[rand.Intn(len(seeds.StartingLocationSeeds))]
+
 	// Select random seeds based on profile rules
 	result := &models.CampaignSeeds{
 		Objective:            objective,
@@ -686,6 +693,7 @@ func generateBlueprintSeeds(campaign *models.Campaign) (*models.CampaignSeeds, e
 		Antagonists:          antagonists,
 		SetPieces:            selectRandomElements(seeds.SetPieceCandidates, profile.Selection.SetPieces.Min, profile.Selection.SetPieces.Max),
 		Constraints:          selectWeightedConstraints(seeds.OptionalConstraints, profile.Selection.Constraints.Min, profile.Selection.Constraints.Max),
+		StartingLocation:     selectedLocation,
 		Map:                  mapSeed,
 		FeaturedAreas:        areaSeed,
 		MaxCombatScenes:      profile.MaxCombatScenes,

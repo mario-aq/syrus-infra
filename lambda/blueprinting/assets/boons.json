@@ -5,7 +5,7 @@
       "name": "Thread Rewound",
       "description": "Reroll the last d20 roll affecting you. You must accept the new result.",
       "category": "fate_control",
-      "weight": 24,
+      "weight": 20,
       "usage": {
         "self_only": false,
         "requires_roll": true,
@@ -15,7 +15,7 @@
     {
       "boonId": "hand_of_fate",
       "name": "Hand of Fate",
-      "description": "Declare before rolling. Your next d20 roll becomes a natural 20.",
+      "description": "Declare before rolling. Your next d20 roll becomes a natural 20. The consequences of this outcome are fully realized and cannot be mitigated or softened.",
       "category": "fate_control",
       "weight": 7,
       "usage": {
@@ -27,7 +27,7 @@
     {
       "boonId": "phoenix_spark",
       "name": "Phoenix Spark",
-      "description": "Instantly revive an incapacitated character (including yourself) with 30% of their maximum HP. Removes the incapacitated state.",
+      "description": "Instantly revive an incapacitated character (including yourself) with 30% of their maximum HP. Removes the incapacitated state. The revival leaves visible scars, lingering exhaustion, or an omen that Syrus may later call upon.",
       "category": "survival",
       "weight": 6,
       "usage": {
@@ -63,7 +63,7 @@
       "name": "Veil Pierced",
       "description": "Gain advantage on a single Awareness, Lore, or Arcana roll.",
       "category": "information",
-      "weight": 20,
+      "weight": 22,
       "usage": {
         "self_only": false,
         "requires_roll": true,
@@ -73,9 +73,9 @@
     {
       "boonId": "strike_true",
       "name": "Strike True",
-      "description": "After a successful hit, increase damage or force the target to make a Resist Roll or suffer a condition determined by Syrus.",
+      "description": "After a successful hit, increase damage or force the target to make a Resist Roll or suffer a minor condition determined by Syrus.",
       "category": "offense",
-      "weight": 13,
+      "weight": 16,
       "usage": {
         "self_only": false,
         "requires_hit": true,
@@ -116,4 +116,3 @@
     "reset_window_on_syrus_response": true
   }
 }
-

@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -176,16 +178,16 @@ func processBlueprintMessage(ctx context.Context, record events.SQSMessage) erro
 
 	// Generate intro image if present in imagePlan
 	var introImageS3Key string
-	if introImage, exists := blueprint.ImagePlan["intro"]; exists && introImage.Prompt != "" {
+	if blueprint.ImagePlan.IntroImage.Prompt != "" {
 		log.Printf("Generating intro image for campaign %s", blueprintMsg.CampaignID)
-		s3Key, err := generateIntroImage(ctx, blueprintMsg.CampaignID, introImage.Prompt)
+		s3Key, err := generateIntroImage(ctx, blueprintMsg.CampaignID, blueprint.ImagePlan.IntroImage.Prompt)
 		if err != nil {
 			log.Printf("Warning: failed to generate intro image: %v", err)
 			// Don't fail the entire blueprint if intro image fails
 		} else {
 			introImageS3Key = s3Key
 			// Update blueprint with S3 key
-			if err := updateImagePlanS3Key(blueprintMsg.CampaignID, "intro", s3Key); err != nil {
+			if err := updateImagePlanIntroS3Key(blueprintMsg.CampaignID, s3Key); err != nil {
 				log.Printf("Warning: failed to update intro image S3 key: %v", err)
 			}
 		}
@@ -590,6 +592,84 @@ func validateBlueprint(blueprint *models.Blueprint, seeds models.CampaignSeeds) 
 		// This is a sanity check, not a hard requirement
 	}
 
+	// Adventure Content Validation (soft checks - log warnings for monitoring)
+	adventureScore := 0
+	hasMonsterInEarlyActs := false
+	hasPhysicalLocation := false
+	hasCombatOpportunity := false
+	hasTangibleStakes := false
+
+	for i, act := range blueprint.Acts {
+		actText := strings.ToLower(act.PrimaryArea + " " + act.PrimaryDanger + " " + act.NarrativePurpose)
+
+		// Check for physical locations
+		locationKeywords := []string{"lair", "ruins", "tomb", "dungeon", "stronghold", "tower", "cave", "wilderness", "temple", "crypt", "vault", "barrow", "fortress", "citadel"}
+		for _, kw := range locationKeywords {
+			if strings.Contains(actText, kw) {
+				hasPhysicalLocation = true
+				adventureScore++
+				break
+			}
+		}
+
+		// Check for monsters/enemies (especially in acts 1-2)
+		monsterKeywords := []string{"monster", "beast", "dragon", "undead", "creature", "guardian", "enemy", "raiders", "cultists", "demon", "aberration", "wyrm", "lich", "necromancer", "goblin", "orc", "troll", "giant", "elemental"}
+		for _, kw := range monsterKeywords {
+			if strings.Contains(actText, kw) {
+				if i < 2 {
+					hasMonsterInEarlyActs = true
+				}
+				adventureScore++
+				break
+			}
+		}
+
+		// Check for action/danger
+		actionKeywords := []string{"fight", "combat", "battle", "chase", "escape", "siege", "assault", "infiltrate", "hunt", "pursue", "ambush", "defend", "attack", "confront"}
+		for _, kw := range actionKeywords {
+			if strings.Contains(actText, kw) {
+				hasCombatOpportunity = true
+				adventureScore++
+				break
+			}
+		}
+	}
+
+	// Check for tangible stakes in premise
+	premiseText := strings.ToLower(blueprint.Premise)
+	stakeKeywords := []string{"treasure", "power", "territory", "artifact", "relic", "destroy", "kill", "stop", "save", "claim", "steal", "recover", "reclaim"}
+	for _, kw := range stakeKeywords {
+		if strings.Contains(premiseText, kw) {
+			hasTangibleStakes = true
+			adventureScore++
+			break
+		}
+	}
+
+	// Log warnings if adventure content is weak
+	if adventureScore < 3 {
+		log.Printf("WARNING: Low adventure score (%d/5) - campaign may lack physical danger and tangible threats", adventureScore)
+	}
+	if !hasMonsterInEarlyActs {
+		log.Printf("WARNING: No monsters detected in acts 1-2 - campaign may start slowly")
+	}
+	if !hasPhysicalLocation {
+		log.Printf("WARNING: No hostile physical locations detected - campaign may be too abstract")
+	}
+	if !hasCombatOpportunity {
+		log.Printf("WARNING: No combat/action opportunities detected - players may lack clear danger")
+	}
+	if !hasTangibleStakes {
+		log.Printf("WARNING: No tangible stakes detected in premise - goals may be too abstract")
+	}
+
+	// Log success for high adventure content
+	if adventureScore >= 4 {
+		log.Printf("✓ Strong adventure content detected (score: %d/5)", adventureScore)
+	}
+
+	// These are soft warnings - don't fail validation, just log for monitoring
+
 	// TODO: Add more validation as needed:
 	// - Validate area names match featured areas
 	// - Validate NPC firstAppearanceAct values
@@ -692,12 +772,43 @@ func sendIntroductionToMessaging(campaignID, interactionID string, blueprint *mo
 	}
 	log.Printf("DEBUG: Title message sent successfully")
 
-	// Message 2: Campaign Premise
+	// Message 2: Campaign Premise (with intro image if available)
 	log.Printf("DEBUG: Sending premise message")
 	premiseMsg := models.MessagingQueueMessage{
 		ChannelID: campaign.Meta.ChannelID,
 		Content:   blueprint.Premise,
 	}
+	
+	// Attach intro image if it was generated
+	if introImageS3Key != "" {
+		log.Printf("DEBUG: Attaching intro image to premise message: %s", introImageS3Key)
+		
+		// Read image from S3
+		imageData, err := s3Client.GetObject(&s3.GetObjectInput{
+			Bucket: aws.String(modelCacheBucket),
+			Key:    aws.String(introImageS3Key),
+		})
+		if err != nil {
+			log.Printf("Warning: failed to read intro image from S3: %v", err)
+		} else {
+			defer imageData.Body.Close()
+			imageBytes, err := ioutil.ReadAll(imageData.Body)
+			if err != nil {
+				log.Printf("Warning: failed to read intro image bytes: %v", err)
+			} else {
+				// Base64 encode
+				imageBase64 := base64.StdEncoding.EncodeToString(imageBytes)
+				premiseMsg.Attachments = []models.Attachment{
+					{
+						Name:        "intro.png",
+						Data:        imageBase64,
+						ContentType: "image/png",
+					},
+				}
+			}
+		}
+	}
+	
 	premiseMsgJSON, err := json.Marshal(premiseMsg)
 	if err != nil {
 		return fmt.Errorf("failed to marshal premise message: %w", err)
@@ -918,8 +1029,25 @@ func downloadImageFromURL(ctx context.Context, imageURL string) ([]byte, error) 
 	return io.ReadAll(resp.Body)
 }
 
-func updateImagePlanS3Key(campaignID, imageID, s3Key string) error {
-	updateExpr := "SET blueprint.imagePlan.#imageId.s3Key = :s3Key, lastUpdatedAt = :lastUpdatedAt"
+func updateImagePlanIntroS3Key(campaignID, s3Key string) error {
+	updateExpr := "SET blueprint.imagePlan.introImage.s3Key = :s3Key, lastUpdatedAt = :lastUpdatedAt"
+
+	_, err := dynamodbClient.UpdateItem(&dynamodb.UpdateItemInput{
+		TableName: aws.String(campaignsTable),
+		Key: map[string]*dynamodb.AttributeValue{
+			"campaignId": {S: aws.String(campaignID)},
+		},
+		UpdateExpression: aws.String(updateExpr),
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":s3Key":         {S: aws.String(s3Key)},
+			":lastUpdatedAt": {S: aws.String(time.Now().UTC().Format(time.RFC3339))},
+		},
+	})
+	return err
+}
+
+func updateImagePlanAdditionalS3Key(campaignID, imageID, s3Key string) error {
+	updateExpr := "SET blueprint.imagePlan.additionalImages.#imageId.s3Key = :s3Key, lastUpdatedAt = :lastUpdatedAt"
 
 	_, err := dynamodbClient.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: aws.String(campaignsTable),
@@ -944,12 +1072,13 @@ func queueMilestoneImages(campaignID, interactionID string, blueprint *models.Bl
 		return nil
 	}
 
-	for imageID, imagePlan := range blueprint.ImagePlan {
-		// Skip intro image (already generated)
-		if imageID == "intro" {
-			continue
-		}
+	// Queue additional images (intro image already generated and sent)
+	if blueprint.ImagePlan.AdditionalImages == nil {
+		log.Printf("No additional images to queue for campaign %s", campaignID)
+		return nil
+	}
 
+	for imageID, imagePlan := range blueprint.ImagePlan.AdditionalImages {
 		// Skip if no prompt
 		if imagePlan.Prompt == "" {
 			continue
