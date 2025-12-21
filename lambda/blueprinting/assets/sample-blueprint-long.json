@@ -1,0 +1,199 @@
+{
+  "title": "The Gilded Inquisition",
+  "premise": "An inquisitorial order has begun hunting practitioners of forbidden magic. The party must navigate political intrigue, protect the innocent, and confront the true purpose behind the purge.",
+  "thematicPillars": [
+    "justice_vs_order",
+    "hidden_knowledge",
+    "cost_of_silence"
+  ],
+  "beatQualification": {
+    "mustHave": ["inquisitor_arrival", "sanctuary_decision", "hidden_archive", "confrontation"],
+    "mayHave": ["investigation", "moral_dilemma", "betrayal", "escape"]
+  },
+  "ingredientBinding": {
+    "objective": ["protect_innocents"],
+    "twists": ["ally_is_compromised", "truth_is_inverted"],
+    "antagonists": ["zealot_inquisitor", "corrupt_magistrate"],
+    "setPieces": ["tribunal", "hidden_library"]
+  },
+  "acts": [
+    {
+      "actNumber": 1,
+      "name": "The Arrival",
+      "primaryArea": "temple_district",
+      "narrativePurpose": "Establish threat and moral stakes",
+      "primaryDanger": "surveillance",
+      "beatExpectations": {"min": 6, "max": 9},
+      "pressureType": "social"
+    },
+    {
+      "actNumber": 2,
+      "name": "Sanctuary and Secrets",
+      "primaryArea": "underground_network",
+      "narrativePurpose": "Reveal deeper conspiracy, force stance",
+      "primaryDanger": "exposure",
+      "beatExpectations": {"min": 6, "max": 9},
+      "pressureType": "investigative"
+    },
+    {
+      "actNumber": 3,
+      "name": "The Hidden Archive",
+      "primaryArea": "forgotten_catacombs",
+      "narrativePurpose": "Uncover true purpose of purge",
+      "primaryDanger": "knowledge_corruption",
+      "beatExpectations": {"min": 6, "max": 9},
+      "pressureType": "revelatory"
+    },
+    {
+      "actNumber": 4,
+      "name": "Judgment",
+      "primaryArea": "grand_tribunal",
+      "narrativePurpose": "Force final choice with lasting consequences",
+      "primaryDanger": "irreversible_verdict",
+      "beatExpectations": {"min": 6, "max": 9},
+      "pressureType": "escalating"
+    }
+  ],
+  "majorForces": {
+    "inquisition": {
+      "name": "The Silver Inquisition",
+      "nature": "religious_enforcement",
+      "primaryGoal": "eradicate_forbidden_magic",
+      "methods": ["investigation", "public_trials", "execution"],
+      "threatLevel": "systemic"
+    },
+    "underground": {
+      "name": "The Veiled Circle",
+      "nature": "refugee_network",
+      "primaryGoal": "survival_and_resistance",
+      "methods": ["hiding", "smuggling", "information_gathering"],
+      "threatLevel": "vulnerable"
+    },
+    "shadow_power": {
+      "name": "The Archive Keepers",
+      "nature": "ancient_order",
+      "primaryGoal": "preserve_forbidden_knowledge",
+      "methods": ["manipulation", "secrecy"],
+      "threatLevel": "ambiguous"
+    }
+  },
+  "npcs": {
+    "inquisitor": {
+      "name": "High Inquisitor Cassia Mordain",
+      "role": "antagonist_primary",
+      "firstAppearanceAct": 1,
+      "personality": ["zealous", "intelligent", "uncompromising"],
+      "agenda": "complete_the_purge"
+    },
+    "refugee": {
+      "name": "Elara the Scribe",
+      "role": "ally_vulnerable",
+      "firstAppearanceAct": 1,
+      "personality": ["frightened", "determined", "knowledgeable"],
+      "agenda": "protect_daughter_and_truth"
+    },
+    "keeper": {
+      "name": "Archivist Severin",
+      "role": "ambiguous_guide",
+      "firstAppearanceAct": 3,
+      "personality": ["cryptic", "ancient", "calculating"],
+      "agenda": "test_worthiness"
+    }
+  },
+  "boonPlan": [
+    {
+      "boonName": "sanctuary_network",
+      "act": 2,
+      "trigger": "earn_underground_trust",
+      "narrativeCost": "inquisition_attention"
+    },
+    {
+      "boonName": "forbidden_ritual",
+      "act": 3,
+      "trigger": "unlock_archive",
+      "narrativeCost": "moral_compromise"
+    }
+  ],
+  "failurePaths": [
+    {
+      "trigger": "sanctuary_discovered",
+      "consequence": "mass_arrests_innocents_executed",
+      "recoveryPath": "emergency_rescue_or_public_stand"
+    },
+    {
+      "trigger": "archive_corrupts_party_member",
+      "consequence": "internal_conflict_trust_broken",
+      "recoveryPath": "confrontation_or_containment"
+    }
+  ],
+  "endStates": {
+    "triumph": "Inquisition exposed and reformed, innocents saved, knowledge preserved",
+    "costly_victory": "Purge stopped but key allies lost or knowledge destroyed",
+    "pyrrhic_success": "Innocents saved but inquisition empowered or corruption spreads",
+    "failure": "Purge completes, underground destroyed, truth lost"
+  },
+  "memoryDirectives": {
+    "canonicalFacts": [
+      "inquisition_arrival_date",
+      "sanctuary_locations",
+      "archive_contents",
+      "public_stance_taken"
+    ],
+    "relationshipAxes": [
+      {"entity": "inquisition", "states": ["unknown", "opposed", "negotiating", "enemy"]},
+      {"entity": "underground", "states": ["distant", "allied", "compromised"]},
+      {"entity": "archive", "states": ["undiscovered", "accessed", "corrupted"]}
+    ],
+    "decisionFlags": [
+      "sanctuary_provided",
+      "archive_opened",
+      "public_accusation_made",
+      "violence_escalated"
+    ]
+  },
+  "imagePlan": {
+    "intro": {
+      "description": "Inquisitors arriving at city gates with prisoners in chains",
+      "prompt": "Fantasy medieval city gates at dawn, stern religious inquisitors in silver and white robes arriving, chained prisoners behind them, fearful citizens watching, ominous atmosphere, dramatic lighting, detailed fantasy art",
+      "sendWhen": "campaign_start",
+      "narrativePurpose": "Establish authoritarian threat",
+      "s3Key": ""
+    },
+    "tribunal": {
+      "description": "A grand public trial in progress",
+      "prompt": "A grand medieval tribunal hall, elevated judges' bench with religious symbols, accused standing in the center, crowd of onlookers, tension and judgment in the air, dramatic shadows, fantasy setting",
+      "sendWhen": "beat_public_trial",
+      "narrativePurpose": "Visualize the justice system as threat",
+      "s3Key": ""
+    },
+    "archive": {
+      "description": "Ancient forbidden library deep underground",
+      "prompt": "An ancient underground library with towering shelves of forbidden books, glowing mystical runes, dust and cobwebs, mysterious artifacts, eerie blue magical light, fantasy dungeon aesthetic, detailed environment",
+      "sendWhen": "beat_archive_discovery",
+      "narrativePurpose": "Show the hidden knowledge at stake",
+      "s3Key": ""
+    }
+  },
+  "combatConstraints": {
+    "maxCombatScenes": 2,
+    "combatIntent": {
+      "act1": "none - tension builds through surveillance and bureaucratic pressure",
+      "act2": "signal that negotiation has real cost and violence is a last resort",
+      "act3": "none - revelations drive escalation, not violence",
+      "act4": "force decisive choice between restraint and escalation"
+    },
+    "combatTriggers": [
+      "sanctuary_raid",
+      "escape_attempt",
+      "tribunal_disrupted",
+      "final_confrontation"
+    ],
+    "combatOutcomesMust": [
+      "force_public_stance_eliminates_neutrality",
+      "irreversibly_damage_trust_with_faction",
+      "reveal_hidden_allegiances",
+      "create_martyr_or_witness_that_changes_narrative"
+    ]
+  }
+}
+

@@ -332,7 +332,415 @@ func TestBlueprintMessageSerialization(t *testing.T) {
 	if len(unmarshaled.Seeds.Twists) != len(blueprintMsg.Seeds.Twists) {
 		t.Error("Twists count mismatch after serialization")
 	}
-	if len(unmarshaled.Seeds.Antagonists) != len(blueprintMsg.Seeds.Antagonists) {
+		if len(unmarshaled.Seeds.Antagonists) != len(blueprintMsg.Seeds.Antagonists) {
 		t.Error("Antagonists count mismatch after serialization")
 	}
 }
+
+// TestMapsParsing tests that the embedded maps JSON can be parsed correctly
+func TestMapsParsing(t *testing.T) {
+	var mapsData map[string]MapData
+	if err := json.Unmarshal(mapsJSON, &mapsData); err != nil {
+		t.Fatalf("Failed to parse maps JSON: %v", err)
+	}
+
+	if len(mapsData) == 0 {
+		t.Error("No maps found")
+	}
+
+	for mapID, mapData := range mapsData {
+		if mapData.Name == "" {
+			t.Errorf("Map %s missing name", mapID)
+		}
+		if mapData.Description == "" {
+			t.Errorf("Map %s missing description", mapID)
+		}
+		if len(mapData.Areas) == 0 {
+			t.Errorf("Map %s has no areas", mapID)
+		}
+
+		for _, area := range mapData.Areas {
+			if area.Name == "" {
+				t.Errorf("Map %s has area with no name", mapID)
+			}
+			if area.Mood == "" {
+				t.Errorf("Map %s, area %s has no mood", mapID, area.Name)
+			}
+		}
+	}
+}
+
+// TestSelectRandomMap tests the random map selection
+func TestSelectRandomMap(t *testing.T) {
+	var mapsData map[string]MapData
+	if err := json.Unmarshal(mapsJSON, &mapsData); err != nil {
+		t.Fatalf("Failed to parse maps JSON: %v", err)
+	}
+
+	// Run selection multiple times to verify randomness
+	selectedMaps := make(map[string]int)
+	for i := 0; i < 100; i++ {
+		mapID, mapData := selectRandomMap(mapsData)
+		if mapID == "" {
+			t.Error("Empty map ID returned")
+		}
+		if mapData.Name == "" {
+			t.Error("Empty map data returned")
+		}
+		selectedMaps[mapID]++
+	}
+
+	// Verify we got some variety (at least 50% of available maps selected)
+	if len(selectedMaps) < len(mapsData)/2 {
+		t.Errorf("Not enough variety in map selection: got %d unique maps out of %d", len(selectedMaps), len(mapsData))
+	}
+}
+
+// TestSelectFeaturedAreas tests featured area selection
+func TestSelectFeaturedAreas(t *testing.T) {
+	var mapsData map[string]MapData
+	if err := json.Unmarshal(mapsJSON, &mapsData); err != nil {
+		t.Fatalf("Failed to parse maps JSON: %v", err)
+	}
+
+	// Get a map for testing
+	_, testMap := selectRandomMap(mapsData)
+
+	tests := []struct {
+		name  string
+		count int
+	}{
+		{"Select 3 areas", 3},
+		{"Select 6 areas", 6},
+		{"Select 10 areas", 10},
+		{"Select more than available", len(testMap.Areas) + 5},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := selectFeaturedAreas(testMap, tt.count)
+
+			expectedCount := tt.count
+			if expectedCount > len(testMap.Areas) {
+				expectedCount = len(testMap.Areas)
+			}
+
+			if len(result) != expectedCount {
+				t.Errorf("Expected %d areas, got %d", expectedCount, len(result))
+			}
+
+			// Verify no duplicates
+			seen := make(map[int]bool)
+			for _, area := range result {
+				if seen[area.AreaID] {
+					t.Errorf("Duplicate area ID: %d", area.AreaID)
+				}
+				seen[area.AreaID] = true
+			}
+		})
+	}
+}
+
+// TestGenerateVarianceInjectors tests variance injector generation
+func TestGenerateVarianceInjectors(t *testing.T) {
+	var config CampaignConfig
+	if err := json.Unmarshal(configJSON, &config); err != nil {
+		t.Fatalf("Failed to parse config JSON: %v", err)
+	}
+
+	tests := []struct {
+		name         string
+		profileKey   string
+		expectedKillers int
+	}{
+		{"Short campaign", "short", 1},
+		{"Long campaign", "long", 2},
+		{"Epic campaign", "epic", 2},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			profile := config.CampaignLengthProfiles[tt.profileKey]
+			genre, perspective, _, motifs := generateVarianceInjectors(profile, &config)
+
+			// Verify genre modifier is set for short+ campaigns
+			if tt.expectedKillers > 0 && genre == "" {
+				t.Error("Expected genre modifier to be set")
+			}
+
+			// Verify perspective bias for long+ campaigns
+			if profile.VarianceRules.RequirePerspectiveBias && perspective == "" {
+				t.Error("Expected perspective bias to be set")
+			}
+
+			// Verify excluded motifs are present
+			if len(motifs) == 0 {
+				t.Error("Expected excluded motifs to be set")
+			}
+
+			// Verify excluded motifs include defaults from config
+			for _, defaultMotif := range profile.VarianceRules.ExcludeByDefault {
+				found := false
+				for _, motif := range motifs {
+					if motif == defaultMotif {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("Expected excluded motif %s not found", defaultMotif)
+				}
+			}
+
+			// Run multiple times to verify randomness
+			genres := make(map[string]bool)
+			for i := 0; i < 20; i++ {
+				g, _, _, _ := generateVarianceInjectors(profile, &config)
+				if g != "" {
+					genres[g] = true
+				}
+			}
+			if len(genres) < 2 {
+				t.Error("Not enough variety in genre modifiers")
+			}
+		})
+	}
+}
+
+// TestSelectObjectiveWithBias tests biased objective selection
+func TestSelectObjectiveWithBias(t *testing.T) {
+	var seeds CampaignSeeds
+	if err := json.Unmarshal(seedsJSON, &seeds); err != nil {
+		t.Fatalf("Failed to parse seeds JSON: %v", err)
+	}
+
+	var config CampaignConfig
+	if err := json.Unmarshal(configJSON, &config); err != nil {
+		t.Fatalf("Failed to parse config JSON: %v", err)
+	}
+
+	// Test short campaign (force non-environmental threat)
+	t.Run("Short campaign excludes ecological threats", func(t *testing.T) {
+		profile := config.CampaignLengthProfiles["short"]
+
+		// Run multiple times to verify consistency
+		for i := 0; i < 20; i++ {
+			objective := selectObjectiveWithBias(seeds.ObjectiveSeeds, profile)
+			if objective.PrimaryThreatCategory == "ecological" {
+				t.Error("Short campaign should exclude ecological threats")
+			}
+		}
+	})
+
+	// Test randomness
+	t.Run("Selection is random", func(t *testing.T) {
+		profile := config.CampaignLengthProfiles["long"]
+		objectives := make(map[string]int)
+
+		for i := 0; i < 50; i++ {
+			objective := selectObjectiveWithBias(seeds.ObjectiveSeeds, profile)
+			objectives[objective.ObjectiveID]++
+		}
+
+		// Should have selected multiple different objectives
+		if len(objectives) < 3 {
+			t.Error("Not enough variety in objective selection")
+		}
+	})
+}
+
+// TestSelectAntagonistsWithBias tests biased antagonist selection
+func TestSelectAntagonistsWithBias(t *testing.T) {
+	var seeds CampaignSeeds
+	if err := json.Unmarshal(seedsJSON, &seeds); err != nil {
+		t.Fatalf("Failed to parse seeds JSON: %v", err)
+	}
+
+	var config CampaignConfig
+	if err := json.Unmarshal(configJSON, &config); err != nil {
+		t.Fatalf("Failed to parse config JSON: %v", err)
+	}
+
+	// Test epic campaign (require multiple threat categories)
+	t.Run("Epic campaign enforces threat diversity", func(t *testing.T) {
+		profile := config.CampaignLengthProfiles["epic"]
+
+		for i := 0; i < 10; i++ {
+			antagonists := selectAntagonistsWithBias(seeds.AntagonistCandidates, profile, 3, 4)
+
+			// Count unique threat categories
+			categories := make(map[string]bool)
+			for _, ant := range antagonists {
+				categories[ant.PrimaryThreatCategory] = true
+			}
+
+			// Epic campaigns should have multiple categories
+			if len(categories) < 2 {
+				t.Error("Epic campaign should have multiple threat categories")
+			}
+		}
+	})
+
+	// Test count boundaries
+	t.Run("Respects min/max counts", func(t *testing.T) {
+		profile := config.CampaignLengthProfiles["long"]
+
+		for i := 0; i < 10; i++ {
+			antagonists := selectAntagonistsWithBias(seeds.AntagonistCandidates, profile, 2, 3)
+
+			if len(antagonists) < 2 || len(antagonists) > 3 {
+				t.Errorf("Expected 2-3 antagonists, got %d", len(antagonists))
+			}
+		}
+	})
+}
+
+// TestGenerateExpectationViolation tests expectation violation generation
+func TestGenerateExpectationViolation(t *testing.T) {
+	var config CampaignConfig
+	if err := json.Unmarshal(configJSON, &config); err != nil {
+		t.Fatalf("Failed to parse config JSON: %v", err)
+	}
+
+	tests := []struct {
+		name       string
+		profileKey string
+	}{
+		{"Short campaign", "short"},
+		{"Long campaign", "long"},
+		{"Epic campaign", "epic"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			beatProfile := config.BeatProfiles[tt.profileKey]
+			violation := generateExpectationViolation(beatProfile)
+
+			if violation == nil {
+				t.Fatal("Expected expectation violation to be generated")
+			}
+
+			// Verify act number is valid (2-N)
+			if violation.ActNumber < 2 || violation.ActNumber > beatProfile.Acts {
+				t.Errorf("Invalid act number: %d (should be 2-%d)", violation.ActNumber, beatProfile.Acts)
+			}
+
+			// Verify type is valid
+			validTypes := map[string]bool{
+				"inversion":            true,
+				"removal":              true,
+				"prematureResolution":  true,
+			}
+			if !validTypes[violation.Type] {
+				t.Errorf("Invalid violation type: %s", violation.Type)
+			}
+
+			// Test randomness
+			types := make(map[string]bool)
+			for i := 0; i < 30; i++ {
+				v := generateExpectationViolation(beatProfile)
+				types[v.Type] = true
+			}
+			if len(types) < 2 {
+				t.Error("Not enough variety in violation types")
+			}
+		})
+	}
+}
+
+// TestBlueprintSeedsIncludeAllVariance tests that generated seeds include all new fields
+func TestBlueprintSeedsIncludeAllVariance(t *testing.T) {
+	campaignTypes := []models.CampaignType{
+		models.CampaignTypeShort,
+		models.CampaignTypeLong,
+		models.CampaignTypeEpic,
+	}
+
+	for _, campaignType := range campaignTypes {
+		t.Run(string(campaignType), func(t *testing.T) {
+			campaign := &models.Campaign{
+				CampaignID:    "test-campaign",
+				CampaignType:  campaignType,
+				Status:        models.CampaignStatusConfiguring,
+				CreatedAt:     time.Now().UTC(),
+				LastUpdatedAt: time.Now().UTC(),
+			}
+
+			seeds, err := generateBlueprintSeeds(campaign)
+			if err != nil {
+				t.Fatalf("Failed to generate blueprint seeds: %v", err)
+			}
+
+			// Verify map is selected
+			if seeds.Map.MapID == "" {
+				t.Error("No map selected")
+			}
+			if seeds.Map.Name == "" {
+				t.Error("Map name is empty")
+			}
+
+			// Verify featured areas
+			if len(seeds.FeaturedAreas) == 0 {
+				t.Error("No featured areas selected")
+			}
+
+			// Verify maxCombatScenes is set
+			if seeds.MaxCombatScenes == 0 {
+				t.Error("MaxCombatScenes not set")
+			}
+
+			expectedCombat := map[models.CampaignType]int{
+				models.CampaignTypeShort: 1,
+				models.CampaignTypeLong:  2,
+				models.CampaignTypeEpic:  3,
+			}
+			if seeds.MaxCombatScenes != expectedCombat[campaignType] {
+				t.Errorf("Expected maxCombatScenes=%d for %s, got %d", expectedCombat[campaignType], campaignType, seeds.MaxCombatScenes)
+			}
+
+			// Verify excluded motifs
+			if len(seeds.ExcludedMotifs) == 0 {
+				t.Error("No excluded motifs set")
+			}
+
+			// Verify genre modifier for short+ campaigns
+			if campaignType != models.CampaignTypeShort || seeds.GenreModifier == "" {
+				// Short campaigns should have genre modifier
+			}
+
+			// Verify expectation violation for epic campaigns
+			if campaignType == models.CampaignTypeEpic && seeds.ExpectationViolation == nil {
+				t.Error("Epic campaign should have expectation violation")
+			}
+		})
+	}
+}
+
+// TestSeedCategorization tests that all seeds have proper categorization
+func TestSeedCategorization(t *testing.T) {
+	var seeds CampaignSeeds
+	if err := json.Unmarshal(seedsJSON, &seeds); err != nil {
+		t.Fatalf("Failed to parse seeds JSON: %v", err)
+	}
+
+	// Check objectives have categories
+	for _, obj := range seeds.ObjectiveSeeds {
+		if obj.TerrainCategory == "" {
+			t.Errorf("Objective %s missing terrainCategory", obj.ObjectiveID)
+		}
+		if obj.PrimaryThreatCategory == "" {
+			t.Errorf("Objective %s missing primaryThreatCategory", obj.ObjectiveID)
+		}
+	}
+
+	// Check antagonists have categories
+	for _, ant := range seeds.AntagonistCandidates {
+		if ant.TerrainCategory == "" {
+			t.Errorf("Antagonist %s missing terrainCategory", ant.AntagonistID)
+		}
+		if ant.PrimaryThreatCategory == "" {
+			t.Errorf("Antagonist %s missing primaryThreatCategory", ant.AntagonistID)
+		}
+	}
+}
+

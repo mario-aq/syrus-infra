@@ -125,6 +125,16 @@ You MUST return a JSON object with this exact structure:
         "narrativePurpose": string,
         "s3Key": string
       }
+    },
+    "combatConstraints": {
+      "maxCombatScenes": int,
+      "combatIntent": {
+        "act1": string,
+        "act2": string,
+        ...
+      },
+      "combatTriggers": [string],
+      "combatOutcomesMust": [string]
     }
   },
   "intro": string
@@ -214,6 +224,96 @@ Seed Package (Curated by Fate)
 	•	setPieceCandidates
 	•	optionalConstraints
 	•	beatProfile
+	•	maxCombatScenes: hard limit (1 short, 2 long, 3 epic)
+	
+	NEW CONSTRAINTS:
+	•	genreModifier (if present): structural tone to apply
+	•	perspectiveBias (if present): frame conflicts through this lens
+	•	environmentalOddity (if present): environment behaves in this non-standard way
+	•	excludedMotifs: FORBIDDEN - do not use these themes, words, or patterns
+	•	expectationViolation (if present): one act MUST break normal progression
+
+⸻
+
+Excluded Motifs (Absolute)
+
+If excludedMotifs are provided, you MUST NOT:
+	•	Use these words in descriptions
+	•	Base threats on these concepts
+	•	Frame the campaign around these themes
+
+This is structural avoidance, not stylistic preference.
+
+⸻
+
+Expectation Violation (Required When Present)
+
+If expectationViolation is specified:
+	•	The designated act MUST violate standard progression
+	•	Types:
+		- inversion: expected progress reverses
+		- removal: a pillar becomes irrelevant
+		- prematureResolution: objective resolves early, new framing emerges
+	
+	This act must be flagged in memoryDirectives as "expectationBreaking"
+
+⸻
+
+Combat Constraints (Absolute - Guides Syrus, Not Scripted)
+
+You MUST create a combatConstraints object in the blueprint:
+
+```json
+"combatConstraints": {
+  "maxCombatScenes": <from seed package>,
+  "combatIntent": {
+    "act1": "one sentence: what combat must accomplish narratively in this act",
+    "act2": "...",
+  },
+  "combatTriggers": [
+    "narrative circumstance that could lead to combat",
+    "another potential trigger"
+  ],
+  "combatOutcomesMust": [
+    "what combat must achieve if it occurs",
+    "another required narrative outcome"
+  ]
+}
+```
+
+Rules:
+	•	maxCombatScenes is ABSOLUTE (from seed: 1 short, 2 long, 3 epic)
+	•	Combat defined as: direct violence as primary resolution method
+	•	Does NOT count: chase, social confrontation, environmental hazard, escape
+	•	combatIntent: PER ACT guidance on narrative function (not all acts need combat)
+	•	combatTriggers: list 2-4 circumstances that COULD lead to combat (not scripted)
+	•	combatOutcomesMust: 2-4 narrative outcomes combat MUST achieve if it occurs
+
+This guides Syrus in narration - it is NOT a script. Combat may or may not occur based on player choices.
+
+When combat scenes are exhausted, violence still resolves — but never safely, never cleanly, and never slowly. Syrus can call for a roll, if failure some complication, and if success you won the fight. no structured combat, always narrative resolution.
+
+Example for act with no planned combat:
+```json
+"combatIntent": {
+  "act2": "none - escalation through revelation and social fracture"
+}
+```
+
+⸻
+
+Genre Modifier & Perspective Bias
+
+If genreModifier is provided (e.g., "tragic", "absurd"):
+	•	Structure acts to emphasize this tone through beats and escalations
+	•	Not prose style - structural pacing
+
+If perspectiveBias is provided (e.g., "publicSpectacle"):
+	•	Frame NPCs, locations, and conflicts through this lens
+	•	publicSpectacle: visible, reputation-driven
+	•	privateSecrets: hidden, intimate stakes
+	•	institutional: systemic, procedural
+	•	personal: individual agency dominant
 
 ⸻
 
@@ -232,10 +332,15 @@ If a boon is not in the boonMap, it does not exist.
 
 ⸻
 
-Pacing Requirements (Absolute)
+Pacing Requirements
+
+The beatProfile provided in your input specifies the EXACT number of acts required.
+You MUST create exactly that many acts - no more, no fewer.
+
+Typical patterns (for reference only - always use the provided beatProfile):
 
 Short (~1 hour)
-	•	acts: 2–3
+	•	acts: 3
 	•	totalBeats: 15–20
 	•	one dominant conflict
 
@@ -244,7 +349,7 @@ Long (~3 hours)
 	•	totalBeats: 40–50
 
 Epic (~6 hours)
-	•	acts: 5–6
+	•	acts: 5
 	•	totalBeats: 80–100
 	•	multiple forces and locations
 

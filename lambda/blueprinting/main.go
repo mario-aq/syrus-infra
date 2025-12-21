@@ -33,8 +33,14 @@ var blueprintPrompt string
 //go:embed assets/boons.json
 var boonsJSON string
 
-//go:embed assets/sampleCampaign.json
-var sampleCampaignJSON string
+//go:embed assets/sample-blueprint-short.json
+var sampleBlueprintShort string
+
+//go:embed assets/sample-blueprint-long.json
+var sampleBlueprintLong string
+
+//go:embed assets/sample-blueprint-epic.json
+var sampleBlueprintEpic string
 
 var (
 	awsSession       *session.Session
@@ -326,7 +332,7 @@ func callClaude(ctx context.Context, apiKey, modelName string, blueprintMsg mode
 	var maxTokens int
 	if modelName == "haiku" {
 		modelID = "claude-3-5-haiku-20241022"
-		maxTokens = 8000
+		maxTokens = 8000 // Haiku max is 8192, use 8000 for safety
 	} else {
 		modelID = "claude-sonnet-4-20250514"
 		maxTokens = 16000
@@ -367,6 +373,19 @@ func buildPrompt(blueprintMsg models.BlueprintMessage, campaign *models.Campaign
 		return "", err
 	}
 
+	// Select appropriate sample blueprint based on campaign type
+	var sampleBlueprint string
+	switch campaign.CampaignType {
+	case models.CampaignTypeShort:
+		sampleBlueprint = sampleBlueprintShort
+	case models.CampaignTypeLong:
+		sampleBlueprint = sampleBlueprintLong
+	case models.CampaignTypeEpic:
+		sampleBlueprint = sampleBlueprintEpic
+	default:
+		sampleBlueprint = sampleBlueprintLong // Default to long
+	}
+
 	// Assemble full prompt
 	prompt := fmt.Sprintf(`Please generate a campaign blueprint.
 
@@ -386,14 +405,14 @@ func buildPrompt(blueprintMsg models.BlueprintMessage, campaign *models.Campaign
 %s
 </seedPackage>
 
-<exampleOutput>
+<exampleBlueprint>
 %s
-</exampleOutput>`,
+</exampleBlueprint>`,
 		string(configJSON),
 		string(beatProfileJSON),
 		boonsJSON,
 		string(seedsJSON),
-		sampleCampaignJSON,
+		sampleBlueprint,
 	)
 
 	return prompt, nil

@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,7 +19,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/ssm"
 
 	models "loros/syrus-models"
@@ -30,11 +28,9 @@ var (
 	awsSession       *session.Session
 	dynamodbClient   *dynamodb.DynamoDB
 	s3Client         *s3.S3
-	sqsClient        *sqs.SQS
 	ssmClient        *ssm.SSM
 	campaignsTable   string
 	dedupTable       string
-	messagingQueue   string
 	modelCacheBucket string
 	stage            string
 )
@@ -43,12 +39,10 @@ func init() {
 	awsSession = session.Must(session.NewSession())
 	dynamodbClient = dynamodb.New(awsSession)
 	s3Client = s3.New(awsSession)
-	sqsClient = sqs.New(awsSession)
 	ssmClient = ssm.New(awsSession)
 
 	campaignsTable = os.Getenv("SYRUS_CAMPAIGNS_TABLE")
 	dedupTable = os.Getenv("SYRUS_DEDUP_TABLE")
-	messagingQueue = os.Getenv("SYRUS_MESSAGING_QUEUE_URL")
 	modelCacheBucket = os.Getenv("SYRUS_MODEL_CACHE_BUCKET")
 	stage = os.Getenv("SYRUS_STAGE")
 }
@@ -99,9 +93,6 @@ func processImageGenMessage(ctx context.Context, record events.SQSMessage) error
 	} else if cached {
 		log.Printf("Image already cached in S3: %s", s3Key)
 		// Use cached image - send to messaging queue
-		if err := sendImageToMessaging(imageGenMsg.CampaignID, imageGenMsg.ImageID, s3Key); err != nil {
-			return fmt.Errorf("failed to send cached image to messaging: %w", err)
-		}
 		// Mark as processed
 		if err := markAsProcessed(dedupKey); err != nil {
 			log.Printf("Warning: failed to mark as processed: %v", err)
@@ -138,9 +129,6 @@ func processImageGenMessage(ctx context.Context, record events.SQSMessage) error
 	}
 
 	// Send to messaging queue
-	if err := sendImageToMessaging(imageGenMsg.CampaignID, imageGenMsg.ImageID, s3Key); err != nil {
-		return fmt.Errorf("failed to send to messaging: %w", err)
-	}
 
 	// Mark as processed in dedup table
 	if err := markAsProcessed(dedupKey); err != nil {
@@ -332,61 +320,6 @@ func updateBlueprintS3Key(campaignID, imageID, s3Key string) error {
 	}
 
 	log.Printf("Successfully updated blueprint")
-	return nil
-}
-
-func sendImageToMessaging(campaignID, imageID, s3Key string) error {
-	log.Printf("Sending image to messaging queue")
-
-	campaign, err := getCampaign(campaignID)
-	if err != nil {
-		return fmt.Errorf("failed to get campaign: %w", err)
-	}
-
-	result, err := s3Client.GetObject(&s3.GetObjectInput{
-		Bucket: aws.String(modelCacheBucket),
-		Key:    aws.String(s3Key),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to get image from S3: %w", err)
-	}
-	defer result.Body.Close()
-
-	imageData, err := io.ReadAll(result.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read image data: %w", err)
-	}
-
-	imageBase64 := base64.StdEncoding.EncodeToString(imageData)
-
-	message := models.MessagingQueueMessage{
-		ChannelID: campaign.Meta.ChannelID,
-		Content:   "",
-		Attachments: []models.Attachment{
-			{
-				Name:        fmt.Sprintf("%s.png", imageID),
-				Data:        imageBase64,
-				ContentType: "image/png",
-			},
-		},
-	}
-
-	messageJSON, err := json.Marshal(message)
-	if err != nil {
-		return fmt.Errorf("failed to marshal message: %w", err)
-	}
-
-	_, err = sqsClient.SendMessage(&sqs.SendMessageInput{
-		QueueUrl:               aws.String(messagingQueue),
-		MessageBody:            aws.String(string(messageJSON)),
-		MessageGroupId:         aws.String(campaignID),
-		MessageDeduplicationId: aws.String(fmt.Sprintf("image-%s", imageID)),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to send message to queue: %w", err)
-	}
-
-	log.Printf("Successfully sent image to messaging queue")
 	return nil
 }
 

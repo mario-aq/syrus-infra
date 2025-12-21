@@ -56,7 +56,7 @@ export class SyrusMvpStack extends Stack {
     const blueprintingQueue = new SqsFifoWithDlq(this, 'BlueprintingQueue', {
       queueName: 'blueprinting',
       stage: props.stage,
-      visibilityTimeout: Duration.minutes(6), // Must be > Lambda timeout (5 min)
+      visibilityTimeout: Duration.minutes(3), // Reduced from 6 to 3 - Lambda typically takes 60-90s
     });
 
     // Create S3 bucket for model cache
@@ -361,7 +361,6 @@ export class SyrusMvpStack extends Stack {
       environment: {
         SYRUS_CAMPAIGNS_TABLE: campaignsTable.tableName,
         SYRUS_DEDUP_TABLE: dedupTable.table.tableName,
-        SYRUS_MESSAGING_QUEUE_URL: messagingQueue.queue.queueUrl,
         SYRUS_MODEL_CACHE_BUCKET: modelCacheBucket.bucketName,
         SYRUS_STAGE: stageConfig.stage,
       },

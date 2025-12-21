@@ -3,6 +3,7 @@
     "short": {
       "label": "short",
       "estimatedDurationHours": 1,
+      "maxCombatScenes": 1,
       "selection": {
         "objective": { "min": 1, "max": 1 },
         "twists": { "min": 1, "max": 2 },
@@ -14,12 +15,19 @@
       "guardrails": {
         "maxPrimaryAntagonists": 1,
         "requireDirectAntagonist": true
+      },
+      "varianceRules": {
+        "forceNonEnvironmentalThreat": true,
+        "preferCategories": ["institutional", "social", "logistical", "volatile"],
+        "excludeByDefault": ["fog", "blight"],
+        "requireSamenessKillers": 1
       }
     },
 
     "long": {
       "label": "long",
       "estimatedDurationHours": 3,
+      "maxCombatScenes": 2,
       "selection": {
         "objective": { "min": 1, "max": 1 },
         "twists": { "min": 2, "max": 3 },
@@ -32,12 +40,19 @@
         "maxPrimaryAntagonists": 2,
         "requireDirectAntagonist": true,
         "requireIndirectAntagonist": false
+      },
+      "varianceRules": {
+        "allowEnvironmentalThreat": true,
+        "requireNonEnvironmentalAntagonist": true,
+        "requirePerspectiveBias": true,
+        "requireSamenessKillers": 2
       }
     },
 
     "epic": {
       "label": "epic",
       "estimatedDurationHours": 6,
+      "maxCombatScenes": 3,
       "selection": {
         "objective": { "min": 1, "max": 1 },
         "twists": { "min": 3, "max": 4 },
@@ -50,6 +65,12 @@
         "maxPrimaryAntagonists": 2,
         "requireDirectAntagonist": true,
         "requireIndirectAntagonist": true
+      },
+      "varianceRules": {
+        "requireMultipleThreatCategories": true,
+        "enforceTerrainDiversity": true,
+        "requireExpectationViolation": true,
+        "requireSamenessKillers": 2
       }
     }
   },
@@ -76,7 +97,7 @@
     },
 
     "epic": {
-      "acts": 4,
+      "acts": 5,
       "beatsPerAct": {
         "min": 9,
         "max": 13
@@ -108,5 +129,13 @@
     "maxFeaturedAreasHardCap": 14,
     "maxTwistsHardCap": 4,
     "maxAntagonistsHardCap": 4
-  }
+  },
+
+  "samenessKillers": {
+    "genreModifiers": ["tragic", "absurd", "intimate", "mythic", "procedural"],
+    "perspectiveBiases": ["publicSpectacle", "privateSecrets", "institutional", "personal"],
+    "environmentalOddities": ["nonHostileDisruptive", "invertedCausality", "unreliableSpace", "ritualConstraint"]
+  },
+
+  "excludableMotifs": ["fog", "blight", "coast", "corruption", "decay", "treaty"]
 }

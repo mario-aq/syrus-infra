@@ -58,15 +58,49 @@ type CampaignSeeds struct {
 	SetPieces   []SetPieceSeed   `json:"setPieces"`
 	Constraints []ConstraintSeed `json:"constraints"`
 	BeatProfile BeatProfile      `json:"beatProfile"`
+
+	// Variance injectors
+	Map                  MapSeed           `json:"map"`
+	FeaturedAreas        []AreaSeed        `json:"featuredAreas"`
+	MaxCombatScenes      int               `json:"maxCombatScenes"`
+	GenreModifier        string            `json:"genreModifier,omitempty"`
+	PerspectiveBias      string            `json:"perspectiveBias,omitempty"`
+	MoralAsymmetry       bool              `json:"moralAsymmetry"`
+	EnvironmentalOddity  string            `json:"environmentalOddity,omitempty"`
+	ExcludedMotifs       []string          `json:"excludedMotifs"`
+	ExpectationViolation *ExpectationBreak `json:"expectationViolation,omitempty"`
+}
+
+// MapSeed represents a selected map
+type MapSeed struct {
+	MapID       string `json:"mapId"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// AreaSeed represents a featured area within a map
+type AreaSeed struct {
+	AreaID      int    `json:"areaId"`
+	Name        string `json:"name"`
+	Mood        string `json:"mood"`
+	Description string `json:"description"`
+}
+
+// ExpectationBreak represents a structural expectation violation in an act
+type ExpectationBreak struct {
+	ActNumber int    `json:"actNumber"`
+	Type      string `json:"type"` // "inversion" | "removal" | "prematureResolution"
 }
 
 // ObjectiveSeed represents a campaign objective
 type ObjectiveSeed struct {
-	ObjectiveID string            `json:"objectiveId"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Stakes      map[string]string `json:"stakes"`
-	Complexity  string            `json:"complexity"`
+	ObjectiveID          string            `json:"objectiveId"`
+	Name                 string            `json:"name"`
+	Description          string            `json:"description"`
+	Stakes               map[string]string `json:"stakes"`
+	Complexity           string            `json:"complexity"`
+	TerrainCategory      string            `json:"terrainCategory,omitempty"`
+	PrimaryThreatCategory string            `json:"primaryThreatCategory,omitempty"`
 }
 
 // TwistSeed represents a campaign twist
@@ -80,13 +114,15 @@ type TwistSeed struct {
 
 // AntagonistSeed represents a campaign antagonist
 type AntagonistSeed struct {
-	AntagonistID  string   `json:"antagonistId"`
-	Name          string   `json:"name"`
-	Nature        string   `json:"nature"`
-	Goal          string   `json:"goal"`
-	Methods       []string `json:"methods"`
-	ThreatLevel   string   `json:"threatLevel"`
-	PresenceStyle string   `json:"presenceStyle"`
+	AntagonistID          string   `json:"antagonistId"`
+	Name                  string   `json:"name"`
+	Nature                string   `json:"nature"`
+	Goal                  string   `json:"goal"`
+	Methods               []string `json:"methods"`
+	ThreatLevel           string   `json:"threatLevel"`
+	PresenceStyle         string   `json:"presenceStyle"`
+	TerrainCategory       string   `json:"terrainCategory,omitempty"`
+	PrimaryThreatCategory string   `json:"primaryThreatCategory,omitempty"`
 }
 
 // SetPieceSeed represents a campaign set piece

@@ -27,19 +27,45 @@ var configJSON []byte
 //go:embed assets/campaign-blueprint-seeds.json
 var seedsJSON []byte
 
+//go:embed assets/arcanos_maps.json
+var mapsJSON []byte
+
 // Config structures
 type CampaignConfig struct {
 	CampaignLengthProfiles map[string]LengthProfile `json:"campaignLengthProfiles"`
 	BeatProfiles           map[string]BeatProfile   `json:"beatProfiles"`
 	PlayStyleModifiers     map[string]interface{}   `json:"playStyleModifiers"`
 	GlobalLimits           map[string]interface{}   `json:"globalLimits"`
+	SamenessKillers        SamenessKillers          `json:"samenessKillers"`
+	ExcludableMotifs       []string                 `json:"excludableMotifs"`
+}
+
+type SamenessKillers struct {
+	GenreModifiers        []string `json:"genreModifiers"`
+	PerspectiveBiases     []string `json:"perspectiveBiases"`
+	EnvironmentalOddities []string `json:"environmentalOddities"`
 }
 
 type LengthProfile struct {
 	Label                  string                 `json:"label"`
 	EstimatedDurationHours int                    `json:"estimatedDurationHours"`
+	MaxCombatScenes        int                    `json:"maxCombatScenes"`
 	Selection              SelectionRules         `json:"selection"`
 	Guardrails             map[string]interface{} `json:"guardrails"`
+	VarianceRules          VarianceRules          `json:"varianceRules"`
+}
+
+type VarianceRules struct {
+	ForceNonEnvironmentalThreat      bool     `json:"forceNonEnvironmentalThreat"`
+	PreferCategories                 []string `json:"preferCategories"`
+	ExcludeByDefault                 []string `json:"excludeByDefault"`
+	AllowEnvironmentalThreat         bool     `json:"allowEnvironmentalThreat"`
+	RequireNonEnvironmentalAntagonist bool     `json:"requireNonEnvironmentalAntagonist"`
+	RequirePerspectiveBias           bool     `json:"requirePerspectiveBias"`
+	RequireMultipleThreatCategories  bool     `json:"requireMultipleThreatCategories"`
+	EnforceTerrainDiversity          bool     `json:"enforceTerrainDiversity"`
+	RequireExpectationViolation      bool     `json:"requireExpectationViolation"`
+	RequireSamenessKillers           int      `json:"requireSamenessKillers"`
 }
 
 type SelectionRules struct {
@@ -70,6 +96,27 @@ type CampaignSeeds struct {
 	AntagonistCandidates []models.AntagonistSeed `json:"antagonistCandidates"`
 	SetPieceCandidates   []models.SetPieceSeed   `json:"setPieceCandidates"`
 	OptionalConstraints  []models.ConstraintSeed `json:"optionalConstraints"`
+}
+
+// Maps structures
+type MapData struct {
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Areas       []AreaData `json:"areas"`
+}
+
+type AreaData struct {
+	AreaID      int    `json:"areaId"`
+	Name        string `json:"name"`
+	Mood        string `json:"mood"`
+	Description string `json:"description"`
+}
+
+// SelectionContext tracks anti-bias state
+type SelectionContext struct {
+	UsedTerrainCategories map[string]int
+	UsedThreatCategories  map[string]int
+	LastCombination       string
 }
 
 // checkDedup checks if a message has already been processed
@@ -240,6 +287,174 @@ func sendToBlueprintingQueue(blueprintMsg models.BlueprintMessage) error {
 	return nil
 }
 
+// selectRandomMap selects a random map from the maps data
+func selectRandomMap(mapsData map[string]MapData) (string, MapData) {
+	keys := make([]string, 0, len(mapsData))
+	for k := range mapsData {
+		keys = append(keys, k)
+	}
+	if len(keys) == 0 {
+		return "", MapData{}
+	}
+	mapID := keys[rand.Intn(len(keys))]
+	return mapID, mapsData[mapID]
+}
+
+// selectFeaturedAreas selects random areas from a map
+func selectFeaturedAreas(mapData MapData, count int) []AreaData {
+	if count > len(mapData.Areas) {
+		count = len(mapData.Areas)
+	}
+	return selectRandomElements(mapData.Areas, count, count)
+}
+
+// selectObjectiveWithBias selects an objective while avoiding recent patterns
+func selectObjectiveWithBias(objectives []models.ObjectiveSeed, profile LengthProfile) models.ObjectiveSeed {
+	eligible := make([]models.ObjectiveSeed, 0)
+
+	for _, obj := range objectives {
+		// Apply variance rules
+		if profile.VarianceRules.ForceNonEnvironmentalThreat && obj.PrimaryThreatCategory == "ecological" {
+			continue
+		}
+
+		// Check if preferred category
+		if len(profile.VarianceRules.PreferCategories) > 0 {
+			preferred := false
+			for _, cat := range profile.VarianceRules.PreferCategories {
+				if obj.PrimaryThreatCategory == cat || obj.TerrainCategory == cat {
+					preferred = true
+					break
+				}
+			}
+			if preferred {
+				eligible = append(eligible, obj)
+			}
+		} else {
+			eligible = append(eligible, obj)
+		}
+	}
+
+	// If no eligible, fall back to all non-excluded
+	if len(eligible) == 0 {
+		for _, obj := range objectives {
+			if profile.VarianceRules.ForceNonEnvironmentalThreat && obj.PrimaryThreatCategory == "ecological" {
+				continue
+			}
+			eligible = append(eligible, obj)
+		}
+	}
+
+	if len(eligible) == 0 {
+		eligible = objectives
+	}
+
+	return eligible[rand.Intn(len(eligible))]
+}
+
+// selectAntagonistsWithBias selects antagonists while enforcing diversity
+func selectAntagonistsWithBias(antagonists []models.AntagonistSeed, profile LengthProfile, min, max int) []models.AntagonistSeed {
+	count := min
+	if max > min {
+		count = min + rand.Intn(max-min+1)
+	}
+	if count > len(antagonists) {
+		count = len(antagonists)
+	}
+
+	eligible := make([]models.AntagonistSeed, len(antagonists))
+	copy(eligible, antagonists)
+
+	// Apply variance rules
+	if profile.VarianceRules.RequireMultipleThreatCategories {
+		// Ensure diversity in threat categories
+		selected := make([]models.AntagonistSeed, 0)
+		usedCategories := make(map[string]bool)
+
+		for len(selected) < count && len(eligible) > 0 {
+			idx := rand.Intn(len(eligible))
+			ant := eligible[idx]
+
+			// Prefer antagonists with different categories
+			if !usedCategories[ant.PrimaryThreatCategory] || len(selected) >= count/2 {
+				selected = append(selected, ant)
+				usedCategories[ant.PrimaryThreatCategory] = true
+			}
+
+			// Remove from eligible
+			eligible = append(eligible[:idx], eligible[idx+1:]...)
+		}
+		return selected
+	}
+
+	// Standard random selection
+	rand.Shuffle(len(eligible), func(i, j int) { eligible[i], eligible[j] = eligible[j], eligible[i] })
+	return eligible[:count]
+}
+
+// generateVarianceInjectors creates sameness killers based on campaign type
+func generateVarianceInjectors(profile LengthProfile, config *CampaignConfig) (string, string, string, []string) {
+	var genreModifier, perspectiveBias, environmentalOddity string
+	excludedMotifs := make([]string, 0)
+
+	killersCount := profile.VarianceRules.RequireSamenessKillers
+
+	// Select genre modifier
+	if killersCount > 0 && len(config.SamenessKillers.GenreModifiers) > 0 {
+		genreModifier = config.SamenessKillers.GenreModifiers[rand.Intn(len(config.SamenessKillers.GenreModifiers))]
+	}
+
+	// Select perspective bias
+	if profile.VarianceRules.RequirePerspectiveBias && len(config.SamenessKillers.PerspectiveBiases) > 0 {
+		perspectiveBias = config.SamenessKillers.PerspectiveBiases[rand.Intn(len(config.SamenessKillers.PerspectiveBiases))]
+	}
+
+	// Randomly select environmental oddity
+	if killersCount > 1 && rand.Float32() < 0.4 && len(config.SamenessKillers.EnvironmentalOddities) > 0 {
+		environmentalOddity = config.SamenessKillers.EnvironmentalOddities[rand.Intn(len(config.SamenessKillers.EnvironmentalOddities))]
+	}
+
+	// Select 2-3 excluded motifs
+	if len(config.ExcludableMotifs) > 0 {
+		motifsCount := 2 + rand.Intn(2) // 2 or 3
+		if motifsCount > len(config.ExcludableMotifs) {
+			motifsCount = len(config.ExcludableMotifs)
+		}
+		excludedMotifs = selectRandomElements(config.ExcludableMotifs, motifsCount, motifsCount)
+	}
+
+	// Add default excludes from variance rules
+	for _, motif := range profile.VarianceRules.ExcludeByDefault {
+		found := false
+		for _, em := range excludedMotifs {
+			if em == motif {
+				found = true
+				break
+			}
+		}
+		if !found {
+			excludedMotifs = append(excludedMotifs, motif)
+		}
+	}
+
+	return genreModifier, perspectiveBias, environmentalOddity, excludedMotifs
+}
+
+// generateExpectationViolation creates an expectation break for an act
+func generateExpectationViolation(beatProfile BeatProfile) *models.ExpectationBreak {
+	if beatProfile.Acts < 2 {
+		return nil
+	}
+
+	types := []string{"inversion", "removal", "prematureResolution"}
+	actNumber := 2 + rand.Intn(beatProfile.Acts-1) // Acts 2-N
+
+	return &models.ExpectationBreak{
+		ActNumber: actNumber,
+		Type:      types[rand.Intn(len(types))],
+	}
+}
+
 // selectRandomElements selects a random number of elements from a slice
 func selectRandomElements[T any](items []T, min, max int) []T {
 	count := rand.Intn(max-min+1) + min
@@ -271,6 +486,12 @@ func generateBlueprintSeeds(campaign *models.Campaign) (*models.CampaignSeeds, e
 		return nil, fmt.Errorf("failed to parse seeds: %w", err)
 	}
 
+	// Parse maps
+	var mapsData map[string]MapData
+	if err := json.Unmarshal(mapsJSON, &mapsData); err != nil {
+		return nil, fmt.Errorf("failed to parse maps: %w", err)
+	}
+
 	// Get length profile for campaign type
 	profileKey := string(campaign.CampaignType)
 	profile, ok := config.CampaignLengthProfiles[profileKey]
@@ -289,12 +510,58 @@ func generateBlueprintSeeds(campaign *models.Campaign) (*models.CampaignSeeds, e
 	// Seed random number generator
 	rand.Seed(time.Now().UnixNano())
 
+	// Select map and featured areas
+	mapID, selectedMap := selectRandomMap(mapsData)
+	featuredAreas := selectFeaturedAreas(selectedMap, profile.Selection.FeaturedAreas.Min+rand.Intn(profile.Selection.FeaturedAreas.Max-profile.Selection.FeaturedAreas.Min+1))
+
+	// Convert to model types
+	mapSeed := models.MapSeed{
+		MapID:       mapID,
+		Name:        selectedMap.Name,
+		Description: selectedMap.Description,
+	}
+
+	areaSeed := make([]models.AreaSeed, len(featuredAreas))
+	for i, area := range featuredAreas {
+		areaSeed[i] = models.AreaSeed{
+			AreaID:      area.AreaID,
+			Name:        area.Name,
+			Mood:        area.Mood,
+			Description: area.Description,
+		}
+	}
+
+	// Generate variance injectors
+	genreModifier, perspectiveBias, environmentalOddity, excludedMotifs := generateVarianceInjectors(profile, &config)
+
+	// Select objective with bias
+	objective := selectObjectiveWithBias(seeds.ObjectiveSeeds, profile)
+
+	// Select antagonists with bias for diversity
+	antagonists := selectAntagonistsWithBias(seeds.AntagonistCandidates, profile, profile.Selection.Antagonists.Min, profile.Selection.Antagonists.Max)
+
+	// Generate expectation violation if required
+	var expectationViolation *models.ExpectationBreak
+	if profile.VarianceRules.RequireExpectationViolation {
+		expectationViolation = generateExpectationViolation(beatProfile)
+	}
+
 	// Select random seeds based on profile rules
 	result := &models.CampaignSeeds{
-		Twists:      selectRandomElements(seeds.TwistCandidates, profile.Selection.Twists.Min, profile.Selection.Twists.Max),
-		Antagonists: selectRandomElements(seeds.AntagonistCandidates, profile.Selection.Antagonists.Min, profile.Selection.Antagonists.Max),
-		SetPieces:   selectRandomElements(seeds.SetPieceCandidates, profile.Selection.SetPieces.Min, profile.Selection.SetPieces.Max),
-		Constraints: selectRandomElements(seeds.OptionalConstraints, profile.Selection.Constraints.Min, profile.Selection.Constraints.Max),
+		Objective:            objective,
+		Twists:               selectRandomElements(seeds.TwistCandidates, profile.Selection.Twists.Min, profile.Selection.Twists.Max),
+		Antagonists:          antagonists,
+		SetPieces:            selectRandomElements(seeds.SetPieceCandidates, profile.Selection.SetPieces.Min, profile.Selection.SetPieces.Max),
+		Constraints:          selectRandomElements(seeds.OptionalConstraints, profile.Selection.Constraints.Min, profile.Selection.Constraints.Max),
+		Map:                  mapSeed,
+		FeaturedAreas:        areaSeed,
+		MaxCombatScenes:      profile.MaxCombatScenes,
+		GenreModifier:        genreModifier,
+		PerspectiveBias:      perspectiveBias,
+		MoralAsymmetry:       rand.Float32() < 0.3, // 30% chance
+		EnvironmentalOddity:  environmentalOddity,
+		ExcludedMotifs:       excludedMotifs,
+		ExpectationViolation: expectationViolation,
 		BeatProfile: models.BeatProfile{
 			Acts: beatProfile.Acts,
 			BeatsPerAct: models.MinMaxRange{
@@ -306,13 +573,12 @@ func generateBlueprintSeeds(campaign *models.Campaign) (*models.CampaignSeeds, e
 		},
 	}
 
-	// Select exactly 1 objective
-	if len(seeds.ObjectiveSeeds) > 0 {
-		result.Objective = seeds.ObjectiveSeeds[rand.Intn(len(seeds.ObjectiveSeeds))]
+	log.Printf("Selected seeds: map=%s, areas=%d, objective=%s, twists=%d, antagonists=%d, setPieces=%d, constraints=%d, maxCombat=%d",
+		mapID, len(featuredAreas), result.Objective.ObjectiveID, len(result.Twists), len(result.Antagonists), len(result.SetPieces), len(result.Constraints), result.MaxCombatScenes)
+	log.Printf("Variance: genre=%s, perspective=%s, oddity=%s, excludedMotifs=%v", genreModifier, perspectiveBias, environmentalOddity, excludedMotifs)
+	if expectationViolation != nil {
+		log.Printf("Expectation violation: act=%d, type=%s", expectationViolation.ActNumber, expectationViolation.Type)
 	}
-
-	log.Printf("Selected seeds: objective=%s, twists=%d, antagonists=%d, setPieces=%d, constraints=%d",
-		result.Objective.ObjectiveID, len(result.Twists), len(result.Antagonists), len(result.SetPieces), len(result.Constraints))
 	log.Printf("Beat profile: acts=%d, beatsPerAct=%d-%d, avgMinutesPerBeat=%d",
 		result.BeatProfile.Acts, result.BeatProfile.BeatsPerAct.Min, result.BeatProfile.BeatsPerAct.Max, result.BeatProfile.AvgMinutesPerBeat)
 

@@ -1,0 +1,253 @@
+{
+  "title": "The Unraveling Crown",
+  "premise": "The kingdom's heir has vanished, and three factions vie for the throne. The party must navigate civil war, uncover ancient secrets, and decide who deserves to rule—if anyone.",
+  "thematicPillars": [
+    "legitimacy_vs_capability",
+    "cost_of_unity",
+    "burden_of_choice"
+  ],
+  "beatQualification": {
+    "mustHave": ["heir_vanishes", "faction_meetings", "ancient_truth", "succession_crisis", "final_decision"],
+    "mayHave": ["investigation", "betrayal", "combat", "diplomacy", "revelation"]
+  },
+  "ingredientBinding": {
+    "objective": ["resolve_succession"],
+    "twists": ["heir_alive_but_changed", "crown_is_cursed", "party_member_has_claim"],
+    "antagonists": ["ambitious_general", "corrupt_chancellor", "zealot_priestess"],
+    "setPieces": ["throne_room_confrontation", "battlefield_diplomacy", "coronation_ceremony"]
+  },
+  "acts": [
+    {
+      "actNumber": 1,
+      "name": "The Vanishing",
+      "primaryArea": "royal_palace",
+      "narrativePurpose": "Establish power vacuum and introduce factions",
+      "primaryDanger": "political_maneuvering",
+      "beatExpectations": {"min": 9, "max": 13},
+      "pressureType": "temporal"
+    },
+    {
+      "actNumber": 2,
+      "name": "Fractured Loyalties",
+      "primaryArea": "war_camps",
+      "narrativePurpose": "Force party to engage with factions and their claims",
+      "primaryDanger": "civil_war_escalation",
+      "beatExpectations": {"min": 9, "max": 13},
+      "pressureType": "reputational"
+    },
+    {
+      "actNumber": 3,
+      "name": "The Heir's Truth",
+      "primaryArea": "forgotten_monastery",
+      "narrativePurpose": "Reveal heir's fate and deeper conspiracy",
+      "primaryDanger": "truth_is_dangerous",
+      "beatExpectations": {"min": 9, "max": 13},
+      "pressureType": "revelatory"
+    },
+    {
+      "actNumber": 4,
+      "name": "The Breaking Point",
+      "primaryArea": "contested_city",
+      "narrativePurpose": "Expectation violation - premature resolution forces new framing",
+      "primaryDanger": "irreversible_choice",
+      "beatExpectations": {"min": 9, "max": 13},
+      "pressureType": "existential"
+    },
+    {
+      "actNumber": 5,
+      "name": "Coronation or Ruin",
+      "primaryArea": "throne_room",
+      "narrativePurpose": "Final choice with lasting consequences for the realm",
+      "primaryDanger": "no_good_options",
+      "beatExpectations": {"min": 9, "max": 13},
+      "pressureType": "escalating"
+    }
+  ],
+  "majorForces": {
+    "military_faction": {
+      "name": "The Iron Legion",
+      "nature": "military_power",
+      "primaryGoal": "restore_order_through_strength",
+      "methods": ["intimidation", "martial_law", "strategic_alliances"],
+      "threatLevel": "direct"
+    },
+    "noble_council": {
+      "name": "The Silver Council",
+      "nature": "aristocratic_bloc",
+      "primaryGoal": "preserve_traditional_power",
+      "methods": ["negotiation", "bribery", "legal_maneuvering"],
+      "threatLevel": "systemic"
+    },
+    "church": {
+      "name": "The Divine Order",
+      "nature": "religious_authority",
+      "primaryGoal": "install_divine_chosen_ruler",
+      "methods": ["prophecy", "zealotry", "popular_support"],
+      "threatLevel": "ideological"
+    },
+    "shadow_power": {
+      "name": "The Broken Crown",
+      "nature": "ancient_curse",
+      "primaryGoal": "consume_rulers",
+      "methods": ["corruption", "manipulation"],
+      "threatLevel": "metaphysical"
+    }
+  },
+  "npcs": {
+    "general": {
+      "name": "General Korven Steelhand",
+      "role": "antagonist_primary",
+      "firstAppearanceAct": 1,
+      "personality": ["pragmatic", "ruthless", "charismatic"],
+      "agenda": "seize_throne_restore_order"
+    },
+    "chancellor": {
+      "name": "Chancellor Marius Goldweave",
+      "role": "antagonist_secondary",
+      "firstAppearanceAct": 1,
+      "personality": ["cunning", "eloquent", "self-serving"],
+      "agenda": "become_power_behind_throne"
+    },
+    "priestess": {
+      "name": "High Priestess Lyra the Devoted",
+      "role": "antagonist_ideological",
+      "firstAppearanceAct": 2,
+      "personality": ["zealous", "sincere", "dangerous"],
+      "agenda": "install_divine_ruler"
+    },
+    "heir": {
+      "name": "Prince Aldric the Lost",
+      "role": "catalyst",
+      "firstAppearanceAct": 3,
+      "personality": ["transformed", "reluctant", "knowing"],
+      "agenda": "prevent_anyone_from_taking_cursed_throne"
+    },
+    "royal_guard": {
+      "name": "Captain Sera Brightblade",
+      "role": "ally_conflicted",
+      "firstAppearanceAct": 1,
+      "personality": ["loyal", "honorable", "desperate"],
+      "agenda": "protect_legitimate_succession"
+    }
+  },
+  "boonPlan": [
+    {
+      "boonName": "faction_alliance",
+      "act": 2,
+      "trigger": "secure_faction_support",
+      "narrativeCost": "enemy_of_other_factions"
+    },
+    {
+      "boonName": "royal_authority",
+      "act": 3,
+      "trigger": "heir_endorses_party",
+      "narrativeCost": "responsibility_for_realm"
+    },
+    {
+      "boonName": "crown_breaker",
+      "act": 4,
+      "trigger": "understand_curse",
+      "narrativeCost": "forbidden_knowledge"
+    }
+  ],
+  "failurePaths": [
+    {
+      "trigger": "civil_war_erupts",
+      "consequence": "kingdom_fractures_mass_casualties",
+      "recoveryPath": "emergency_ceasefire_or_pick_side"
+    },
+    {
+      "trigger": "heir_dies_or_corrupted",
+      "consequence": "legitimacy_lost_chaos_deepens",
+      "recoveryPath": "find_alternative_or_new_government"
+    },
+    {
+      "trigger": "party_claims_throne",
+      "consequence": "expectation_violation_all_factions_unite_against_you",
+      "recoveryPath": "survive_and_prove_worth"
+    }
+  ],
+  "endStates": {
+    "triumph": "Rightful ruler crowned, curse broken, realm unified",
+    "costly_victory": "Succession resolved but kingdom weakened or war-torn",
+    "pyrrhic_success": "Peace achieved but wrong ruler or curse persists",
+    "failure": "Civil war continues, realm collapses, curse spreads"
+  },
+  "memoryDirectives": {
+    "canonicalFacts": [
+      "heir_disappearance_date",
+      "faction_stances",
+      "curse_nature",
+      "party_allegiances",
+      "succession_decision"
+    ],
+    "relationshipAxes": [
+      {"entity": "iron_legion", "states": ["neutral", "allied", "opposed", "at_war"]},
+      {"entity": "silver_council", "states": ["ignored", "negotiating", "allied", "enemy"]},
+      {"entity": "divine_order", "states": ["distant", "cooperating", "zealous_against"]},
+      {"entity": "heir", "states": ["missing", "found", "trusted", "enemy"]}
+    ],
+    "decisionFlags": [
+      "faction_chosen",
+      "curse_revealed",
+      "heir_fate_decided",
+      "throne_claimed_or_refused",
+      "violence_escalated"
+    ]
+  },
+  "imagePlan": {
+    "intro": {
+      "description": "The empty throne room after the heir's disappearance",
+      "prompt": "A grand medieval throne room with an empty ornate throne, crown sitting abandoned, worried courtiers and guards whispering, heavy atmosphere of crisis and uncertainty, dramatic lighting through stained glass windows, fantasy setting",
+      "sendWhen": "campaign_start",
+      "narrativePurpose": "Establish the power vacuum",
+      "s3Key": ""
+    },
+    "war_camp": {
+      "description": "Military encampment preparing for civil war",
+      "prompt": "A massive military war camp with rows of tents, soldiers sharpening weapons, war banners flying, generals planning around a map table, tension and anticipation, dusk lighting, fantasy medieval warfare",
+      "sendWhen": "beat_faction_rising",
+      "narrativePurpose": "Show the escalating conflict",
+      "s3Key": ""
+    },
+    "monastery": {
+      "description": "Discovering the heir in a remote monastery",
+      "prompt": "A weathered stone monastery on a misty mountaintop, a transformed prince in simple robes standing in candlelit chapel, mystical atmosphere, realization and revelation, dramatic shadows, detailed fantasy environment",
+      "sendWhen": "beat_heir_found",
+      "narrativePurpose": "Reveal the central mystery",
+      "s3Key": ""
+    },
+    "coronation": {
+      "description": "The final coronation ceremony",
+      "prompt": "A grand coronation ceremony in an ornate throne room, new ruler being crowned, crowd of nobles and common folk watching, mixture of hope and uncertainty, golden light streaming through windows, epic fantasy moment",
+      "sendWhen": "beat_succession_resolved",
+      "narrativePurpose": "Visualize the resolution",
+      "s3Key": ""
+    }
+  },
+  "combatConstraints": {
+    "maxCombatScenes": 3,
+    "combatIntent": {
+      "act1": "none - crisis unfolds through political pressure",
+      "act2": "signal that factions will use force and neutrality is ending",
+      "act3": "none - revelations drive tension, not violence",
+      "act4": "force irreversible stance through premature confrontation",
+      "act5": "final battle must expose fundamental incompatibilities"
+    },
+    "combatTriggers": [
+      "faction_assassination_attempt",
+      "battlefield_negotiation_collapses",
+      "throne_room_coup",
+      "party_forced_to_choose_side",
+      "curse_manifests_physically"
+    ],
+    "combatOutcomesMust": [
+      "eliminate_one_faction_from_contention",
+      "force_public_declaration_of_loyalty",
+      "reveal_hidden_allegiances",
+      "create_martyr_that_shifts_public_opinion",
+      "prove_capability_or_unworthiness_of_claimant"
+    ]
+  }
+}
+

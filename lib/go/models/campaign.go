@@ -110,6 +110,15 @@ type Blueprint struct {
 	EndStates         EndStates                `json:"endStates" dynamodbav:"endStates"`
 	MemoryDirectives  MemoryDirectives         `json:"memoryDirectives" dynamodbav:"memoryDirectives"`
 	ImagePlan         map[string]ImagePlanItem `json:"imagePlan" dynamodbav:"imagePlan"`
+	CombatConstraints CombatConstraints        `json:"combatConstraints" dynamodbav:"combatConstraints"`
+}
+
+// CombatConstraints defines combat guidance for narrative purposes
+type CombatConstraints struct {
+	MaxCombatScenes    int               `json:"maxCombatScenes" dynamodbav:"maxCombatScenes"`
+	CombatIntent       map[string]string `json:"combatIntent" dynamodbav:"combatIntent"`
+	CombatTriggers     []string          `json:"combatTriggers" dynamodbav:"combatTriggers"`
+	CombatOutcomesMust []string          `json:"combatOutcomesMust" dynamodbav:"combatOutcomesMust"`
 }
 
 // BeatQualification defines what counts as a beat

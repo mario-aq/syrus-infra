@@ -8,7 +8,9 @@
         "on_success": "The relic is secured and its influence contained.",
         "on_failure": "The relic empowers an enemy or destabilizes the region."
       },
-      "complexity": "standard"
+      "complexity": "standard",
+      "terrainCategory": "subterranean",
+      "primaryThreatCategory": "logistical"
     },
     {
       "objectiveId": "protect_vulnerable_settlement",
@@ -18,7 +20,9 @@
         "on_success": "Lives are saved and trust is earned.",
         "on_failure": "Loss, fear, or displacement spreads."
       },
-      "complexity": "low"
+      "complexity": "low",
+      "terrainCategory": "interiorWilderness",
+      "primaryThreatCategory": "logistical"
     },
     {
       "objectiveId": "expose_hidden_truth",
@@ -28,7 +32,9 @@
         "on_success": "The truth alters the balance of power.",
         "on_failure": "Falsehood hardens into accepted reality."
       },
-      "complexity": "high"
+      "complexity": "high",
+      "terrainCategory": "institutional",
+      "primaryThreatCategory": "social"
     },
     {
       "objectiveId": "escape_encroaching_doom",
@@ -38,7 +44,9 @@
         "on_success": "The party survives and retains agency.",
         "on_failure": "They are trapped, scattered, or consumed."
       },
-      "complexity": "standard"
+      "complexity": "standard",
+      "terrainCategory": "nomadic",
+      "primaryThreatCategory": "ecological"
     },
     {
       "objectiveId": "break_the_siege",
@@ -48,7 +56,9 @@
         "on_success": "The besieged endure and the enemy loses momentum.",
         "on_failure": "The defense collapses and innocents pay the price."
       },
-      "complexity": "standard"
+      "complexity": "standard",
+      "terrainCategory": "urbanVertical",
+      "primaryThreatCategory": "logistical"
     },
     {
       "objectiveId": "stop_the_ritual",
@@ -58,7 +68,9 @@
         "on_success": "The threat is delayed or neutralized.",
         "on_failure": "The world changes in a lasting way."
       },
-      "complexity": "high"
+      "complexity": "high",
+      "terrainCategory": "surreal",
+      "primaryThreatCategory": "metaphysical"
     },
     {
       "objectiveId": "escort_the_key",
@@ -68,7 +80,9 @@
         "on_success": "The key arrives and unlocks a decisive advantage.",
         "on_failure": "The key is captured or destroyed, shifting the balance."
       },
-      "complexity": "standard"
+      "complexity": "standard",
+      "terrainCategory": "nomadic",
+      "primaryThreatCategory": "logistical"
     },
     {
       "objectiveId": "secure_the_treaty",
@@ -78,7 +92,9 @@
         "on_success": "Peace, access, or unity is achieved.",
         "on_failure": "War, isolation, or betrayal follows."
       },
-      "complexity": "high"
+      "complexity": "high",
+      "terrainCategory": "institutional",
+      "primaryThreatCategory": "social"
     },
     {
       "objectiveId": "cleanse_the_blight",
@@ -88,17 +104,21 @@
         "on_success": "The blight recedes and survivors recover.",
         "on_failure": "The corruption becomes permanent and expands."
       },
-      "complexity": "standard"
+      "complexity": "standard",
+      "terrainCategory": "coastal",
+      "primaryThreatCategory": "ecological"
     },
     {
       "objectiveId": "steal_the_blueprint",
       "name": "Steal the Blueprint",
       "description": "A plan, ledger, or design will enable catastrophe if completed; the party must steal or destroy it.",
       "stakes": {
-        "on_success": "The enemy’s advantage is denied.",
+        "on_success": "The enemy's advantage is denied.",
         "on_failure": "A devastating tool enters play."
       },
-      "complexity": "high"
+      "complexity": "high",
+      "terrainCategory": "urbanVertical",
+      "primaryThreatCategory": "cognitive"
     }
   ],
 
@@ -183,7 +203,9 @@
       "goal": "Control forbidden power.",
       "methods": ["infiltration", "rituals", "assassination"],
       "threatLevel": "high",
-      "presenceStyle": "indirect"
+      "presenceStyle": "indirect",
+      "terrainCategory": "institutional",
+      "primaryThreatCategory": "social"
     },
     {
       "antagonistId": "void_behemoth",
@@ -192,7 +214,9 @@
       "goal": "Feed on instability within the Weave.",
       "methods": ["corruption", "devastation"],
       "threatLevel": "extreme",
-      "presenceStyle": "catastrophic"
+      "presenceStyle": "catastrophic",
+      "terrainCategory": "surreal",
+      "primaryThreatCategory": "metaphysical"
     },
     {
       "antagonistId": "crownless_regent",
@@ -201,7 +225,9 @@
       "goal": "Seize authority through fear or manipulation.",
       "methods": ["political pressure", "enforcers", "blackmail"],
       "threatLevel": "standard",
-      "presenceStyle": "direct"
+      "presenceStyle": "direct",
+      "terrainCategory": "urbanVertical",
+      "primaryThreatCategory": "social"
     },
     {
       "antagonistId": "fractured_order",
@@ -210,16 +236,20 @@
       "goal": "Preserve control despite internal decay.",
       "methods": ["bureaucratic force", "detention", "propaganda"],
       "threatLevel": "standard",
-      "presenceStyle": "systemic"
+      "presenceStyle": "systemic",
+      "terrainCategory": "institutional",
+      "primaryThreatCategory": "social"
     },
     {
       "antagonistId": "iron_bailiffs",
       "name": "The Iron Bailiffs",
       "nature": "militant syndicate",
-      "goal": "Collect debts and expand control under ‘lawful’ pretense.",
+      "goal": "Collect debts and expand control under 'lawful' pretense.",
       "methods": ["extortion", "seizure", "public examples"],
       "threatLevel": "standard",
-      "presenceStyle": "direct"
+      "presenceStyle": "direct",
+      "terrainCategory": "urbanVertical",
+      "primaryThreatCategory": "logistical"
     },
     {
       "antagonistId": "the_blistering_fog",
@@ -228,7 +258,9 @@
       "goal": "Spread, suffocate, and erase paths and memory.",
       "methods": ["disorientation", "attrition", "separation"],
       "threatLevel": "high",
-      "presenceStyle": "environmental"
+      "presenceStyle": "environmental",
+      "terrainCategory": "coastal",
+      "primaryThreatCategory": "ecological"
     },
     {
       "antagonistId": "the_glass_oracle",
@@ -237,7 +269,9 @@
       "goal": "Manipulate outcomes to force a foretold future.",
       "methods": ["misdirection", "prophecy traps", "paid agents"],
       "threatLevel": "high",
-      "presenceStyle": "indirect"
+      "presenceStyle": "indirect",
+      "terrainCategory": "surreal",
+      "primaryThreatCategory": "cognitive"
     },
     {
       "antagonistId": "the_hollow_host",
@@ -246,7 +280,9 @@
       "goal": "Assimilate communities into a single will.",
       "methods": ["conversion", "infection", "overwhelm"],
       "threatLevel": "extreme",
-      "presenceStyle": "relentless"
+      "presenceStyle": "relentless",
+      "terrainCategory": "interiorWilderness",
+      "primaryThreatCategory": "cognitive"
     },
     {
       "antagonistId": "rift_poachers",
@@ -255,7 +291,9 @@
       "goal": "Harvest unstable sites and sell what should remain buried.",
       "methods": ["ambush", "sabotage", "scavenging"],
       "threatLevel": "standard",
-      "presenceStyle": "direct"
+      "presenceStyle": "direct",
+      "terrainCategory": "nomadic",
+      "primaryThreatCategory": "logistical"
     },
     {
       "antagonistId": "the_last_warden",
@@ -264,7 +302,9 @@
       "goal": "Prevent anyone from touching a sealed truth—at any cost.",
       "methods": ["trials", "traps", "unyielding force"],
       "threatLevel": "high",
-      "presenceStyle": "territorial"
+      "presenceStyle": "territorial",
+      "terrainCategory": "subterranean",
+      "primaryThreatCategory": "metaphysical"
     }
   ],
 

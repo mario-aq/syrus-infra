@@ -187,7 +187,7 @@ func TestBuildPrompt(t *testing.T) {
 		"<beatProfile>",
 		"<availableBoons>",
 		"<seedPackage>",
-		"<exampleOutput>",
+		"<exampleBlueprint>",
 	}
 
 	for _, section := range expectedSections {
@@ -200,4 +200,3 @@ func TestBuildPrompt(t *testing.T) {
 func contains(s, substr string) bool {
 	return len(s) > 0 && len(substr) > 0 && (s == substr || len(s) >= len(substr) && (s[:len(substr)] == substr || contains(s[1:], substr)))
 }
-

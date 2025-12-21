@@ -1,0 +1,156 @@
+{
+  "title": "The Midnight Accord",
+  "premise": "A fragile treaty threatens to collapse as foreign spies undermine trust between rival merchant houses. The party must expose the conspiracy before blood is shed in the streets.",
+  "thematicPillars": [
+    "trust_vs_pragmatism",
+    "public_reputation",
+    "cost_of_neutrality"
+  ],
+  "beatQualification": {
+    "mustHave": ["treaty_signing", "betrayal_revealed", "final_confrontation"],
+    "mayHave": ["investigation", "social_maneuvering", "chase"]
+  },
+  "ingredientBinding": {
+    "objective": ["prevent_catastrophe"],
+    "twists": ["unexpected_ally"],
+    "antagonists": ["foreign_operative"],
+    "setPieces": ["public_ceremony"]
+  },
+  "acts": [
+    {
+      "actNumber": 1,
+      "name": "False Peace",
+      "primaryArea": "merchant_quarter",
+      "narrativePurpose": "Establish treaty stakes and introduce key players",
+      "primaryDanger": "social_misstep",
+      "beatExpectations": {"min": 4, "max": 6},
+      "pressureType": "reputational"
+    },
+    {
+      "actNumber": 2,
+      "name": "Cracks in the Facade",
+      "primaryArea": "foreign_embassy",
+      "narrativePurpose": "Uncover conspiracy and force a choice",
+      "primaryDanger": "exposure_or_complicity",
+      "beatExpectations": {"min": 5, "max": 7},
+      "pressureType": "temporal"
+    },
+    {
+      "actNumber": 3,
+      "name": "The Reckoning",
+      "primaryArea": "public_square",
+      "narrativePurpose": "Resolve conflict with irreversible consequences",
+      "primaryDanger": "public_violence",
+      "beatExpectations": {"min": 5, "max": 7},
+      "pressureType": "escalating"
+    }
+  ],
+  "majorForces": {
+    "house_velmark": {
+      "name": "House Velmark",
+      "nature": "merchant_dynasty",
+      "primaryGoal": "maintain_monopoly",
+      "methods": ["negotiation", "bribery"],
+      "threatLevel": "indirect"
+    },
+    "foreign_crown": {
+      "name": "The Crimson Throne",
+      "nature": "expansionist_power",
+      "primaryGoal": "destabilize_region",
+      "methods": ["espionage", "assassination"],
+      "threatLevel": "direct"
+    }
+  },
+  "npcs": {
+    "merchant_lord": {
+      "name": "Lord Theron Velmark",
+      "role": "treaty_architect",
+      "firstAppearanceAct": 1,
+      "personality": ["pragmatic", "suspicious"],
+      "agenda": "preserve_house_legacy"
+    },
+    "spy_handler": {
+      "name": "The Orchid",
+      "role": "antagonist_primary",
+      "firstAppearanceAct": 1,
+      "personality": ["charming", "ruthless"],
+      "agenda": "sabotage_treaty"
+    }
+  },
+  "boonPlan": [
+    {
+      "boonName": "safe_passage",
+      "act": 1,
+      "trigger": "gain_velmark_trust",
+      "narrativeCost": "public_debt"
+    },
+    {
+      "boonName": "hidden_truth",
+      "act": 2,
+      "trigger": "interrogate_spy",
+      "narrativeCost": "enemy_awareness"
+    }
+  ],
+  "failurePaths": [
+    {
+      "trigger": "treaty_collapses_prematurely",
+      "consequence": "open_conflict_begins",
+      "recoveryPath": "emergency_mediation"
+    }
+  ],
+  "endStates": {
+    "triumph": "Treaty holds, conspiracy exposed, regional stability",
+    "costly_victory": "Treaty saved but house weakened or key figure lost",
+    "pyrrhic_success": "Treaty holds but trust destroyed, cold war begins",
+    "failure": "Treaty collapses, violence erupts, region destabilized"
+  },
+  "memoryDirectives": {
+    "canonicalFacts": [
+      "treaty_signing_date",
+      "spy_network_exposed",
+      "velmark_stance"
+    ],
+    "relationshipAxes": [
+      {"entity": "house_velmark", "states": ["trusted", "neutral", "hostile"]},
+      {"entity": "foreign_crown", "states": ["unknown", "suspected", "confirmed"]}
+    ],
+    "decisionFlags": [
+      "public_accusation_made",
+      "violence_used"
+    ]
+  },
+  "imagePlan": {
+    "intro": {
+      "description": "A crowded merchant square at dusk, tension thick in the air",
+      "prompt": "A fantasy medieval merchant square at dusk, crowded with people, ornate buildings with diplomatic banners, tension and unease in the atmosphere, torchlight casting long shadows, cinematic lighting, detailed fantasy art style",
+      "sendWhen": "campaign_start",
+      "narrativePurpose": "Establish urban political tension",
+      "s3Key": ""
+    },
+    "treaty-moment": {
+      "description": "The treaty signing ceremony disrupted",
+      "prompt": "A grand diplomatic ceremony inside an ornate hall, two rival merchant lords at a table with treaty documents, sudden disruption as masked figures burst in, chaos and panic, dramatic lighting, fantasy medieval setting",
+      "sendWhen": "beat_treaty_signing",
+      "narrativePurpose": "Visualize the central conflict moment",
+      "s3Key": ""
+    }
+  },
+  "combatConstraints": {
+    "maxCombatScenes": 1,
+    "combatIntent": {
+      "act2": "signal that investigation has real cost and violence is a last resort",
+      "act3": "force choice between restraint and decisive action"
+    },
+    "combatTriggers": [
+      "spy_confrontation_escalates",
+      "public_assassination_attempt",
+      "party_exposed_as_threat"
+    ],
+    "combatOutcomesMust": [
+      "force_public_stance",
+      "reveal_hidden_allegiance",
+      "eliminate_one_threat_path"
+    ]
+  }
+}
+
