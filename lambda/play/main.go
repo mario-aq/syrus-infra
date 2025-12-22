@@ -236,15 +236,25 @@ func handlePlayRequest(ctx context.Context, playRequest PlayRequest) error {
 			// Parse options to determine subcommand and debug mode
 			options, hasOptions := interaction.Data["options"].([]interface{})
 
-			// Check for debug flag first
+			// Check for debug flag first (only for authorized user)
 			debugMode := false
 			if hasOptions {
 				for _, opt := range options {
 					if optMap, ok := opt.(map[string]interface{}); ok {
 						if name, ok := optMap["name"].(string); ok && name == "debug" {
 							if debugValue, ok := optMap["value"].(bool); ok && debugValue {
-								debugMode = true
-								break
+								// Only enable debug mode for authorized user
+								userID := ""
+								if interaction.User != nil {
+									userID = interaction.User.ID
+								} else if interaction.Member != nil && interaction.Member.User.ID != "" {
+									userID = interaction.Member.User.ID
+								}
+
+								if userID == "1400583338720235591" {
+									debugMode = true
+									break
+								}
 							}
 						}
 					}
@@ -297,10 +307,6 @@ func handleDebugMode(playRequest PlayRequest) error {
 **Current Beat:** %d
 **Players:** %d
 
-**Interaction ID:** %s
-**Channel:** %s
-
-**Blueprint Acts:** %d
 **Failure Paths:** %d
 **End States:** %d
 
@@ -310,16 +316,13 @@ func handleDebugMode(playRequest PlayRequest) error {
 		campaign.Runtime.CurrentAct,
 		campaign.Runtime.CurrentBeat,
 		len(campaign.Party.Members),
-		playRequest.InteractionId,
-		playRequest.CampaignId,
-		len(campaign.Blueprint.Acts),
 		len(campaign.Blueprint.FailurePaths),
 		3, // EndStates struct has 3 fields: Success, Compromised, Failure
 		len(campaign.Memory.PerAct),
 	)
 
 	// Add a note about full data availability
-	debugInfo += "\n\n*📜 Full campaign data available in CloudWatch logs*"
+	debugInfo += "\n\n*📜 Extended diagnostics recorded for debugging*"
 
 	return sendMessageToQueue(playRequest.CampaignId, debugInfo, playRequest.InteractionObject.Token, playRequest.InteractionId)
 }

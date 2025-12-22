@@ -207,8 +207,8 @@ func sendToPlayQueue(campaignID, interactionID string, interaction DiscordIntera
 	svc := sqs.New(sess)
 
 	playRequest := map[string]interface{}{
-		"campaignId":       campaignID,
-		"interactionId":    interactionID,
+		"campaignId":        campaignID,
+		"interactionId":     interactionID,
 		"interactionObject": interaction,
 	}
 
@@ -551,17 +551,11 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 				}
 				return response, nil
 			}
+
+			log.Printf("unhandled command: %s", string(commandName))
 		}
+		// Log unhandled interaction with full payload
 	}
-
-	// TODO
-	// 1. get campaign
-	// 2. route the message to either configuring, play, cinematic queues
-	// 3. respond 200 to the webhook
-
-	// Log unhandled interaction with full payload
-	interactionJSON, _ := json.Marshal(interaction)
-	log.Printf("unhandled interaction type: %s", string(interactionJSON))
 
 	// Return type 5 (DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE) - will follow up via webhook
 	response := events.APIGatewayV2HTTPResponse{
