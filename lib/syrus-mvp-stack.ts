@@ -59,6 +59,14 @@ export class SyrusMvpStack extends Stack {
       visibilityTimeout: Duration.minutes(3), // Reduced from 6 to 3 - Lambda typically takes 60-90s
     });
 
+    // Play Infrastructure
+    // Create SQS FIFO queue for play
+    const playQueue = new SqsFifoWithDlq(this, 'PlayQueue', {
+      queueName: 'play',
+      stage: props.stage,
+      visibilityTimeout: Duration.minutes(6), // Must be > Lambda timeout (5 min) * 6
+    });
+
     // Create S3 bucket for model cache
     const modelCacheBucket = new s3.Bucket(this, 'ModelCacheBucket', {
       bucketName: `syrus-model-cache-${props.stage}`,
@@ -86,6 +94,7 @@ export class SyrusMvpStack extends Stack {
       hostsTableName: hostsTable.tableName,
       messagingQueue: messagingQueue.queue,
       configuringQueue: configuringQueue.queue,
+      playQueue: playQueue.queue,
     });
 
     // Add CloudFormation outputs
@@ -415,6 +424,52 @@ export class SyrusMvpStack extends Stack {
       ],
     }));
 
+    // Create play Lambda function
+    const playFunction = new lambda.Function(this, 'PlayFunction', {
+      runtime: lambda.Runtime.PROVIDED_AL2023,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/play')),
+      handler: 'bootstrap',
+      environment: {
+        SYRUS_CAMPAIGNS_TABLE: campaignsTable.tableName,
+        SYRUS_DEDUP_TABLE: dedupTable.table.tableName,
+        SYRUS_MESSAGING_QUEUE_URL: messagingQueue.queue.queueUrl,
+        SYRUS_MODEL_CACHE_BUCKET: modelCacheBucket.bucketName,
+        SYRUS_STAGE: stageConfig.stage,
+      },
+      timeout: Duration.minutes(5), // Model calls can be slow
+      memorySize: 512,
+    });
+
+    // Grant play Lambda permissions
+    campaignsTable.grantReadWriteData(playFunction);
+    dedupTable.table.grantReadWriteData(playFunction);
+    messagingQueue.queue.grantSendMessages(playFunction);
+    modelCacheBucket.grantReadWrite(playFunction);
+
+    // Grant play Lambda SSM access for Anthropic API key
+    playFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/syrus/${stageConfig.stage}/anthropic/api-key`,
+      ],
+    }));
+
+    // Grant play Lambda read/delete permissions for its queue
+    playFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'sqs:ReceiveMessage',
+        'sqs:DeleteMessage',
+        'sqs:GetQueueAttributes',
+      ],
+      resources: [playQueue.queue.queueArn],
+    }));
+
+    // Add SQS event source mapping for play queue
+    playFunction.addEventSource(new lambdaEventSources.SqsEventSource(playQueue.queue, {
+      batchSize: playQueue.defaultBatchSize,
+      reportBatchItemFailures: true,
+    }));
+
     // CloudFormation outputs for Messaging Infrastructure
     new CfnOutput(this, 'MessagingQueueUrl', {
       value: messagingQueue.queue.queueUrl,
@@ -598,6 +653,37 @@ export class SyrusMvpStack extends Stack {
       value: imageGenFunction.functionArn,
       description: 'ARN of the imageGen Lambda function',
       exportName: `SyrusImageGenLambdaArn-${props.stage}`,
+    });
+
+    // CloudFormation outputs for Play Infrastructure
+    new CfnOutput(this, 'PlayQueueUrl', {
+      value: playQueue.queue.queueUrl,
+      description: 'URL of the play FIFO queue',
+      exportName: `SyrusPlayQueueUrl-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'PlayQueueArn', {
+      value: playQueue.queue.queueArn,
+      description: 'ARN of the play FIFO queue',
+      exportName: `SyrusPlayQueueArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'PlayDlqUrl', {
+      value: playQueue.dlq.queueUrl,
+      description: 'URL of the play dead letter queue',
+      exportName: `SyrusPlayDlqUrl-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'PlayDlqArn', {
+      value: playQueue.dlq.queueArn,
+      description: 'ARN of the play dead letter queue',
+      exportName: `SyrusPlayDlqArn-${props.stage}`,
+    });
+
+    new CfnOutput(this, 'PlayLambdaArn', {
+      value: playFunction.functionArn,
+      description: 'ARN of the play Lambda function',
+      exportName: `SyrusPlayLambdaArn-${props.stage}`,
     });
   }
 }

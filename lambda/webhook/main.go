@@ -192,6 +192,46 @@ func sendMessageToQueue(channelID string, content string, interactionToken strin
 	return nil
 }
 
+// sendToPlayQueue sends a play request to the play queue
+func sendToPlayQueue(campaignID, interactionID string, interaction DiscordInteraction) error {
+	queueURL := os.Getenv("SYRUS_PLAY_QUEUE_URL")
+	if queueURL == "" {
+		return fmt.Errorf("SYRUS_PLAY_QUEUE_URL environment variable not set")
+	}
+
+	sess, err := session.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create AWS session: %w", err)
+	}
+
+	svc := sqs.New(sess)
+
+	playRequest := map[string]interface{}{
+		"campaignId":       campaignID,
+		"interactionId":    interactionID,
+		"interactionObject": interaction,
+	}
+
+	messageBodyJSON, err := json.Marshal(playRequest)
+	if err != nil {
+		return fmt.Errorf("failed to marshal play request: %w", err)
+	}
+
+	_, err = svc.SendMessage(&sqs.SendMessageInput{
+		QueueUrl:               aws.String(queueURL),
+		MessageBody:            aws.String(string(messageBodyJSON)),
+		MessageGroupId:         aws.String(campaignID),
+		MessageDeduplicationId: aws.String(interactionID),
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to send message to play queue: %w", err)
+	}
+
+	log.Printf("Successfully sent play request to queue for campaign %s", campaignID)
+	return nil
+}
+
 // sendToConfiguringQueue sends a campaign configuration request
 func sendToConfiguringQueue(channelID, hostID, interactionID, interactionToken string, options []map[string]interface{}) error {
 	queueURL := os.Getenv("SYRUS_CONFIGURING_QUEUE_URL")
@@ -439,35 +479,21 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 			log.Printf("Command name detected: %s", commandName)
 			switch commandName {
 			case "syrus":
-				// Build response message
-				responseMessage := "Received"
-
-				// Check for debug mode: if debug option is true, append interaction JSON
-				if options, ok := interaction.Data["options"].([]interface{}); ok {
-					// Look for the debug option
-					for _, option := range options {
-						if optionMap, ok := option.(map[string]interface{}); ok {
-							if name, ok := optionMap["name"].(string); ok && name == "debug" {
-								if debugValue, ok := optionMap["value"].(bool); ok && debugValue {
-									// Debug mode enabled - marshal the full interaction JSON
-									interactionJSON, err := json.MarshalIndent(interaction, "", "  ")
-									if err != nil {
-										log.Printf("Failed to marshal interaction JSON: %v", err)
-									} else {
-										responseMessage = fmt.Sprintf("Received\n\n```json\nInteractionPayload: %s\n```", string(interactionJSON))
-									}
-									break
-								}
-							}
-						}
+				// Send the entire interaction to the play queue for processing
+				if err := sendToPlayQueue(interaction.ChannelID, interaction.ID, interaction); err != nil {
+					log.Printf("Failed to send to play queue: %v", err)
+					// Return error response
+					response := events.APIGatewayV2HTTPResponse{
+						StatusCode: 500,
+						Headers: map[string]string{
+							"Content-Type": "application/json",
+						},
+						Body: `{"error": "Internal server error"}`,
 					}
+					return response, nil
 				}
 
-				if err := sendMessageToQueue(interaction.ChannelID, responseMessage, interaction.Token, interaction.ID); err != nil {
-					log.Printf("Failed to send 'Received' message to queue: %v", err)
-				}
-
-				// Return type 5 (DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE) - will follow up via webhook
+				// Return type 5 (DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE) - play lambda will follow up via messaging queue
 				response := events.APIGatewayV2HTTPResponse{
 					StatusCode: 200,
 					Headers: map[string]string{

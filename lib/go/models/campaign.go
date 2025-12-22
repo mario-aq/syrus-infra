@@ -8,6 +8,8 @@ type CampaignStatus string
 const (
 	// CampaignStatusActive indicates the campaign is actively running
 	CampaignStatusActive CampaignStatus = "active"
+	// CampaignStatusPlaying indicates the campaign is in active play
+	CampaignStatusPlaying CampaignStatus = "playing"
 	// CampaignStatusConfiguring indicates the campaign is being set up
 	CampaignStatusConfiguring CampaignStatus = "configuring"
 	// CampaignStatusEnded indicates the campaign has concluded
@@ -323,6 +325,12 @@ type ActMemory struct {
 	KeyDecisions        []interface{}          `json:"keyDecisions" dynamodbav:"keyDecisions"`
 	RelationshipChanges map[string]interface{} `json:"relationshipChanges" dynamodbav:"relationshipChanges"`
 	Notes               []interface{}          `json:"notes" dynamodbav:"notes"`
+	// Play-specific memory fields
+	Beats            *int     `json:"beats,omitempty" dynamodbav:"beats,omitempty"`
+	CombatSceneCount *int     `json:"combatSceneCount,omitempty" dynamodbav:"combatSceneCount,omitempty"`
+	Flags            []string `json:"flags,omitempty" dynamodbav:"flags,omitempty"`
+	Failures         []string `json:"failures,omitempty" dynamodbav:"failures,omitempty"`
+	Successes        []string `json:"successes,omitempty" dynamodbav:"successes,omitempty"`
 }
 
 // CostTracking represents cost tracking

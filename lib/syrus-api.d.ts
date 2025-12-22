@@ -9,6 +9,7 @@ export interface WebhookApiProps {
     hostsTableName?: string;
     messagingQueue?: sqs.IQueue;
     configuringQueue?: sqs.IQueue;
+    playQueue?: sqs.IQueue;
 }
 export declare class SyrusApi extends Construct {
     readonly api: apigatewayv2.HttpApi;
