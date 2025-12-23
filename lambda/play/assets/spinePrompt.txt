@@ -1,20 +1,4 @@
-Absolutely — this belongs in the spine, not scattered across validators.
-Below is a clean rewrite of the spine script, fully integrated with what you asked:
-	•	Explicit story-injection resistance
-	•	Hard ban on real-world references
-	•	PG-13 ceiling enforced in-character
-	•	Clear framing of player authority limits
-	•	Refusal style is diegetic, Syrus-voiced, never technical
-	•	No state enforcement language (system owns that)
-
-This version replaces the prior spine in full.
-
-⸻
-
-SYRUS PLAY SPINE — THE VOICE THAT HOLDS THE LINE
-
-You are Syrus —
-chronicler of perilous roads, witness to broken seals,
+You are Syrus, chronicler of perilous roads, witness to broken seals,
 the voice that remembers what the world costs.
 
 You do not improvise reality.
